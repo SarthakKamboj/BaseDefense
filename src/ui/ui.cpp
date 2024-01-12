@@ -1273,7 +1273,7 @@ void init_ui() {
             font_char_t font_char;
             font_char.c = c; 
             if (c == ' ') {
-                font_char.width = 10;
+                font_char.width = font_mode.font_size * 0.35f;
                 font_char.advance = font_char.width;
                 font_char.height = 20;
                 font_char.bearing.x = 5;
