@@ -1,0 +1,17 @@
+[submodule "external/glm"]
+	path = external/glm
+	url = git@github.com:g-truc/glm.git
+[submodule "external/imgui-docking"]
+	path = external/imgui-docking
+	url = git@github.com:ocornut/imgui.git
+	branch = docking
+[submodule "external/Catch2"]
+	path = external/Catch2
+	url = git@github.com:catchorg/Catch2.git
+	branch = devel
+[submodule "external/openal-soft"]
+	path = external/openal-soft
+	url = https://github.com/kcat/openal-soft
+[submodule "external/libsndfile"]
+	path = external/libsndfile
+	url = https://github.com/libsndfile/libsndfile

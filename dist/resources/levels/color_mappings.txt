@@ -1,0 +1,5 @@
+#E2E2E2: goomba
+#3CA9EE: ground
+#DFA693: goomba turn around
+#DC6E55: pipe
+#ED553B: brick

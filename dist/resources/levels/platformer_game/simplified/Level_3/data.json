@@ -1,0 +1,58 @@
+{
+	"identifier": "Level_3",
+	"uniqueIdentifer": "874bce80-8990-11ee-801d-c5466f73ef5d",
+	"x": 0,
+	"y": 512,
+	"width": 896,
+	"height": 256,
+	"bgColor": "#232EDC",
+	"neighbourLevels": [
+		{
+			"levelIid": "7d9c67f0-8990-11ee-801d-1bc79047634b",
+			"dir": "n"
+		},
+		{
+			"levelIid": "90662100-8990-11ee-801d-f929913431b6",
+			"dir": "s"
+		}
+	],
+	"customFields": {
+		"Goomba": "#E2E2E2",
+		"Ground": "#3CA9EE",
+		"GoombaTurnAround": "#DFA693",
+		"Pipe": "#DC6E55",
+		"Brick": "#ED553B",
+		"FinalFlag": "#F6D55C"
+	},
+	"layers": [
+		"Platformer_Color_Palette.png"
+	],
+	"entities": {
+		"FinalFlag": [
+			{
+				"id": "FinalFlag",
+				"iid": "874bce83-8990-11ee-801d-add547bccce0",
+				"layer": "Player_Entities",
+				"x": 848,
+				"y": 208,
+				"width": 16,
+				"height": 16,
+				"color": 12470831,
+				"customFields" : {}
+			}
+		],
+		"PlayerStart": [
+			{
+				"id": "PlayerStart",
+				"iid": "874bce84-8990-11ee-801d-f924883f1a68",
+				"layer": "Player_Entities",
+				"x": 80,
+				"y": 64,
+				"width": 16,
+				"height": 16,
+				"color": 6539085,
+				"customFields" : {}
+			}
+		]
+	}
+}

@@ -1,0 +1,11 @@
+character anims:
+1-3: idle
+4-10: running
+11: jumping up
+12: jumping down
+13: dash
+14-30: level_finish
+31-37: death
+
+enemy1 anims:
+1-9: walking
