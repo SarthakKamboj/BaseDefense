@@ -1,19 +1,18 @@
 #include "ui.h"
-#include "constants.h"
+
+#include <iostream>
 #include <unordered_map>
 
+#include "constants.h"
+#include "utils/io.h"
 #include "gfx/quad.h"
 #include "gfx/gfx_data/vertex.h"
 #include "gfx/gfx_data/texture.h"
 #include "gfx/renderer.h"
+#include "globals.h"
 
-#include <iostream>
 #include <ft2build.h>
 #include FT_FREETYPE_H  
-
-#include "utils/io.h"
-
-#include "globals.h"
 
 extern globals_t globals;
 
@@ -254,10 +253,6 @@ hash_t hash(const char* key) {
     }
 
     return sha;
-}
-
-glm::vec3 create_color(float r, float g, float b) {
-    return glm::vec3(r, g, b) / 255.f;
 }
 
 void start_of_frame() {
@@ -1215,19 +1210,11 @@ void render_ui_helper(widget_t& widget) {
 }
 
 void render_ui() {  
-
     if (ui_will_update) {
         cur_focused_internal_handle = -1;
         cur_final_focused_handle = -1;
         stack_nav_cur = false;
     }
-
-    // if (app.controller_state_changed) {
-    //     if (!app.game_controller) {
-    //         stack_nav_cur = false;
-    //         cur_focused_internal_handle = cur_final_focused_handle;
-    //     }
-    // }
 
     auto& cur_arr = *curframe_widget_arr;
     for (widget_t& widget : cur_arr) {

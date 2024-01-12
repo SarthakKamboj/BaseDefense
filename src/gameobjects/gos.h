@@ -1,23 +1,17 @@
 #pragma once
 
+struct gun_base_t {
+	int handle = -1;
+
+	int quad_render_handle = -1;
+	int rb_handle = -1;
+
+	static const int WIDTH;
+	static const int HEIGHT;
+};
+void create_gun_base();
+
 /**
  * @brief Update all gameobjects
 */
 void gos_update();
-
-enum PARALLAX_BCK {
-	EVEN1 = 0,
-	EVEN2,
-	ODD1,
-	ODD2,
-
-	NUM_BCKS
-};
-
-struct parallax_bck {
-	static int transform_handles[NUM_BCKS];
-	static int rec_render_handles[NUM_BCKS];
-	static int bck_texture;
-};
-void init_parallax_bck_data();
-void update_parallax_bcks();

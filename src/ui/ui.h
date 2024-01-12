@@ -103,7 +103,6 @@ enum class ALIGN {
 };
 
 #define TRANSPARENT_COLOR glm::vec3(-1)
-glm::vec3 create_color(float r, float g, float b);
 
 struct style_t {
     DISPLAY_DIR display_dir = DISPLAY_DIR::VERTICAL;

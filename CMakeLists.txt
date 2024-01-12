@@ -15,13 +15,12 @@ function(configure_game)
 
     set(FILES)
     list(APPEND FILES 
-        src/camera.cpp
-        src/update.cpp
-        src/init.cpp
-        src/scene_manager.cpp
         src/physics/physics.cpp
+
         src/utils/time.cpp
         src/utils/io.cpp
+        src/utils/general.cpp
+
         src/gfx/gfx_data/buffers.cpp
         src/gfx/gfx_data/object_data.cpp
         src/gfx/gfx_data/shader.cpp
@@ -29,13 +28,23 @@ function(configure_game)
         src/gfx/gfx_data/vertex.cpp
         src/gfx/quad.cpp
         src/gfx/renderer.cpp
+
         src/transform/transform.cpp
+
         src/gameobjects/gos.cpp
+
         src/animation/animation.cpp
+
         src/ui/ui.cpp
+
         src/audio/audio.cpp
+
         src/window.cpp
         src/scene_manager.cpp
+        src/update.cpp
+        src/init.cpp
+        src/camera.cpp
+
         src/main.cpp
     )
 

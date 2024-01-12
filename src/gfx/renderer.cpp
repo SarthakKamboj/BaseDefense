@@ -3,6 +3,7 @@
 #include "window.h"
 #include "quad.h"
 #include "ui/ui.h"
+#include "gameobjects/bck.h"
 
 void render() {
 	clear_window();
@@ -19,7 +20,7 @@ void render() {
 	create_panel("main panel");
 	pop_style();
 
-	create_text("Base Defense!", TEXT_SIZE::TITLE);
+	create_text("Base Defense Game In Progress!", TEXT_SIZE::TITLE);
 
 	end_panel();
 

@@ -115,7 +115,7 @@ void set_quad_texture(int quad_handle, int tex_handle) {
 }
 
 void draw_quad_renders() {
-	glm::mat4 view_mat = get_view_matrix(globals.camera);
+	glm::mat4 view_mat = get_cam_view_matrix();
 	shader_set_mat4(quad_render_t::obj_data.shader, "view", view_mat);
 	glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
 	shader_set_mat4(quad_render_t::obj_data.shader, "projection", projection);

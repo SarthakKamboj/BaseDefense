@@ -15,6 +15,7 @@
 
 #include <filesystem>
 
+#include "camera.h"
 #include "constants.h"
 #include "window.h"
 #include "globals.h"
@@ -541,4 +542,7 @@ void init() {
 		// make sure this is first so that backgrond quads get created first and are always rendered in the back
 		// init_parallax_bck_data();
 	}
+
+	init_camera();
+	create_gun_base();
 }
