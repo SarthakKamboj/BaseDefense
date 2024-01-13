@@ -102,11 +102,31 @@ void set_quad_width_height(int quad_handle, float width, float height) {
 	}
 }
 
+quad_render_t* get_quad_render(int quad_handle) {
+	for (int i = 0; i < quads.size(); i++) {
+        quad_render_t& quad = quads[i];
+		if (quad.handle == quad_handle) {
+			return &quad;
+		}
+	}
+	return NULL;
+}
+
 void set_quad_texture(int quad_handle, int tex_handle) {
 	for (int i = 0; i < quads.size(); i++) {
         quad_render_t& quad = quads[i];
 		if (quad.handle == quad_handle) {
 			quad.tex_handle = tex_handle;
+			return;
+		}
+	}
+}
+
+void set_quad_color(int quad_handle, glm::vec3& color) {
+	for (int i = 0; i < quads.size(); i++) {
+        quad_render_t& quad = quads[i];
+		if (quad.handle == quad_handle) {
+			quad.color = color;
 			return;
 		}
 	}
@@ -119,7 +139,9 @@ void draw_quad_renders() {
 	shader_set_mat4(quad_render_t::obj_data.shader, "projection", projection);
     for (int i = 0; i < quads.size(); i++) {
         const quad_render_t& quad = quads[i];
-		draw_quad_render(quad);
+		if (quad.render) {
+			draw_quad_render(quad);
+		}
 	}
 	for (glm::vec3& dp : debug_pts) {
 		draw_debug_pt(dp);
@@ -128,7 +150,21 @@ void draw_quad_renders() {
 
 
 void add_debug_pt(glm::vec3& pt) {
+	for (int i = 0; i < debug_pts.size(); i++) {
+		if (pt == debug_pts[i]) {
+			return;
+		}
+	}
 	debug_pts.push_back(pt);
+}
+
+void remove_debug_pt(glm::vec3& pt) {
+	for (int i = 0; i < debug_pts.size(); i++) {
+		if (pt == debug_pts[i]) {
+			debug_pts.erase(debug_pts.begin() + i);
+			return;
+		}
+	}
 }
 
 void clear_debug_pts() {

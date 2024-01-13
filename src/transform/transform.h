@@ -41,6 +41,8 @@ glm::mat4 get_model_matrix(transform_t& transform);
 /// <returns>A pointer to the transform for that handle, NULL if it doesn't exist</returns>
 transform_t* get_transform(int transform_handle);
 
+glm::vec3 get_world_pos(transform_t* transform);
+
 /**
  * @brief Delete a transform by handle
  * @param handle 

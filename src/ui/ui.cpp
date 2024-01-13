@@ -577,7 +577,7 @@ bool create_button(const char* text, TEXT_SIZE text_size, int user_handle) {
             cur_focused_internal_handle = widget_handle;
         }
 
-        if (mouse_over_widget && input_state.left_clicked) {
+        if (mouse_over_widget && input_state.left_mouse_release) {
             return true;
         }
 

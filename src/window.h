@@ -58,8 +58,12 @@ struct user_input_t {
     bool controller_b_down = false;
     bool controller_start_down = false;
 
-    bool right_clicked = false;
-    bool left_clicked = false;
+    bool right_mouse_down_click = false;
+    bool left_mouse_down_click = false;
+    bool right_mouse_release = false;
+    bool left_mouse_release = false;
+    bool right_mouse_down = false;
+    bool left_mouse_down = false;
 
     bool quit = false;
 

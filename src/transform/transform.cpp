@@ -33,6 +33,15 @@ glm::mat4 get_model_matrix(transform_t& transform) {
 	return model;
 }
 
+glm::vec3 get_world_pos(transform_t* transform) {
+    if (transform->parent_transform_handle == -1) {
+        return transform->position;
+    }
+    transform_t* parent_transform = get_transform(transform->parent_transform_handle);
+    game_assert_msg(parent_transform, "parent transform not found");
+    return parent_transform->position + transform->position;
+}
+
 transform_t* get_transform(int transform_handle) {
     for (transform_t& transform : transforms) {
         if (transform.handle == transform_handle) {

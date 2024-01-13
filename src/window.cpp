@@ -180,8 +180,10 @@ void process_input() {
     user_input.controller_start_pressed = false;
 
     user_input.quit = false;
-    user_input.left_clicked = false;
-    user_input.right_clicked = false;
+    user_input.right_mouse_down_click = false;
+    user_input.left_mouse_down_click = false;
+    user_input.right_mouse_release = false;
+    user_input.left_mouse_release = false;
 
     user_input.controller_x_axis = 0;
     user_input.controller_y_axis = 0;
@@ -324,8 +326,24 @@ void process_input() {
                 break;
             }
             case SDL_MOUSEBUTTONUP: {
-                user_input.right_clicked = (event.button.button == SDL_BUTTON_RIGHT);
-                user_input.left_clicked = (event.button.button == SDL_BUTTON_LEFT);	
+                if (event.button.button == SDL_BUTTON_RIGHT) {
+                    user_input.right_mouse_release = true;
+                    user_input.right_mouse_down = false;
+                } else if (event.button.button == SDL_BUTTON_LEFT) {
+                    user_input.left_mouse_release = true;
+                    user_input.left_mouse_down = false;
+                }
+                break;
+            }
+            case SDL_MOUSEBUTTONDOWN: {
+                if (event.button.button == SDL_BUTTON_RIGHT) {
+                    user_input.right_mouse_down = true;
+                    user_input.right_mouse_down_click = true;
+                } else if (event.button.button == SDL_BUTTON_LEFT) {
+                    user_input.left_mouse_down = true;
+                    user_input.left_mouse_down_click = true;
+                }
+                break;
             }
             case SDL_KEYUP: {
                 switch (event.key.keysym.sym) {	

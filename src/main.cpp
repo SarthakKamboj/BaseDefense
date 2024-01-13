@@ -6,7 +6,7 @@
 #include "constants.h"
 #include "init.h"
 #include "utils/io.h"
-
+#include "gfx/quad.h"
 #include "globals.h"
 
 #define WANT_EXTRA_INFO 1
@@ -44,6 +44,8 @@ int main(int argc, char *argv[])
 
 	while (globals.running)
     {
+		clear_debug_pts();
+
 		game_timer_t frame_timer;
 		start_timer(frame_timer);
 

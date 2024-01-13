@@ -17,6 +17,7 @@ struct quad_render_t {
 	glm::vec3 color = glm::vec3(0, 0, 0);
 	float width = -1.f, height = -1.f;
 	bool wireframe_mode = false;
+	bool render = true;
 
     // each rectangle_rectangle_t is associated with one set of opengl vao, vbo, ebo
 	static render_object_data obj_data;
@@ -38,7 +39,9 @@ void init_quad_data();
 int create_quad_render(int transform_handle, glm::vec3& color, float width, float height, bool wireframe, float tex_influence, int tex_handle);
 
 void set_quad_texture(int quad_handle, int tex_handle);
+void set_quad_color(int quad_handle, glm::vec3& color);
 void set_quad_width_height(int quad_handle, float width, float height);
+quad_render_t* get_quad_render(int quad_handle);
 
 /// <summary>
 /// Draw a particular quad
@@ -47,6 +50,7 @@ void set_quad_width_height(int quad_handle, float width, float height);
 void draw_quad_render(const quad_render_t& quad);
 
 void add_debug_pt(glm::vec3& pt);
+void remove_debug_pt(glm::vec3& pt);
 void draw_debug_pt(glm::vec3 pos);
 void clear_debug_pts();
 
