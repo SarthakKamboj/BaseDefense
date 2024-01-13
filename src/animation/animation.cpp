@@ -206,4 +206,5 @@ int get_tex_handle_for_statemachine(int state_machine_handle) {
 			return anim->textures[anim_player->cur_frame];
 		}
 	}
+	return -1;
 }
