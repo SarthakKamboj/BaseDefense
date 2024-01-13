@@ -4,6 +4,9 @@
 #include "quad.h"
 #include "ui/ui.h"
 #include "gameobjects/bck.h"
+#include "gameobjects/gos.h"
+
+extern PREVIEW_MODE preview_mode;
 
 void render() {
 	clear_window();
@@ -20,7 +23,15 @@ void render() {
 	create_panel("main panel");
 	pop_style();
 
-	create_text("Base Defense Game In Progress!", TEXT_SIZE::TITLE);
+	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
+		create_text("preview gun mode");
+	} else if (preview_mode == PREVIEW_MODE::PREVIEW_ATTACHMENT) {
+		create_text("preview attachment mode");
+	} else if (preview_mode == PREVIEW_MODE::PREVIEW_ATTACHMENT) {
+		create_text("preview none mode");
+	} else {
+		create_text("unrecognized preview mode");
+	}
 
 	end_panel();
 

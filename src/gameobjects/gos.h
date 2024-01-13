@@ -3,6 +3,16 @@
 #include "utils/time.h"
 #include "glm/glm.hpp"
 
+#define NUM_BASE_ATTACH_PTS 3
+
+enum PREVIEW_MODE {
+	PREVIEW_GUN = 0,
+	PREVIEW_ATTACHMENT,
+	NUM_PREVIEWABLE_ITEMS,
+
+	PREVIEW_NONE,
+};
+
 struct base_t {
 	int handle = -1;
 
@@ -10,13 +20,21 @@ struct base_t {
 	int quad_render_handle = -1;
 	int rb_handle = -1;
 
+	int attach_pt_transform_handles[NUM_BASE_ATTACH_PTS] = {-1, -1, -1};
+	bool attach_pts_attached[NUM_BASE_ATTACH_PTS] = {false, false, false};
+
 	static const int WIDTH;
 	static const int HEIGHT;
 };
 void create_base();
+void update_base(base_t& base);
 
 struct base_attachment_t {
 	int handle = -1;
+
+	bool previewing = true;
+	bool free = true;
+	int index_attached_to_on_base = -1;
 
 	int transform_handle = -1;
 	int quad_render_handle = -1;
@@ -31,8 +49,10 @@ struct base_attachment_t {
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-int create_base_attachment();
-void update_base_attachment(base_attachment_t& attachment);
+void init_base_attachment_preview();
+void update_preview_attachment();
+int create_attached_base_attachment(glm::vec3 pos);
+void update_attached_base_attachment(base_attachment_t& attachment);
 base_attachment_t* get_base_attachment();
 
 // TODO: review linear algebra transformations since gun will need to rotate around attachment point
