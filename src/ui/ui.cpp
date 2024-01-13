@@ -564,14 +564,14 @@ bool create_button(const char* text, TEXT_SIZE text_size, int user_handle) {
         widget_t& cached_widget = prev_arr[widget_handle];
 
         user_input_t& input_state = globals.window.user_input;
-        bool mouse_over_widget = input_state.x_pos >= (cached_widget.x + cached_widget.style.margin.x) &&
-                input_state.x_pos <= (cached_widget.x + cached_widget.render_width + cached_widget.style.margin.x) &&
+        bool mouse_over_widget = input_state.mouse_x >= (cached_widget.x + cached_widget.style.margin.x) &&
+                input_state.mouse_x <= (cached_widget.x + cached_widget.render_width + cached_widget.style.margin.x) &&
                 // render x and render y specified as the top left pivot and y in ui is 0 on the
                 // bottom and WINDOW_HEIGHT on the top, so cached_widget.y is the top y of the 
                 // widget and cached_widget.y - cached_widget.render_height is the bottom y 
                 // of the widget
-                input_state.y_pos <= (cached_widget.y - cached_widget.style.margin.y) &&
-                input_state.y_pos >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
+                input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
+                input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
 
         if (mouse_over_widget && !input_state.game_controller) {
             cur_focused_internal_handle = widget_handle;
