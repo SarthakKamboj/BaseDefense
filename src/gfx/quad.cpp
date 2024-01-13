@@ -77,7 +77,6 @@ int create_quad_render(int transform_handle, glm::vec3& color, float width, floa
 	game_assert(tex_influence <= 1.f);
     static int running_count = 0;
 	quad_render_t quad;
-	quad._internal_transform.scale = glm::vec3(width, height, 1.f);
 	quad.transform_handle = transform_handle;
 	quad.width = width;
     quad.tex_influence = tex_influence;
@@ -98,7 +97,6 @@ void set_quad_width_height(int quad_handle, float width, float height) {
 		if (quad.handle == quad_handle) {
 			quad.width = width;
 			quad.height = height;
-			quad._internal_transform.scale = glm::vec3(width, height, 1.f);
 			return;
 		}
 	}
@@ -155,17 +153,18 @@ void draw_debug_pt(glm::vec3 pos) {
 void draw_quad_render(const quad_render_t& quad) {
     // get the transform for that rectangle render
     transform_t* transform_ptr = get_transform(quad.transform_handle);
-    game_assert(transform_ptr != NULL);
+    game_assert_msg(transform_ptr != NULL, "the transform for this quad doesn't exist");
 	transform_t cur_transform = *transform_ptr;
     
-    // add the internal offset, especially necessary for scale to make sure width and height are abided by
-#if 1
-	cur_transform.position += quad._internal_transform.position;
-	cur_transform.rotation_deg += quad._internal_transform.rotation_deg;
-	cur_transform.scale *= quad._internal_transform.scale;
-#endif
+	cur_transform.scale *= glm::vec3(quad.width, quad.height, 1.f);
 
-	glm::mat4 model_matrix = get_model_matrix(cur_transform);
+	glm::mat4 model_matrix(1.f);
+	if (transform_ptr->parent_transform_handle != -1) {
+    	transform_t* parent_transform = get_transform(transform_ptr->parent_transform_handle);
+    	game_assert_msg(parent_transform != NULL, "the parent transform for this quad doesn't exist");
+		model_matrix = get_model_matrix(*parent_transform);
+	}
+	model_matrix = model_matrix * get_model_matrix(cur_transform);
     // get model matrix and color and set them in the shader
 	shader_set_mat4(quad_render_t::obj_data.shader, "model", model_matrix);
 	shader_set_vec3(quad_render_t::obj_data.shader, "color", quad.color);

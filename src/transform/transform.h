@@ -3,15 +3,19 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include <vector>
+
 struct transform_t {
-	glm::vec3 position = glm::vec3(0);
-	glm::vec3 scale = glm::vec3(1);
-	float rotation_deg = 0;
-	float y_deg = 0;
     int handle = -1;
 
-	float last_delta_x = 0;
-	float last_delta_y = 0;
+	int parent_transform_handle = -1;
+	std::vector<int> child_transform_handles;
+
+	glm::vec3 position = glm::vec3(0);
+	glm::vec3 scale = glm::vec3(1);
+	glm::vec3 rotation = glm::vec3(0);
+	// float rotation_deg = 0;
+	// float y_deg = 0;
 };
 
 /// <summary>
@@ -21,7 +25,7 @@ struct transform_t {
 /// <param name="scale"></param>
 /// <param name="rot_deg">Rotation in degrees</param>
 /// <returns>The handle associated with the created transform</returns>
-int create_transform(glm::vec3 position, glm::vec3 scale, float rot_deg, float y_deg = 0.f);
+int create_transform(glm::vec3 position, glm::vec3 scale, float rot_deg, float y_deg = 0.f, int parent_transform_handle = -1);
 
 /// <summary>
 /// Creates the model matrix associated with a particular position, scale, and rotation
