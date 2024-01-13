@@ -55,7 +55,7 @@ void update_parallax_bcks() {
 	odd_bck_1->position.y = ground_height + ((window_height-ground_height)/2);
 	odd_bck_2->position.y = ground_height + ((window_height-ground_height)/2);
 
-	int cam_x = globals.camera.pos.x;
+	int cam_x = globals.camera.perceived_pos.x;
 	int cam_center_x_screen = cam_x + (window_width / 2);
 	int bck_tile = floor(cam_center_x_screen / bck_width);
 
