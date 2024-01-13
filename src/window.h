@@ -63,8 +63,9 @@ struct user_input_t {
 
     bool quit = false;
 
-    int x_pos;
-    int y_pos;
+    // bottom left is (0,0)
+    int mouse_x;
+    int mouse_y;
 
     float controller_x_axis = 0;
     float controller_y_axis = 0;

@@ -160,8 +160,8 @@ void process_input() {
 
     user_input.controller_state_changed = false;
 
-    SDL_GetMouseState(&user_input.x_pos, &user_input.y_pos);
-    user_input.y_pos = globals.window.window_height - user_input.y_pos;
+    SDL_GetMouseState(&user_input.mouse_x, &user_input.mouse_y);
+    user_input.mouse_y = globals.window.window_height - user_input.mouse_y;
 
     user_input.some_key_pressed = false;
     user_input.w_pressed = false;
