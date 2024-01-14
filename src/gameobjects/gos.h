@@ -8,6 +8,7 @@
 enum PREVIEW_MODE {
 	PREVIEW_GUN = 0,
 	PREVIEW_ATTACHMENT,
+	PREVIEW_BASE,
 	NUM_PREVIEWABLE_ITEMS,
 
 	PREVIEW_NONE,
@@ -15,6 +16,8 @@ enum PREVIEW_MODE {
 
 struct base_t {
 	int handle = -1;
+
+	bool previewing = true;
 
 	int transform_handle = -1;
 	int quad_render_handle = -1;
@@ -26,7 +29,9 @@ struct base_t {
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-void create_base();
+void init_preview_base();
+void update_preview_base();
+void create_base(glm::vec3 pos);
 void update_base(base_t& base);
 
 struct base_attachment_t {

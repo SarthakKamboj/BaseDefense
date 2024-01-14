@@ -18,20 +18,50 @@ static std::vector<bullet_t> bullets;
 
 static gun_t preview_gun;
 static base_attachment_t preview_attachment;
-PREVIEW_MODE preview_mode = PREVIEW_MODE::PREVIEW_ATTACHMENT;
+static base_t preview_base;
+PREVIEW_MODE preview_mode = PREVIEW_MODE::PREVIEW_BASE;
 
 const int base_t::WIDTH = 100;
 const int base_t::HEIGHT = 300;
 
-void create_base() {
+void init_preview_base() {
+	preview_base.handle = -1;
+
+	preview_base.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f);
+	preview_base.quad_render_handle = create_quad_render(preview_base.transform_handle, create_color(60,90,30), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
+	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
+}
+
+void update_preview_base() {
+	if (preview_mode != PREVIEW_MODE::PREVIEW_BASE) return;
+
+	quad_render_t* quad_render = get_quad_render(preview_base.quad_render_handle);
+	game_assert_msg(quad_render, "quad render for base not found");	
+
+	glm::vec3 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y, 0);
+	transform_t* preview_transform = get_transform(preview_base.transform_handle);
+	game_assert_msg(preview_transform, "could not find transform for preview base");
+
+	preview_transform->position = glm::vec3(mouse.x, base_t::HEIGHT * 0.5f, 0.f);
+
+	if (globals.window.user_input.left_mouse_release) {
+		create_base(preview_transform->position);
+	}
+
+	bool left_down = globals.window.user_input.left_mouse_down;
+	quad_render->render = left_down;
+}
+
+void create_base(glm::vec3 pos) {
 	static int cnt = 0;
 	base_t gun_base;
 	gun_base.handle = cnt++;
 
-	glm::vec3 pos(400, 200, 0);
 	gun_base.transform_handle = create_transform(pos, glm::vec3(1), 0.f, 0.f);
 	gun_base.quad_render_handle = create_quad_render(gun_base.transform_handle, create_color(59,74,94), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
 	gun_base.rb_handle = create_rigidbody(gun_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
+
+	gun_base.previewing = false;
 
 	gun_base.attach_pt_transform_handles[0] = create_transform(pos - glm::vec3(base_t::WIDTH * 0.4f, 0, 0), glm::vec3(1), 0, 0, -1);
 	gun_base.attach_pt_transform_handles[1] = create_transform(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), glm::vec3(1), 0, 0, -1);
@@ -73,6 +103,8 @@ int create_attached_base_attachment(glm::vec3 pos) {
 	attachment.transform_handle = create_transform(pos, glm::vec3(1), 0.f, 0.f);
 	attachment.quad_render_handle = create_quad_render(attachment.transform_handle, create_color(240,74,94), base_attachment_t::WIDTH, base_attachment_t::HEIGHT, false, 0.f, -1);
 	attachment.rb_handle = create_rigidbody(attachment.transform_handle, false, base_attachment_t::WIDTH, base_attachment_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, false, true);
+	attachment.previewing = false;
+	attachment.free = false;
 
 	glm::vec3 offset(base_attachment_t::WIDTH * 0.4f, 0, 0);
 	attachment.left_attach_pt_transform_handle = create_transform(pos - offset, glm::vec3(1), 0.f, 0.f);
@@ -205,6 +237,9 @@ void create_attached_gun(int base_attachment_handle, bool left_attached, float f
 	gun.quad_render_handle = create_quad_render(gun.transform_handle, create_color(30,0,120), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
 	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
 
+	gun.previewing = false;
+	gun.free = false;
+
 	attached_guns.push_back(gun);
 }
 
@@ -321,9 +356,13 @@ void gos_update() {
 		if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
 			preview_mode = PREVIEW_MODE::PREVIEW_ATTACHMENT;
 		} else if (preview_mode == PREVIEW_MODE::PREVIEW_ATTACHMENT) {
+			preview_mode = PREVIEW_MODE::PREVIEW_BASE;
+		} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
 			preview_mode = PREVIEW_MODE::PREVIEW_GUN;
 		}
 	}	
+
+	update_preview_base();
 
 	preview_attachment.free = true;
 	for (base_t& base : gun_bases) {

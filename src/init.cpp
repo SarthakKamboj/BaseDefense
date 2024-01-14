@@ -546,8 +546,9 @@ void init() {
 	init_camera();
 	init_preview_gun();
 	init_base_attachment_preview();
+	init_preview_base();
 
-	create_base();
+	// create_base();
 	// int base_attachment_handle = create_base_attachment();
 	// create_gun(base_attachment_handle, true);
 	// create_gun(base_attachment_handle, false);
