@@ -16,6 +16,9 @@ static std::vector<base_attachment_t> attached_attachments;
 static std::vector<gun_t> attached_guns;
 static std::vector<bullet_t> bullets;
 
+static std::vector<enemy_spawner_t> enemy_spawners;
+static std::vector<enemy_t> enemies;
+
 static gun_t preview_gun;
 static base_attachment_t preview_attachment;
 static base_t preview_base;
@@ -38,7 +41,7 @@ void update_preview_base() {
 	quad_render_t* quad_render = get_quad_render(preview_base.quad_render_handle);
 	game_assert_msg(quad_render, "quad render for base not found");	
 
-	glm::vec3 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y, 0);
+	glm::vec2 mouse = mouse_to_world_pos();
 	transform_t* preview_transform = get_transform(preview_base.transform_handle);
 	game_assert_msg(preview_transform, "could not find transform for preview base");
 
@@ -154,8 +157,6 @@ void init_base_attachment_preview() {
 }
 
 void update_preview_attachment() {
-	int mouse_x = globals.window.user_input.mouse_x;
-	int mouse_y = globals.window.user_input.mouse_y;	
 	bool left_down = globals.window.user_input.left_mouse_down;
 	bool left_release = globals.window.user_input.left_mouse_release;
 
@@ -181,8 +182,9 @@ void update_preview_attachment() {
 		return;
 	}
 
+	glm::vec2 mouse = mouse_to_world_pos();
 	if (preview_attachment.free) {
-		transform->position = glm::vec3(mouse_x, mouse_y, 0);
+		transform->position = glm::vec3(mouse.x, mouse.y, 0);
 	}	
 }
 
@@ -199,7 +201,7 @@ void init_preview_gun() {
 	preview_gun.handle = -1;
 
 	preview_gun.base_attachment_handle = -1;
-	preview_gun.left_attached = -1;
+	preview_gun.left_attached = false;
 
 	preview_gun.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f, -1);
 	preview_gun.quad_render_handle = create_quad_render(preview_gun.transform_handle, create_color(45,45,45), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
@@ -244,8 +246,6 @@ void create_attached_gun(int base_attachment_handle, bool left_attached, float f
 }
 
 void update_preview_gun() {
-	int mouse_x = globals.window.user_input.mouse_x;
-	int mouse_y = globals.window.user_input.mouse_y;	
 	bool left_down = globals.window.user_input.left_mouse_down;
 	bool left_release = globals.window.user_input.left_mouse_release;
 
@@ -272,7 +272,8 @@ void update_preview_gun() {
 	if (preview_gun.free) {
 		transform_t* transform = get_transform(preview_gun.transform_handle);
 		game_assert_msg(transform, "transform of preview gun not found");
-		transform->position = glm::vec3(mouse_x, mouse_y, 0);
+		glm::vec2 mouse = mouse_to_world_pos();
+		transform->position = glm::vec3(mouse.x, mouse.y, 0);
 	}
 }
 
@@ -350,6 +351,53 @@ void delete_bullet(bullet_t& bullet) {
 	}
 }
 
+const int enemy_t::HEIGHT = 80;
+const int enemy_t::WIDTH = 40;
+void create_enemy(glm::vec3 pos, int dir, float speed) {
+	static int cnt = 0;
+	enemy_t enemy;
+	enemy.handle = cnt++;
+	enemy.dir = dir;
+	enemy.speed = speed;
+	enemy.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, -1);
+	enemy.quad_render_handle = create_quad_render(enemy.transform_handle, create_color(25, 75, 25), enemy_t::WIDTH, enemy_t::HEIGHT, false, 0, -1);
+	enemy.rb_handle = create_rigidbody(enemy.transform_handle, true, enemy_t::WIDTH, enemy_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
+	enemies.push_back(enemy);
+}
+
+void update_enemy(enemy_t& enemy) {
+	transform_t* transform = get_transform(enemy.transform_handle);
+	game_assert_msg(transform, "transform for enemy not found");
+	transform->position += glm::vec3(enemy.speed * enemy.dir * game::time_t::delta_time,0,0);
+}
+
+void delete_enemy(int enemy_handle) {
+	for (int i = 0; i < enemies.size(); i++) {
+		if (enemies[i].handle == enemy_handle) {
+			enemies.erase(enemies.begin() + i);
+		}
+	}
+}
+
+const float enemy_spawner_t::TIME_BETWEEN_SPAWNS = 1.5f;
+void create_enemy_spawner(glm::vec3 pos) {
+	static int cnt = 0;
+	enemy_spawner_t enemy_spawner;	
+	enemy_spawner.handle = cnt++;
+	enemy_spawner.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, -1);
+	enemy_spawner.quad_render_handle = create_quad_render(enemy_spawner.transform_handle, create_color(25,25,75), 60, 140, false, 0, -1);
+
+	enemy_spawners.push_back(enemy_spawner);
+}
+
+void update_enemy_spawner(enemy_spawner_t& spawner) {
+	if (spawner.last_spawn_time + enemy_spawner_t::TIME_BETWEEN_SPAWNS >= game::time_t::cur_time) return;
+	transform_t* transform = get_transform(spawner.transform_handle);
+	game_assert_msg(transform, "transform for enemy spawner not found");
+	create_enemy(transform->position, 1, 40.f);
+	spawner.last_spawn_time = game::time_t::cur_time;
+}
+
 void gos_update() {
 
 	if (globals.window.user_input.s_pressed) {
@@ -379,5 +427,13 @@ void gos_update() {
 	update_preview_gun();
 	for (bullet_t& bullet : bullets) {
 		update_bullet(bullet);
+	}
+
+	for (enemy_spawner_t& enemy_spawner : enemy_spawners) {
+		update_enemy_spawner(enemy_spawner);
+	}
+
+	for (enemy_t& enemy : enemies) {
+		update_enemy(enemy);
 	}
 }

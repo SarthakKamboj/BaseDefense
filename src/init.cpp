@@ -1,24 +1,20 @@
-#include <string>
+#include "init.h"
 
 #include <iostream>
-#include "glad/glad.h"
-#include "init.h"
-#include "SDL.h"
-#include <vector>
-#include "stb/stb_image.h"
-#include "physics/physics.h"
-#include "gameobjects/gos.h"
-#include "ui/ui.h"
-#include "audio/audio.h"
-#include "utils/io.h"
-#include "utils/time.h"
-
+#include <string>
 #include <filesystem>
 
+#include "glm/glm.hpp"
+
+#include "physics/physics.h"
+#include "ui/ui.h"
+#include "utils/time.h"
+#include "audio/audio.h"
 #include "camera.h"
 #include "constants.h"
 #include "window.h"
 #include "globals.h"
+#include "gameobjects/gos.h"
 
 extern globals_t globals;
 
@@ -548,6 +544,7 @@ void init() {
 	init_base_attachment_preview();
 	init_preview_base();
 
+	create_enemy_spawner(glm::vec3(50, 50, 0));
 	// create_base();
 	// int base_attachment_handle = create_base_attachment();
 	// create_gun(base_attachment_handle, true);

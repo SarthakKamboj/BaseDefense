@@ -105,6 +105,42 @@ void create_bullet(glm::vec3& start_pos, glm::vec3& move_dir, float speed);
 void update_bullet(bullet_t& bullet);
 void delete_bullet(bullet_t& bullet);
 
+struct enemy_t {
+	int handle = -1;
+
+	int transform_handle = -1;
+	int quad_render_handle = -1;
+	int rb_handle = -1;
+
+	static const int WIDTH;
+	static const int HEIGHT;
+
+	int dir = 1;
+	int health = 100;
+
+	float speed = 0;
+};
+
+void create_enemy(glm::vec3 pos, int dir, float speed);
+void update_enemy(enemy_t& enemy);
+void delete_enemy(int enemy_handle);
+
+struct enemy_spawner_t {
+	int handle = -1;
+
+	int transform_handle = -1;
+	int quad_render_handle = -1;
+
+	static const int WIDTH;
+	static const int HEIGHT;
+
+	static const float TIME_BETWEEN_SPAWNS;
+	time_count_t last_spawn_time = -TIME_BETWEEN_SPAWNS;
+};
+
+void create_enemy_spawner(glm::vec3 pos);
+void update_enemy_spawner(enemy_spawner_t& spawner);
+
 /**
  * @brief Update all gameobjects
 */
