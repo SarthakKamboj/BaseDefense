@@ -12,15 +12,16 @@
 extern globals_t globals;
 
 static std::vector<base_t> gun_bases;
-static std::vector<base_attachment_t> attached_attachments;
+static std::vector<base_extension_t> attached_base_exts;
 static std::vector<gun_t> attached_guns;
 static std::vector<bullet_t> bullets;
+static std::vector<attachment_t> attachments;
 
 static std::vector<enemy_spawner_t> enemy_spawners;
 static std::vector<enemy_t> enemies;
 
 static gun_t preview_gun;
-static base_attachment_t preview_attachment;
+static base_extension_t preview_base_ext;
 static base_t preview_base;
 PREVIEW_MODE preview_mode = PREVIEW_MODE::PREVIEW_BASE;
 
@@ -66,115 +67,175 @@ void create_base(glm::vec3 pos) {
 
 	gun_base.previewing = false;
 
-	gun_base.attach_pt_transform_handles[0] = create_transform(pos - glm::vec3(base_t::WIDTH * 0.4f, 0, 0), glm::vec3(1), 0, 0, -1);
-	gun_base.attach_pt_transform_handles[1] = create_transform(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), glm::vec3(1), 0, 0, -1);
-	gun_base.attach_pt_transform_handles[2] = create_transform(pos + glm::vec3(0, base_t::HEIGHT * 0.4f, 0), glm::vec3(1), 0, 0, -1);
+	// gun_base.attach_pt_transform_handles[0] = create_transform(pos - glm::vec3(base_t::WIDTH * 0.4f, 0, 0), glm::vec3(1), 0, 0, -1);
+	// gun_base.attach_pt_transform_handles[1] = create_transform(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), glm::vec3(1), 0, 0, -1);
+	// gun_base.attach_pt_transform_handles[2] = create_transform(pos + glm::vec3(0, base_t::HEIGHT * 0.4f, 0), glm::vec3(1), 0, 0, -1);
+
+	gun_base.attachment_handles[0] = create_attachment(pos - glm::vec3(base_t::WIDTH * 0.4f, 0, 0), true, ATTMNT_GUN | ATTMNT_BASE_EXT);
+	gun_base.attachment_handles[1] = create_attachment(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT);
+	gun_base.attachment_handles[2] = create_attachment(pos + glm::vec3(0, base_t::HEIGHT * 0.4f, 0), false, ATTMNT_BASE_EXT);
 
 	gun_bases.push_back(gun_base);
 }
 
 void update_base(base_t& base) {
 
-	if (preview_mode != PREVIEW_MODE::PREVIEW_ATTACHMENT) return;
+	// if (preview_mode != PREVIEW_MODE::PREVIEW_BASE_EXT) return;
 
-	glm::vec3 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y, 0);
+	// glm::vec3 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y, 0);
 
-	for (int i = 0; i < NUM_BASE_ATTACH_PTS; i++) {
-		transform_t* transform = get_transform(base.attach_pt_transform_handles[i]);
-		game_assert_msg(transform, "could not find transform of base's attachment pt");
-		bool attached = base.attach_pts_attached[i];
-		if (!attached && glm::distance(mouse, transform->position) <= 20) {
-			add_debug_pt(transform->position);
+	// for (int i = 0; i < NUM_BASE_ATTACH_PTS; i++) {
+	// 	transform_t* transform = get_transform(base.attach_pt_transform_handles[i]);
+	// 	game_assert_msg(transform, "could not find transform of base's attachment pt");
+	// 	bool attached = base.attach_pts_attached[i];
+	// 	if (!attached && glm::distance(mouse, transform->position) <= 20) {
+	// 		add_debug_pt(transform->position);
 
-			transform_t* preview_transform = get_transform(preview_attachment.transform_handle);
-			game_assert_msg(preview_transform, "transform of preview attachment not found");
+	// 		transform_t* preview_transform = get_transform(preview_base_ext.transform_handle);
+	// 		game_assert_msg(preview_transform, "transform of preview attachment not found");
 
-			preview_attachment.free = false;
-			preview_attachment.index_attached_to_on_base = i;
-			preview_transform->position = transform->position;
+	// 		preview_base_ext.free = false;
+	// 		preview_base_ext.index_attached_to_on_base = i;
+	// 		preview_transform->position = transform->position;
+	// 	}
+	// }
+}
+
+const int attachment_t::WIDTH = 10;
+const int attachment_t::HEIGHT = 10;
+
+int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types) {
+	static int cnt = 0;
+	attachment_t attmt;
+	attmt.handle = cnt++;
+	attmt.attachment_types = attmt_types;
+	attmt.facing_left = facing_left;
+	attmt.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, -1);
+	attmt.quad_render_handle = create_quad_render(attmt.transform_handle, glm::vec3(1,0,0), attachment_t::WIDTH, attachment_t::HEIGHT, false, 0, -1);
+	attachments.push_back(attmt);
+	return attmt.handle;
+}
+
+void update_attachment(attachment_t& attachment) {
+	if (attachment.attached) return;
+	transform_t* transform = get_transform(attachment.transform_handle);
+	game_assert_msg(transform, "could not find transform of attachment pt");
+
+	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN && (attachment.attachment_types & ATTACHMENT_TYPE::ATTMNT_GUN) == 0) return;
+	if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT && (attachment.attachment_types & ATTACHMENT_TYPE::ATTMNT_BASE_EXT) == 0) return;
+
+	glm::vec2 mouse = mouse_to_world_pos();
+	glm::vec3 mouse3 = glm::vec3(mouse.x, mouse.y, 0);
+	if (glm::distance(mouse3, transform->position) > 20) return;
+	transform_t* preview_transform = preview_mode == PREVIEW_MODE::PREVIEW_GUN ? get_transform(preview_gun.transform_handle) : get_transform(preview_base_ext.transform_handle);
+	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
+		transform_t* gun_transform = get_transform(preview_gun.transform_handle);
+		game_assert_msg(gun_transform, "transform of preview gun not found");
+		preview_gun.free = false;
+		preview_gun.attachment_handle = attachment.handle;
+		gun_transform->position = transform->position;
+	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
+		transform_t* preview_transform = get_transform(preview_base_ext.transform_handle);
+		game_assert_msg(preview_transform, "transform of preview attachment not found");
+		preview_base_ext.attachment_handle = attachment.handle;
+		preview_base_ext.free = false;
+		preview_transform->position = transform->position;
+	}
+}
+
+attachment_t* get_attachment(int handle) {
+	for (attachment_t& att : attachments) {
+		if (att.handle == handle) {
+			return &att;
 		}
 	}
+	return NULL;
 }
 
-const int base_attachment_t::WIDTH = 100;
-const int base_attachment_t::HEIGHT = 40;
-int create_attached_base_attachment(glm::vec3 pos) {
+const int base_extension_t::WIDTH = 100;
+const int base_extension_t::HEIGHT = 40;
+int create_base_ext(glm::vec3 pos) {
 	static int cnt = 0;
-	base_attachment_t attachment;
-	attachment.handle = cnt++;
+	base_extension_t base_ext;
+	base_ext.handle = cnt++;
 
-	attachment.transform_handle = create_transform(pos, glm::vec3(1), 0.f, 0.f);
-	attachment.quad_render_handle = create_quad_render(attachment.transform_handle, create_color(240,74,94), base_attachment_t::WIDTH, base_attachment_t::HEIGHT, false, 0.f, -1);
-	attachment.rb_handle = create_rigidbody(attachment.transform_handle, false, base_attachment_t::WIDTH, base_attachment_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, false, true);
-	attachment.previewing = false;
-	attachment.free = false;
+	base_ext.transform_handle = create_transform(pos, glm::vec3(1), 0.f, 0.f);
+	base_ext.quad_render_handle = create_quad_render(base_ext.transform_handle, create_color(240,74,94), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
+	base_ext.rb_handle = create_rigidbody(base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, false, true);
+	base_ext.previewing = false;
+	base_ext.free = false;
+	base_ext.attachment_handle = preview_base_ext.attachment_handle;
 
-	glm::vec3 offset(base_attachment_t::WIDTH * 0.4f, 0, 0);
-	attachment.left_attach_pt_transform_handle = create_transform(pos - offset, glm::vec3(1), 0.f, 0.f);
-	attachment.right_attach_pt_transform_handle = create_transform(pos + offset, glm::vec3(1), 0.f, 0.f);
+	// glm::vec3 offset(base_extension_t::WIDTH * 0.4f, 0, 0);
+	// attachment.left_attach_pt_transform_handle = create_transform(pos - offset, glm::vec3(1), 0.f, 0.f);
+	// attachment.right_attach_pt_transform_handle = create_transform(pos + offset, glm::vec3(1), 0.f, 0.f);
 
-	gun_bases[0].attach_pts_attached[preview_attachment.index_attached_to_on_base] = true;
+	// gun_bases[0].attach_pts_attached[preview_base_ext.index_attached_to_on_base] = true;x
 
-	attached_attachments.push_back(attachment);
-	return attachment.handle;
+	attachment_t* att = get_attachment(base_ext.attachment_handle);
+	game_assert_msg(att, "attachment not found to make base ext");
+	att->attached = true;
+
+	attached_base_exts.push_back(base_ext);
+	return base_ext.handle;
 }
 
-void update_attached_base_attachment(base_attachment_t& attachment) {
+void update_base_ext(base_extension_t& attachment) {
 
-	if (preview_mode != PREVIEW_MODE::PREVIEW_GUN) return;
+	// if (preview_mode != PREVIEW_MODE::PREVIEW_GUN) return;
 
-	transform_t* left_transform = get_transform(attachment.left_attach_pt_transform_handle);
-	game_assert_msg(left_transform, "left transform for this attachment is not valid");
-	transform_t* right_transform = get_transform(attachment.right_attach_pt_transform_handle);
-	game_assert_msg(right_transform, "right transform for this attachment is not valid");
+	// transform_t* left_transform = get_transform(attachment.left_attach_pt_transform_handle);
+	// game_assert_msg(left_transform, "left transform for this attachment is not valid");
+	// transform_t* right_transform = get_transform(attachment.right_attach_pt_transform_handle);
+	// game_assert_msg(right_transform, "right transform for this attachment is not valid");
 
-	glm::vec3 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y, 0);
-	if (!attachment.left_attached && glm::distance(mouse, left_transform->position) <= 20) {
-		add_debug_pt(left_transform->position);
-		preview_gun.free = false;
-		preview_gun.base_attachment_handle = attachment.handle;
-		preview_gun.left_attached = true;
-		transform_t* gun_transform = get_transform(preview_gun.transform_handle);
-		game_assert_msg(gun_transform, "transform of preview gun not found");
-		gun_transform->position = left_transform->position;
-	} else if (!attachment.right_attached && glm::distance(mouse, right_transform->position) <= 20) {
-		add_debug_pt(right_transform->position);
-		preview_gun.free = false;
-		preview_gun.base_attachment_handle = attachment.handle;
-		preview_gun.left_attached = false;
-		transform_t* gun_transform = get_transform(preview_gun.transform_handle);
-		game_assert_msg(gun_transform, "transform of preview gun not found");
-		gun_transform->position = right_transform->position;
-	}
+	// glm::vec3 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y, 0);
+	// if (!attachment.left_attached && glm::distance(mouse, left_transform->position) <= 20) {
+	// 	add_debug_pt(left_transform->position);
+	// 	preview_gun.free = false;
+	// 	preview_gun.attachment_handle = attachment.handle;
+	// 	preview_gun.left_attached = true;
+	// 	transform_t* gun_transform = get_transform(preview_gun.transform_handle);
+	// 	game_assert_msg(gun_transform, "transform of preview gun not found");
+	// 	gun_transform->position = left_transform->position;
+	// } else if (!attachment.right_attached && glm::distance(mouse, right_transform->position) <= 20) {
+	// 	add_debug_pt(right_transform->position);
+	// 	preview_gun.free = false;
+	// 	preview_gun.attachment_handle = attachment.handle;
+	// 	preview_gun.left_attached = false;
+	// 	transform_t* gun_transform = get_transform(preview_gun.transform_handle);
+	// 	game_assert_msg(gun_transform, "transform of preview gun not found");
+	// 	gun_transform->position = right_transform->position;
+	// }
 }
 
-void init_base_attachment_preview() {
-	preview_attachment.handle = -1;
+void init_base_ext_preview() {
+	preview_base_ext.handle = -1;
 
-	preview_attachment.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f);
-	preview_attachment.quad_render_handle = create_quad_render(preview_attachment.transform_handle, create_color(145, 145, 145), base_attachment_t::WIDTH, base_attachment_t::HEIGHT, false, 0.f, -1);
-	preview_attachment.rb_handle = create_rigidbody(preview_attachment.transform_handle, false, base_attachment_t::WIDTH, base_attachment_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);	
+	preview_base_ext.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f);
+	preview_base_ext.quad_render_handle = create_quad_render(preview_base_ext.transform_handle, create_color(145, 145, 145), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
+	preview_base_ext.rb_handle = create_rigidbody(preview_base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);	
 }
 
-void update_preview_attachment() {
+void update_preview_base_ext() {
 	bool left_down = globals.window.user_input.left_mouse_down;
 	bool left_release = globals.window.user_input.left_mouse_release;
 
-	quad_render_t* preview_quad = get_quad_render(preview_attachment.quad_render_handle);
+	quad_render_t* preview_quad = get_quad_render(preview_base_ext.quad_render_handle);
 	game_assert_msg(preview_quad, "quad render for preview attachment not found");
 
-	if (preview_mode != PREVIEW_MODE::PREVIEW_ATTACHMENT) {
+	if (preview_mode != PREVIEW_MODE::PREVIEW_BASE_EXT) {
 		preview_quad->render = false;
 		return;
 	}
 
 	preview_quad->render = left_down;
 
-	transform_t* transform = get_transform(preview_attachment.transform_handle);
+	transform_t* transform = get_transform(preview_base_ext.transform_handle);
 	game_assert_msg(transform, "transform of preview attachment not found");
-	if(left_release && !preview_attachment.free) {
-		preview_attachment.free = true;
-		create_attached_base_attachment(transform->position);
+	if(left_release && !preview_base_ext.free) {
+		preview_base_ext.free = true;
+		create_base_ext(transform->position);
 		return;
 	}	
 
@@ -183,15 +244,15 @@ void update_preview_attachment() {
 	}
 
 	glm::vec2 mouse = mouse_to_world_pos();
-	if (preview_attachment.free) {
+	if (preview_base_ext.free) {
 		transform->position = glm::vec3(mouse.x, mouse.y, 0);
 	}	
 }
 
-base_attachment_t* get_base_attachment(int handle) {
-	for (int i = 0; i < attached_attachments.size(); i++) {
-		if (handle == attached_attachments[i].handle) {
-			return &attached_attachments[i];
+base_extension_t* get_base_ext(int handle) {
+	for (int i = 0; i < attached_base_exts.size(); i++) {
+		if (handle == attached_base_exts[i].handle) {
+			return &attached_base_exts[i];
 		}
 	}
 	return NULL;
@@ -200,8 +261,7 @@ base_attachment_t* get_base_attachment(int handle) {
 void init_preview_gun() {
 	preview_gun.handle = -1;
 
-	preview_gun.base_attachment_handle = -1;
-	preview_gun.left_attached = false;
+	preview_gun.attachment_handle = -1;
 
 	preview_gun.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f, -1);
 	preview_gun.quad_render_handle = create_quad_render(preview_gun.transform_handle, create_color(45,45,45), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
@@ -210,32 +270,24 @@ void init_preview_gun() {
 
 const int gun_t::WIDTH = 80;
 const int gun_t::HEIGHT = 20;
-void create_attached_gun(int base_attachment_handle, bool left_attached, float fire_rate) {
+void create_attached_gun(int attachment_handle, bool facing_left, float fire_rate) {
 	static int cnt = 0;
-
-	base_attachment_t* attachment = get_base_attachment(base_attachment_handle);
-	game_assert_msg(attachment, "base attachment not valid not this gun");
 
 	gun_t gun;
 	gun.handle = cnt++;
+	gun.attachment_handle = preview_gun.attachment_handle;
 
-	gun.base_attachment_handle = base_attachment_handle;
-	gun.left_attached = left_attached;
+	attachment_t* att = get_attachment(gun.attachment_handle);
+	game_assert_msg(att, "attachment not found to make gun");
+	att->attached = true;
+
 	gun.fire_rate = fire_rate;
+	gun.facing_left = facing_left;
 
-	attachment->left_attached = left_attached;
-	attachment->right_attached = !left_attached;
-
-	int transform_handle = left_attached ? attachment->left_attach_pt_transform_handle : attachment->right_attach_pt_transform_handle;
-	gun.attachment_transform_handle = transform_handle;
-
-	transform_t* attachment_transform = get_transform(transform_handle);
-	game_assert_msg(attachment_transform, "attachment position not valid");
-
-	int multiplier = left_attached ? -1 : 1;
+	int multiplier = facing_left ? -1 : 1;
 	glm::vec3 gun_pos = glm::vec3(multiplier * gun_t::WIDTH / 2.f, 0, 0);
 
-	gun.transform_handle = create_transform(gun_pos, glm::vec3(1), 0.f, 0.f, transform_handle);
+	gun.transform_handle = create_transform(gun_pos, glm::vec3(1), 0.f, 0.f, att->transform_handle);
 	gun.quad_render_handle = create_quad_render(gun.transform_handle, create_color(30,0,120), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
 	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
 
@@ -260,7 +312,9 @@ void update_preview_gun() {
 	preview_quad->render = left_down;
 
 	if(left_release && !preview_gun.free) {
-		create_attached_gun(preview_gun.base_attachment_handle, preview_gun.left_attached, 2.f);
+		attachment_t* att = get_attachment(preview_gun.attachment_handle);
+		game_assert_msg(att, "attachment to create gun not found");
+		create_attached_gun(preview_gun.attachment_handle, att->facing_left, 2.f);
 		preview_gun.free = true;
 		return;
 	}	
@@ -282,15 +336,19 @@ void update_attached_gun(gun_t& gun) {
 
 	transform_t* gun_transform = get_transform(gun.transform_handle);
 	game_assert_msg(gun_transform, "transform for gun not found");
-	transform_t* attachment_transform = get_transform(gun.attachment_transform_handle);
+
+	attachment_t* att = get_attachment(gun.attachment_handle);
+	game_assert_msg(att, "att for attached gun not found");
+	transform_t* attachment_transform = get_transform(att->transform_handle);
 	game_assert_msg(attachment_transform, "transform for gun's attach pt not found");
+	
 	int mouse_x = globals.window.user_input.mouse_x;
 	int mouse_y = globals.window.user_input.mouse_y;
 
 	glm::vec2 to_mouse = glm::normalize(glm::vec2(mouse_x - attachment_transform->position.x, mouse_y - attachment_transform->position.y));
 	glm::vec2 dir_facing = glm::vec2(-1, 0);
 	glm::vec2 dir_perpen = glm::vec2(0, -1);
-	if (!gun.left_attached) {
+	if (!gun.facing_left) {
 		dir_facing = glm::vec2(1, 0);
 		dir_perpen = glm::vec2(0, 1);
 	}
@@ -360,7 +418,7 @@ void create_enemy(glm::vec3 pos, int dir, float speed) {
 	enemy.dir = dir;
 	enemy.speed = speed;
 	enemy.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, -1);
-	enemy.quad_render_handle = create_quad_render(enemy.transform_handle, create_color(25, 75, 25), enemy_t::WIDTH, enemy_t::HEIGHT, false, 0, -1);
+	enemy.quad_render_handle = create_quad_render(enemy.transform_handle, create_color(75, 25, 25), enemy_t::WIDTH, enemy_t::HEIGHT, false, 0, -1);
 	enemy.rb_handle = create_rigidbody(enemy.transform_handle, true, enemy_t::WIDTH, enemy_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
 	enemies.push_back(enemy);
 }
@@ -402,8 +460,8 @@ void gos_update() {
 
 	if (globals.window.user_input.s_pressed) {
 		if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
-			preview_mode = PREVIEW_MODE::PREVIEW_ATTACHMENT;
-		} else if (preview_mode == PREVIEW_MODE::PREVIEW_ATTACHMENT) {
+			preview_mode = PREVIEW_MODE::PREVIEW_BASE_EXT;
+		} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
 			preview_mode = PREVIEW_MODE::PREVIEW_BASE;
 		} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
 			preview_mode = PREVIEW_MODE::PREVIEW_GUN;
@@ -412,19 +470,25 @@ void gos_update() {
 
 	update_preview_base();
 
-	preview_attachment.free = true;
+	preview_base_ext.free = true;
+	preview_gun.free = true;
+
+	for (attachment_t& att : attachments) {
+		update_attachment(att);
+	}
+
 	for (base_t& base : gun_bases) {
 		update_base(base);
 	}
-	update_preview_attachment();
+	update_preview_gun();
+	update_preview_base_ext();
+
 	for (gun_t& gun : attached_guns) {
 		update_attached_gun(gun);
 	}
-	preview_gun.free = true;
-	for (base_attachment_t& att : attached_attachments) {
-		update_attached_base_attachment(att);
+	for (base_extension_t& att : attached_base_exts) {
+		update_base_ext(att);
 	}
-	update_preview_gun();
 	for (bullet_t& bullet : bullets) {
 		update_bullet(bullet);
 	}

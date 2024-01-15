@@ -541,7 +541,7 @@ void init() {
 
 	init_camera();
 	init_preview_gun();
-	init_base_attachment_preview();
+	init_base_ext_preview();
 	init_preview_base();
 
 	create_enemy_spawner(glm::vec3(50, 50, 0));

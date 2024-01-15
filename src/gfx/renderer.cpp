@@ -25,8 +25,8 @@ void render() {
 
 	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
 		create_text("preview gun mode");
-	} else if (preview_mode == PREVIEW_MODE::PREVIEW_ATTACHMENT) {
-		create_text("preview attachment mode");
+	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
+		create_text("preview base ext mode");
 	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
 		create_text("preview base mode");
 	} else {
