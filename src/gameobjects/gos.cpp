@@ -46,10 +46,10 @@ void update_preview_base() {
 	transform_t* preview_transform = get_transform(preview_base.transform_handle);
 	game_assert_msg(preview_transform, "could not find transform for preview base");
 
-	preview_transform->position = glm::vec3(mouse.x, base_t::HEIGHT * 0.5f, 0.f);
+	preview_transform->global_position = glm::vec3(mouse.x, base_t::HEIGHT * 0.5f, 0.f);
 
 	if (globals.window.user_input.left_mouse_release) {
-		create_base(preview_transform->position);
+		create_base(preview_transform->global_position);
 	}
 
 	bool left_down = globals.window.user_input.left_mouse_down;
@@ -126,20 +126,20 @@ void update_attachment(attachment_t& attachment) {
 
 	glm::vec2 mouse = mouse_to_world_pos();
 	glm::vec3 mouse3 = glm::vec3(mouse.x, mouse.y, 0);
-	if (glm::distance(mouse3, transform->position) > 20) return;
+	if (glm::distance(mouse3, transform->global_position) > 20) return;
 	transform_t* preview_transform = preview_mode == PREVIEW_MODE::PREVIEW_GUN ? get_transform(preview_gun.transform_handle) : get_transform(preview_base_ext.transform_handle);
 	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
 		transform_t* gun_transform = get_transform(preview_gun.transform_handle);
 		game_assert_msg(gun_transform, "transform of preview gun not found");
 		preview_gun.free = false;
 		preview_gun.attachment_handle = attachment.handle;
-		gun_transform->position = transform->position;
+		gun_transform->global_position = transform->global_position;
 	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
 		transform_t* preview_transform = get_transform(preview_base_ext.transform_handle);
 		game_assert_msg(preview_transform, "transform of preview attachment not found");
 		preview_base_ext.attachment_handle = attachment.handle;
 		preview_base_ext.free = false;
-		preview_transform->position = transform->position;
+		preview_transform->global_position = transform->global_position;
 	}
 }
 
@@ -235,7 +235,7 @@ void update_preview_base_ext() {
 	game_assert_msg(transform, "transform of preview attachment not found");
 	if(left_release && !preview_base_ext.free) {
 		preview_base_ext.free = true;
-		create_base_ext(transform->position);
+		create_base_ext(transform->global_position);
 		return;
 	}	
 
@@ -245,7 +245,7 @@ void update_preview_base_ext() {
 
 	glm::vec2 mouse = mouse_to_world_pos();
 	if (preview_base_ext.free) {
-		transform->position = glm::vec3(mouse.x, mouse.y, 0);
+		transform->global_position = glm::vec3(mouse.x, mouse.y, 0);
 	}	
 }
 
@@ -288,6 +288,8 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 	glm::vec3 gun_pos = glm::vec3(multiplier * gun_t::WIDTH / 2.f, 0, 0);
 
 	gun.transform_handle = create_transform(gun_pos, glm::vec3(1), 0.f, 0.f, att->transform_handle);
+	transform_t* g = get_transform(gun.transform_handle);
+	printf("local: (%f, %f, %f) and global: (%f, %f, %f)\n", g->local_position.x, g->local_position.y, g->local_position.z, g->global_position.x, g->global_position.y, g->global_position.z);
 	gun.quad_render_handle = create_quad_render(gun.transform_handle, create_color(30,0,120), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
 	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
 
@@ -327,7 +329,7 @@ void update_preview_gun() {
 		transform_t* transform = get_transform(preview_gun.transform_handle);
 		game_assert_msg(transform, "transform of preview gun not found");
 		glm::vec2 mouse = mouse_to_world_pos();
-		transform->position = glm::vec3(mouse.x, mouse.y, 0);
+		transform->global_position = glm::vec3(mouse.x, mouse.y, 0);
 	}
 }
 
@@ -345,7 +347,7 @@ void update_attached_gun(gun_t& gun) {
 	int mouse_x = globals.window.user_input.mouse_x;
 	int mouse_y = globals.window.user_input.mouse_y;
 
-	glm::vec2 to_mouse = glm::normalize(glm::vec2(mouse_x - attachment_transform->position.x, mouse_y - attachment_transform->position.y));
+	glm::vec2 to_mouse = glm::normalize(glm::vec2(mouse_x - attachment_transform->global_position.x, mouse_y - attachment_transform->global_position.y));
 	glm::vec2 dir_facing = glm::vec2(-1, 0);
 	glm::vec2 dir_perpen = glm::vec2(0, -1);
 	if (!gun.facing_left) {
@@ -354,17 +356,17 @@ void update_attached_gun(gun_t& gun) {
 	}
 	float cos_z = glm::dot(to_mouse, dir_facing);
 	float z_rad = acos(cos_z);
-	attachment_transform->rotation.z = glm::degrees(z_rad);
+	attachment_transform->global_rotation.z = glm::degrees(z_rad);
 
 	float below_gun = glm::dot(to_mouse, dir_perpen);
 	if (below_gun < 0) {
-		attachment_transform->rotation.z *= -1;		
+		attachment_transform->global_rotation.z *= -1;		
 	}
 
 	float time_between_fires = 1 / gun.fire_rate;
 	if (gun.time_since_last_fire + time_between_fires < game::time_t::cur_time) {
 		gun.time_since_last_fire = game::time_t::cur_time;
-		create_bullet(attachment_transform->position, glm::vec3(to_mouse.x, to_mouse.y, 0), 800.f);
+		create_bullet(attachment_transform->global_position, glm::vec3(to_mouse.x, to_mouse.y, 0), 800.f);
 	}
 }
 
@@ -390,7 +392,7 @@ void create_bullet(glm::vec3& start_pos, glm::vec3& move_dir, float speed) {
 void update_bullet(bullet_t& bullet) {
 	transform_t* bullet_transform = get_transform(bullet.transform_handle);
 	game_assert_msg(bullet_transform, "bullet transform not found");
-	bullet_transform->position += bullet.dir * glm::vec3(bullet.speed * game::time_t::delta_time);
+	bullet_transform->global_position += bullet.dir * glm::vec3(bullet.speed * game::time_t::delta_time);
 
 	if (bullet.creation_time + bullet_t::ALIVE_TIME < game::time_t::cur_time) {
 		delete_bullet(bullet);
@@ -426,7 +428,7 @@ void create_enemy(glm::vec3 pos, int dir, float speed) {
 void update_enemy(enemy_t& enemy) {
 	transform_t* transform = get_transform(enemy.transform_handle);
 	game_assert_msg(transform, "transform for enemy not found");
-	transform->position += glm::vec3(enemy.speed * enemy.dir * game::time_t::delta_time,0,0);
+	transform->global_position += glm::vec3(enemy.speed * enemy.dir * game::time_t::delta_time,0,0);
 }
 
 void delete_enemy(int enemy_handle) {
@@ -452,7 +454,7 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 	if (spawner.last_spawn_time + enemy_spawner_t::TIME_BETWEEN_SPAWNS >= game::time_t::cur_time) return;
 	transform_t* transform = get_transform(spawner.transform_handle);
 	game_assert_msg(transform, "transform for enemy spawner not found");
-	create_enemy(transform->position, 1, 40.f);
+	create_enemy(transform->global_position, 1, 40.f);
 	spawner.last_spawn_time = game::time_t::cur_time;
 }
 

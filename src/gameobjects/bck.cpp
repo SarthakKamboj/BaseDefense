@@ -50,28 +50,28 @@ void update_parallax_bcks() {
 		set_quad_width_height(parallax_bck::rec_render_handles[i], bck_width, window_height);
 	}
 
-	even_bck_1->position.y = ground_height + ((window_height-ground_height)/2);
-	even_bck_2->position.y = ground_height + ((window_height-ground_height)/2);
-	odd_bck_1->position.y = ground_height + ((window_height-ground_height)/2);
-	odd_bck_2->position.y = ground_height + ((window_height-ground_height)/2);
+	even_bck_1->global_position.y = ground_height + ((window_height-ground_height)/2);
+	even_bck_2->global_position.y = ground_height + ((window_height-ground_height)/2);
+	odd_bck_1->global_position.y = ground_height + ((window_height-ground_height)/2);
+	odd_bck_2->global_position.y = ground_height + ((window_height-ground_height)/2);
 
 	int cam_x = globals.camera.perceived_pos.x;
 	int cam_center_x_screen = cam_x + (window_width / 2);
 	int bck_tile = floor(cam_center_x_screen / bck_width);
 
 	if (bck_tile % 2 == 0) {
-		even_bck_1->position.x = bck_tile * bck_width + (bck_width/2);
-		even_bck_2->position.x = (bck_tile+2) * bck_width + (bck_width/2);
+		even_bck_1->global_position.x = bck_tile * bck_width + (bck_width/2);
+		even_bck_2->global_position.x = (bck_tile+2) * bck_width + (bck_width/2);
 	} else {
-		even_bck_1->position.x = (bck_tile-1) * bck_width + (bck_width/2);
-		even_bck_2->position.x = (bck_tile+1) * bck_width + (bck_width/2);
+		even_bck_1->global_position.x = (bck_tile-1) * bck_width + (bck_width/2);
+		even_bck_2->global_position.x = (bck_tile+1) * bck_width + (bck_width/2);
 	}
 
 	if (fabs(bck_tile % 2) == 1) {
-		odd_bck_1->position.x = bck_tile * bck_width + (bck_width/2);
-		odd_bck_2->position.x = (bck_tile+2) * bck_width + (bck_width/2);
+		odd_bck_1->global_position.x = bck_tile * bck_width + (bck_width/2);
+		odd_bck_2->global_position.x = (bck_tile+2) * bck_width + (bck_width/2);
 	} else {
-		odd_bck_1->position.x = (bck_tile - 1) * bck_width + (bck_width/2);
-		odd_bck_2->position.x = (bck_tile + 1) * bck_width + (bck_width/2);
+		odd_bck_1->global_position.x = (bck_tile - 1) * bck_width + (bck_width/2);
+		odd_bck_2->global_position.x = (bck_tile + 1) * bck_width + (bck_width/2);
 	}
 }

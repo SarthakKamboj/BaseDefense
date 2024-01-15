@@ -28,8 +28,8 @@ int create_rigidbody(int transform_handle, bool use_gravity, float collider_widt
 	transform_t& transform = *get_transform(transform_handle);
 
 	aabb_collider_t aabb_collider;
-	aabb_collider.x = transform.position.x;
-	aabb_collider.y = transform.position.y;
+	aabb_collider.x = transform.global_position.x;
+	aabb_collider.y = transform.global_position.y;
 	aabb_collider.width = collider_width;
 	aabb_collider.height = collider_height;
 
@@ -102,22 +102,22 @@ bool sat_overlap(float min1, float max1, float min2, float max2) {
 */
 bool sat_detect_collision(rigidbody_t& rb1, rigidbody_t& rb2) {
 	transform_t transform1_obj;
-	transform1_obj.position.x = rb1.aabb_collider.x;
-	transform1_obj.position.y = rb1.aabb_collider.y;
-	transform1_obj.position.z = 0;
+	transform1_obj.global_position.x = rb1.aabb_collider.x;
+	transform1_obj.global_position.y = rb1.aabb_collider.y;
+	transform1_obj.global_position.z = 0;
 	transform_t* transform1 = &transform1_obj;
 
 	transform_t transform2_obj;
-	transform2_obj.position.x = rb2.aabb_collider.x;
-	transform2_obj.position.y = rb2.aabb_collider.y;
-	transform2_obj.position.z = 0;
+	transform2_obj.global_position.x = rb2.aabb_collider.x;
+	transform2_obj.global_position.y = rb2.aabb_collider.y;
+	transform2_obj.global_position.z = 0;
 	transform_t* transform2 = &transform2_obj;
 
-	float grid1_x = floor(transform1->position.x / 40);
-	float grid1_y = floor(transform1->position.y / 40);
+	float grid1_x = floor(transform1->global_position.x / 40);
+	float grid1_y = floor(transform1->global_position.y / 40);
 
-	float grid2_x = floor(transform2->position.x / 40);
-	float grid2_y = floor(transform2->position.y / 40);
+	float grid2_x = floor(transform2->global_position.x / 40);
+	float grid2_y = floor(transform2->global_position.y / 40);
 
 	if (abs(grid2_x - grid1_x) >= 4 || abs(grid2_y - grid1_y) >= 10) return false;
 
@@ -251,18 +251,18 @@ bool diagnals_method_col_info(rigidbody_t& kin_rb, rigidbody_t& non_kin_rb, coll
 void resolve(rigidbody_t& kin_rb, rigidbody_t& non_kin_rb, transform_t& non_kin_transform, col_dirs_t col_dirs) {
 	if (col_dirs.right && non_kin_rb.vel.x > 0) {
 		non_kin_rb.vel.x = 0;
-		non_kin_transform.position.x = kin_rb.aabb_collider.x - (kin_rb.aabb_collider.width / 2) - (non_kin_rb.aabb_collider.width / 2);
+		non_kin_transform.global_position.x = kin_rb.aabb_collider.x - (kin_rb.aabb_collider.width / 2) - (non_kin_rb.aabb_collider.width / 2);
 	} else if (col_dirs.left && non_kin_rb.vel.x < 0) {
 		non_kin_rb.vel.x = 0;
-		non_kin_transform.position.x = kin_rb.aabb_collider.x + (kin_rb.aabb_collider.width / 2) + (non_kin_rb.aabb_collider.width / 2);
+		non_kin_transform.global_position.x = kin_rb.aabb_collider.x + (kin_rb.aabb_collider.width / 2) + (non_kin_rb.aabb_collider.width / 2);
 	}
 
 	if (col_dirs.top && non_kin_rb.vel.y > 0) {
 		non_kin_rb.vel.y = 0;
-		non_kin_transform.position.y = kin_rb.aabb_collider.y - (kin_rb.aabb_collider.height / 2) - (non_kin_rb.aabb_collider.height / 2);				
+		non_kin_transform.global_position.y = kin_rb.aabb_collider.y - (kin_rb.aabb_collider.height / 2) - (non_kin_rb.aabb_collider.height / 2);				
 	} else if (col_dirs.bottom && non_kin_rb.vel.y < 0) {
 		non_kin_rb.vel.y = 0;
-		non_kin_transform.position.y = kin_rb.aabb_collider.y + (kin_rb.aabb_collider.height / 2) + (non_kin_rb.aabb_collider.height / 2);				
+		non_kin_transform.global_position.y = kin_rb.aabb_collider.y + (kin_rb.aabb_collider.height / 2) + (non_kin_rb.aabb_collider.height / 2);				
 	}
 }
 
@@ -283,18 +283,18 @@ void update_rigidbodies() {
 
 			if (rb.use_gravity) {
 				rb.vel.y -= GRAVITY * delta_time;
-				transform.position.y += rb.vel.y * delta_time;
+				transform.global_position.y += rb.vel.y * delta_time;
 			}
 
-			rb.aabb_collider.x = transform.position.x;
-			rb.aabb_collider.y = transform.position.y;
+			rb.aabb_collider.x = transform.global_position.x;
+			rb.aabb_collider.y = transform.global_position.y;
 
 			if (rb.debug) {
 				transform_t* debug_t = get_transform(rb.aabb_collider.collider_debug_transform_handle);
 				game_assert(debug_t);
 				transform_t& debug_transform = *debug_t;
-				debug_transform.position.x = rb.aabb_collider.x;
-				debug_transform.position.y = rb.aabb_collider.y;
+				debug_transform.global_position.x = rb.aabb_collider.x;
+				debug_transform.global_position.y = rb.aabb_collider.y;
 			}
 		}
 	}
@@ -309,18 +309,18 @@ void update_rigidbodies() {
 			non_kin_rb.vel.y -= GRAVITY * delta_time;
 		}
 
-		transform.position.y += non_kin_rb.vel.y * delta_time;
-		transform.position.x += non_kin_rb.vel.x * delta_time;
+		transform.global_position.y += non_kin_rb.vel.y * delta_time;
+		transform.global_position.x += non_kin_rb.vel.x * delta_time;
 
-		non_kin_rb.aabb_collider.x = transform.position.x;
-		non_kin_rb.aabb_collider.y = transform.position.y;
+		non_kin_rb.aabb_collider.x = transform.global_position.x;
+		non_kin_rb.aabb_collider.y = transform.global_position.y;
 
 		if (non_kin_rb.debug) {
 			transform_t* debug_t = get_transform(non_kin_rb.aabb_collider.collider_debug_transform_handle);
 			game_assert(debug_t);
 			transform_t& debug_transform = *debug_t;
-			debug_transform.position.x = non_kin_rb.aabb_collider.x;
-			debug_transform.position.y = non_kin_rb.aabb_collider.y;
+			debug_transform.global_position.x = non_kin_rb.aabb_collider.x;
+			debug_transform.global_position.y = non_kin_rb.aabb_collider.y;
 		}
 
 		// if non kin rb is not detecting collision right now, just update positions and move on
@@ -377,15 +377,15 @@ void update_rigidbodies() {
 			resolve(kin_rb, non_kin_rb, transform, col_dirs);
 
 			// update aabb positions
-			non_kin_rb.aabb_collider.x = transform.position.x;
-			non_kin_rb.aabb_collider.y = transform.position.y;
+			non_kin_rb.aabb_collider.x = transform.global_position.x;
+			non_kin_rb.aabb_collider.y = transform.global_position.y;
 
 			// debugging collider
 			transform_t* col_transform_ptr = get_transform(non_kin_rb.aabb_collider.collider_debug_transform_handle);
 			game_assert(col_transform_ptr);
 			transform_t& collider_debug_transform = *col_transform_ptr;
-			collider_debug_transform.position.x = non_kin_rb.aabb_collider.x;
-			collider_debug_transform.position.y = non_kin_rb.aabb_collider.y;
+			collider_debug_transform.global_position.x = non_kin_rb.aabb_collider.x;
+			collider_debug_transform.global_position.y = non_kin_rb.aabb_collider.y;
 #endif
 
 #if DIAG_METHOD_RESOLVE

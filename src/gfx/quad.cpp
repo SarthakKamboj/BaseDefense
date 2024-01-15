@@ -173,10 +173,10 @@ void clear_debug_pts() {
 
 void draw_debug_pt(glm::vec3 pos) {
 	transform_t cur_transform; 
-	cur_transform.position = pos;
-	cur_transform.scale *= 5.f;
+	cur_transform.global_position = pos;
+	cur_transform.global_scale *= 5.f;
 
-	glm::mat4 model_matrix = get_model_matrix(cur_transform);
+	glm::mat4 model_matrix = get_global_model_matrix(cur_transform);
     // get model matrix and color and set them in the shader
 	shader_set_mat4(quad_render_t::obj_data.shader, "model", model_matrix);
 	shader_set_vec3(quad_render_t::obj_data.shader, "color", glm::vec3(1,0,0));
@@ -192,15 +192,16 @@ void draw_quad_render(const quad_render_t& quad) {
     game_assert_msg(transform_ptr != NULL, "the transform for this quad doesn't exist");
 	transform_t cur_transform = *transform_ptr;
     
-	cur_transform.scale *= glm::vec3(quad.width, quad.height, 1.f);
+	cur_transform.global_scale *= glm::vec3(quad.width, quad.height, 1.f);
 
-	glm::mat4 model_matrix(1.f);
-	if (transform_ptr->parent_transform_handle != -1) {
-    	transform_t* parent_transform = get_transform(transform_ptr->parent_transform_handle);
-    	game_assert_msg(parent_transform != NULL, "the parent transform for this quad doesn't exist");
-		model_matrix = get_model_matrix(*parent_transform);
-	}
-	model_matrix = model_matrix * get_model_matrix(cur_transform);
+	// glm::mat4 model_matrix(1.f);
+	// if (transform_ptr->parent_transform_handle != -1) {
+    // 	transform_t* parent_transform = get_transform(transform_ptr->parent_transform_handle);
+    // 	game_assert_msg(parent_transform != NULL, "the parent transform for this quad doesn't exist");
+	// 	model_matrix = get_global_model_matrix(*parent_transform);
+	// }
+	// model_matrix = model_matrix * get_global_model_matrix(cur_transform);
+	glm::mat4 model_matrix = get_global_model_matrix(cur_transform);
     // get model matrix and color and set them in the shader
 	shader_set_mat4(quad_render_t::obj_data.shader, "model", model_matrix);
 	shader_set_vec3(quad_render_t::obj_data.shader, "color", quad.color);

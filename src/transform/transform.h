@@ -11,9 +11,13 @@ struct transform_t {
 	int parent_transform_handle = -1;
 	std::vector<int> child_transform_handles;
 
-	glm::vec3 position = glm::vec3(0);
-	glm::vec3 scale = glm::vec3(1);
-	glm::vec3 rotation = glm::vec3(0);
+	glm::vec3 global_position = glm::vec3(0);
+	glm::vec3 global_scale = glm::vec3(1);
+	glm::vec3 global_rotation = glm::vec3(0);
+
+	glm::vec3 local_position = glm::vec3(0);
+	glm::vec3 local_scale = glm::vec3(1);
+	glm::vec3 local_rotation = glm::vec3(0);
 	// float rotation_deg = 0;
 	// float y_deg = 0;
 };
@@ -32,7 +36,8 @@ int create_transform(glm::vec3 position, glm::vec3 scale, float rot_deg, float y
 /// </summary>
 /// <param name="transform">The world transform</param>
 /// <returns>A 4x4 model (local to world) matrix</returns>
-glm::mat4 get_model_matrix(transform_t& transform);
+glm::mat4 get_global_model_matrix(transform_t& transform);
+glm::mat4 get_local_model_matrix(transform_t& transform);
 
 /// <summary>
 /// Get the transform given the transform's handle
