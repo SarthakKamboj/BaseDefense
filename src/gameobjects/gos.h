@@ -4,6 +4,7 @@
 #include "glm/glm.hpp"
 
 #define NUM_BASE_ATTACH_PTS 3
+#define NUM_BASE_EXT_ATTACH_PTS 2
 
 enum PREVIEW_MODE {
 	PREVIEW_GUN = 0,
@@ -48,6 +49,8 @@ struct base_extension_t {
 
 	int attachment_handle = -1;
 
+	int attachment_handles[NUM_BASE_EXT_ATTACH_PTS] = {-1, -1};
+
 	static const int WIDTH;
 	static const int HEIGHT;
 };
@@ -72,14 +75,13 @@ struct attachment_t {
 	int quad_render_handle = -1;
 	bool attached = false;
 	bool facing_left = false;
-	int base_handle = -1;
 
 	ATTACHMENT_TYPE attachment_types = ATTMNT_NONE;
 
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base);
+int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base, base_extension_t* base_ext);
 void update_attachment(attachment_t& attachment);
 attachment_t* get_attachment(int handle);
 

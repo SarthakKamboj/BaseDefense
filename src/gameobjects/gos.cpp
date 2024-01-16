@@ -83,9 +83,9 @@ void create_base(glm::vec3 pos) {
 	// gun_base.attachment_handles[1] = create_attachment(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT);
 	// gun_base.attachment_handles[2] = create_attachment(pos + glm::vec3(0, base_t::HEIGHT * 0.4f, 0), false, ATTMNT_BASE_EXT);
 
-	gun_base.attachment_handles[0] = create_attachment(glm::vec3(-base_t::WIDTH * 0.4f, 0, 0), true, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base);
-	gun_base.attachment_handles[1] = create_attachment(glm::vec3(base_t::WIDTH * 0.4f, 0, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base);
-	gun_base.attachment_handles[2] = create_attachment(glm::vec3(0, base_t::HEIGHT * 0.4f, 0), false, ATTMNT_BASE_EXT, &gun_base);
+	gun_base.attachment_handles[0] = create_attachment(glm::vec3(-base_t::WIDTH * 0.4f, 0, 0), true, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base, NULL);
+	gun_base.attachment_handles[1] = create_attachment(glm::vec3(base_t::WIDTH * 0.4f, 0, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base, NULL);
+	gun_base.attachment_handles[2] = create_attachment(glm::vec3(0, base_t::HEIGHT * 0.4f, 0), false, ATTMNT_BASE_EXT, &gun_base, NULL);
 
 	gun_bases.push_back(gun_base);
 }
@@ -113,17 +113,24 @@ void update_base(base_t& base) {
 	// }
 }
 
-const int attachment_t::WIDTH = 30;
-const int attachment_t::HEIGHT = 30;
+const int attachment_t::WIDTH = 10;
+const int attachment_t::HEIGHT = 10;
 
-int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base) {
+int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base, base_extension_t* ext) {
+
+	game_assert_msg(base || ext, "neither base or base extension specified");
+	game_assert_msg((base && !ext) || (!base && ext), "cannot specify both base and base ext for 1 attachment");
+
 	static int cnt = 0;
 	attachment_t attmt;
 	attmt.handle = cnt++;
-	attmt.base_handle = base->handle;
 	attmt.attachment_types = attmt_types;
 	attmt.facing_left = facing_left;
-	attmt.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, base->transform_handle);
+	if (base) {
+		attmt.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, base->transform_handle);
+	} else {
+		attmt.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, ext->transform_handle);
+	}
 	attmt.quad_render_handle = create_quad_render(attmt.transform_handle, glm::vec3(1,0,0), attachment_t::WIDTH, attachment_t::HEIGHT, false, 0, -1);
 	attachments.push_back(attmt);
 	return attmt.handle;
@@ -181,7 +188,6 @@ int create_base_ext(glm::vec3 pos) {
 	base_ext.free = false;
 	base_ext.attachment_handle = preview_base_ext.attachment_handle;
 
-	// glm::vec3 offset(base_extension_t::WIDTH * 0.4f, 0, 0);
 	// attachment.left_attach_pt_transform_handle = create_transform(pos - offset, glm::vec3(1), 0.f, 0.f);
 	// attachment.right_attach_pt_transform_handle = create_transform(pos + offset, glm::vec3(1), 0.f, 0.f);
 
@@ -190,6 +196,11 @@ int create_base_ext(glm::vec3 pos) {
 	attachment_t* att = get_attachment(base_ext.attachment_handle);
 	game_assert_msg(att, "attachment not found to make base ext");
 	att->attached = true;
+
+
+	glm::vec3 offset(base_extension_t::WIDTH * 0.4f, 0, 0);
+	base_ext.attachment_handles[0] = create_attachment(offset, false, ATTMNT_GUN, NULL, &base_ext);
+	base_ext.attachment_handles[1] = create_attachment(-offset, true, ATTMNT_GUN, NULL, &base_ext);
 
 	attached_base_exts.push_back(base_ext);
 	return base_ext.handle;
