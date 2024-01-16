@@ -339,7 +339,6 @@ void update_rigidbodies() {
 				continue;
 			}
 
-#if TWO_DIM_RESOLVE
 			collision_info_t total, cur;
 			diagnals_method_col_info(kin_rb, non_kin_rb, total, cur);
 
@@ -386,87 +385,8 @@ void update_rigidbodies() {
 			transform_t& collider_debug_transform = *col_transform_ptr;
 			collider_debug_transform.global_position.x = non_kin_rb.aabb_collider.x;
 			collider_debug_transform.global_position.y = non_kin_rb.aabb_collider.y;
-#endif
-
-#if DIAG_METHOD_RESOLVE
-			collision_info_t cur_col_info;
-			bool detected_col = diagnals_method_col_info(kin_rb, non_kin_rb, total_col_info, cur_col_info);
-
-			// should record collision direction (relative to non kin rb)
-			if (detected_col) {
-				for (int i = 0; i < 4; i++) {
-					PHYSICS_COLLISION_DIR dir = cur_col_info.diag_cols[i].dir;
-					if (dir != PHYSICS_COLLISION_DIR::NONE) {
-						PHYSICS_RELATIVE_DIR rel_dir = PHYSICS_RELATIVE_DIR::NONE;
-						if (dir == PHYSICS_COLLISION_DIR::HORIZONTAL) {
-							if (cur_col_info.diag_cols[i].displacement.x <= 0.f) {
-								rel_dir = PHYSICS_RELATIVE_DIR::RIGHT;
-							}
-							else {
-								rel_dir = PHYSICS_RELATIVE_DIR::LEFT;
-							}
-						}
-						else {
-							if (cur_col_info.diag_cols[i].displacement.y <= 0.f) {
-								rel_dir = PHYSICS_RELATIVE_DIR::TOP;
-							}
-							else {
-								rel_dir = PHYSICS_RELATIVE_DIR::BOTTOM;
-							}
-						} 
-						general_collision_info_t general_col_info(non_kin_rb.rb_type, kin_rb.rb_type, dir, rel_dir, kin_rb.handle);
-						general_frame_col_infos.push_back(general_col_info);
-						break;
-					}
-				}
-				break;
-			}
-#endif
-
 		}
 
-#if DIAG_METHOD_RESOLVE
-		// displace non kin rb properly based on collision information
-		glm::vec3 total_displacement(0.f);
-		bool hor = false;
-		bool vert = false;
-		for (int i = 0; i < 4; i++) {
-			diag_col_info_t& diag_col_info = total_col_info.diag_cols[i];
-			if (diag_col_info.dir == PHYSICS_COLLISION_DIR::NONE) continue;
-			if (diag_col_info.dir == PHYSICS_COLLISION_DIR::HORIZONTAL && fabs(diag_col_info.displacement.x) >= fabs(total_displacement.x)) {
-				total_displacement.x = diag_col_info.displacement.x;
-				non_kin_rb.vel.x = 0;
-				hor = true;
-				if (non_kin_rb.rb_type == PHYSICS_RB_TYPE::PLAYER) {
-					printf("hor ");
-				}
-			}
-			else if (diag_col_info.dir == PHYSICS_COLLISION_DIR::VERTICAL && fabs(diag_col_info.displacement.y) >= fabs(total_displacement.y)){
-				total_displacement.y = diag_col_info.displacement.y;
-				non_kin_rb.vel.y = 0;
-				vert = true;
-				if (non_kin_rb.rb_type == PHYSICS_RB_TYPE::PLAYER) {
-					printf("vert ");
-				}
-			}
-		}
-		if (total_displacement != glm::vec3(0.f) && non_kin_rb.rb_type == PHYSICS_RB_TYPE::PLAYER) {
-			printf("displacement (%f, %f) \n", total_displacement.x, total_displacement.y);
-		}
-		transform.position += total_displacement;
-
-		// update aabb positions
-		non_kin_rb.aabb_collider.x = transform.position.x;
-		non_kin_rb.aabb_collider.y = transform.position.y;
-
-		// debugging collider
-        transform_t* col_transform_ptr = get_transform(non_kin_rb.aabb_collider.collider_debug_transform_handle);
-        game_assert(col_transform_ptr);
-		transform_t& collider_debug_transform = *col_transform_ptr;
-		collider_debug_transform.position.x = non_kin_rb.aabb_collider.x;
-		collider_debug_transform.position.y = non_kin_rb.aabb_collider.y;
-#endif
-	
 	}
 }
 
