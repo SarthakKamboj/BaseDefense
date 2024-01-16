@@ -298,12 +298,12 @@ void set_global_pos(transform_t* t, glm::vec3& pos) {
 }
 
 void set_global_scale(transform_t* t, glm::vec3& scale) {
-    t->global_position = scale;
+    t->global_scale = scale;
     update_local_recursively(t);
 }
 
 void set_global_rot(transform_t* t, glm::vec3& rot) {
-    t->global_position = rot;
+    t->global_rotation = rot;
     update_local_recursively(t);
 }
 

@@ -13,6 +13,7 @@ enum PREVIEW_MODE {
 
 	PREVIEW_NONE
 };
+void init_preview();
 
 struct base_t {
 	int handle = -1;
@@ -71,13 +72,14 @@ struct attachment_t {
 	int quad_render_handle = -1;
 	bool attached = false;
 	bool facing_left = false;
+	int base_handle = -1;
 
 	ATTACHMENT_TYPE attachment_types = ATTMNT_NONE;
 
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types);
+int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base);
 void update_attachment(attachment_t& attachment);
 attachment_t* get_attachment(int handle);
 

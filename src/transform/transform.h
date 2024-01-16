@@ -29,6 +29,8 @@ struct transform_t {
 /// <returns>The handle associated with the created transform</returns>
 int create_transform(glm::vec3 position, glm::vec3 scale, float rot_deg, float y_deg = 0.f, int parent_transform_handle = -1);
 
+// TODO: need to think through cases where children get updated and not parents, how to handle that nicely
+
 /// <summary>
 /// Creates the model matrix associated with a particular position, scale, and rotation
 /// </summary>

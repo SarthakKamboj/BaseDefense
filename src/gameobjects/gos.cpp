@@ -25,6 +25,12 @@ static base_extension_t preview_base_ext;
 static base_t preview_base;
 PREVIEW_MODE preview_mode = PREVIEW_MODE::PREVIEW_BASE;
 
+void init_preview() {
+	init_preview_gun();
+	init_base_ext_preview();
+	init_preview_base();
+}
+
 const int base_t::WIDTH = 100;
 const int base_t::HEIGHT = 300;
 
@@ -33,7 +39,7 @@ void init_preview_base() {
 
 	preview_base.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f);
 	preview_base.quad_render_handle = create_quad_render(preview_base.transform_handle, create_color(60,90,30), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
-	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
+	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, false);
 }
 
 void update_preview_base() {
@@ -73,9 +79,13 @@ void create_base(glm::vec3 pos) {
 	// gun_base.attach_pt_transform_handles[1] = create_transform(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), glm::vec3(1), 0, 0, -1);
 	// gun_base.attach_pt_transform_handles[2] = create_transform(pos + glm::vec3(0, base_t::HEIGHT * 0.4f, 0), glm::vec3(1), 0, 0, -1);
 
-	gun_base.attachment_handles[0] = create_attachment(pos - glm::vec3(base_t::WIDTH * 0.4f, 0, 0), true, ATTMNT_GUN | ATTMNT_BASE_EXT);
-	gun_base.attachment_handles[1] = create_attachment(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT);
-	gun_base.attachment_handles[2] = create_attachment(pos + glm::vec3(0, base_t::HEIGHT * 0.4f, 0), false, ATTMNT_BASE_EXT);
+	// gun_base.attachment_handles[0] = create_attachment(pos - glm::vec3(base_t::WIDTH * 0.4f, 0, 0), true, ATTMNT_GUN | ATTMNT_BASE_EXT);
+	// gun_base.attachment_handles[1] = create_attachment(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT);
+	// gun_base.attachment_handles[2] = create_attachment(pos + glm::vec3(0, base_t::HEIGHT * 0.4f, 0), false, ATTMNT_BASE_EXT);
+
+	gun_base.attachment_handles[0] = create_attachment(glm::vec3(-base_t::WIDTH * 0.4f, 0, 0), true, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base);
+	gun_base.attachment_handles[1] = create_attachment(glm::vec3(base_t::WIDTH * 0.4f, 0, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base);
+	gun_base.attachment_handles[2] = create_attachment(glm::vec3(0, base_t::HEIGHT * 0.4f, 0), false, ATTMNT_BASE_EXT, &gun_base);
 
 	gun_bases.push_back(gun_base);
 }
@@ -103,16 +113,17 @@ void update_base(base_t& base) {
 	// }
 }
 
-const int attachment_t::WIDTH = 10;
-const int attachment_t::HEIGHT = 10;
+const int attachment_t::WIDTH = 30;
+const int attachment_t::HEIGHT = 30;
 
-int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types) {
+int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base) {
 	static int cnt = 0;
 	attachment_t attmt;
 	attmt.handle = cnt++;
+	attmt.base_handle = base->handle;
 	attmt.attachment_types = attmt_types;
 	attmt.facing_left = facing_left;
-	attmt.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, -1);
+	attmt.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, base->transform_handle);
 	attmt.quad_render_handle = create_quad_render(attmt.transform_handle, glm::vec3(1,0,0), attachment_t::WIDTH, attachment_t::HEIGHT, false, 0, -1);
 	attachments.push_back(attmt);
 	return attmt.handle;
@@ -218,7 +229,7 @@ void init_base_ext_preview() {
 
 	preview_base_ext.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f);
 	preview_base_ext.quad_render_handle = create_quad_render(preview_base_ext.transform_handle, create_color(145, 145, 145), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
-	preview_base_ext.rb_handle = create_rigidbody(preview_base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);	
+	preview_base_ext.rb_handle = create_rigidbody(preview_base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, false);
 }
 
 void update_preview_base_ext() {
@@ -269,7 +280,7 @@ void init_preview_gun() {
 
 	preview_gun.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f, -1);
 	preview_gun.quad_render_handle = create_quad_render(preview_gun.transform_handle, create_color(45,45,45), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
-	preview_gun.rb_handle = create_rigidbody(preview_gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, false, true);
+	preview_gun.rb_handle = create_rigidbody(preview_gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, false, false);
 }
 
 const int gun_t::WIDTH = 80;
@@ -363,22 +374,20 @@ void update_attached_gun(gun_t& gun) {
 	}
 	float cos_z = glm::dot(to_mouse, dir_facing);
 	float z_rad = acos(cos_z);
-	attachment_transform->global_rotation.z = glm::degrees(z_rad);
+	glm::vec3 rot = attachment_transform->local_rotation;
+	rot.z = glm::degrees(z_rad);
 
 	float below_gun = glm::dot(to_mouse, dir_perpen);
 	if (below_gun < 0) {
-		attachment_transform->global_rotation.z *= -1;		
+		rot.z *= -1;
 	}
+	set_local_rot(attachment_transform, rot);
 
 	float time_between_fires = 1 / gun.fire_rate;
 	if (gun.time_since_last_fire + time_between_fires < game::time_t::cur_time) {
 		gun.time_since_last_fire = game::time_t::cur_time;
 		create_bullet(attachment_transform->global_position, glm::vec3(to_mouse.x, to_mouse.y, 0), 800.f);
 	}
-
-	transform_t* g = gun_transform;
-	printf("local pos : (%f, %f, %f) and global pos: (%f, %f, %f)\n", g->local_position.x, g->local_position.y, g->local_position.z, g->global_position.x, g->global_position.y, g->global_position.z);
-	printf("local rot: (%f, %f, %f) and global rot: (%f, %f, %f)\n", g->local_rotation.x, g->local_rotation.y, g->local_rotation.z, g->global_rotation.x, g->global_rotation.y, g->global_rotation.z);
 
 }
 

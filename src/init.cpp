@@ -539,10 +539,9 @@ void init() {
 		// init_parallax_bck_data();
 	}
 
-	init_camera();
-	init_preview_gun();
-	init_base_ext_preview();
-	init_preview_base();
+	init_camera();	
+
+	init_preview();
 
 	create_enemy_spawner(glm::vec3(50, 50, 0));
 	// create_base();

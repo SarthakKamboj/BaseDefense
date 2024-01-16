@@ -16,6 +16,12 @@ std::vector<general_collision_info_t> general_frame_col_infos;
 int create_rigidbody(int transform_handle, bool use_gravity, float collider_width, float collider_height, bool is_kinematic, PHYSICS_RB_TYPE rb_type, bool detect_col, bool debug) {
     static int running_count = 0; 
 
+	transform_t* transform = get_transform(transform_handle);
+	game_assert_msg(transform, "could not get transform for this rigidbody");
+	if (transform->parent_transform_handle != -1 && !is_kinematic) {
+		game_assert_msg(false, "rigidbodies with transform parents must be kinematic");
+	}
+
 	rigidbody_t rigidbody;
 	rigidbody.use_gravity = use_gravity;
 	rigidbody.transform_handle = transform_handle;
@@ -25,11 +31,10 @@ int create_rigidbody(int transform_handle, bool use_gravity, float collider_widt
 	rigidbody.debug = debug;
 	rigidbody.detect_col = detect_col;
     running_count++;
-	transform_t& transform = *get_transform(transform_handle);
 
 	aabb_collider_t aabb_collider;
-	aabb_collider.x = transform.global_position.x;
-	aabb_collider.y = transform.global_position.y;
+	aabb_collider.x = transform->global_position.x;
+	aabb_collider.y = transform->global_position.y;
 	aabb_collider.width = collider_width;
 	aabb_collider.height = collider_height;
 
@@ -273,7 +278,9 @@ void update_rigidbodies() {
 	// update kinematic rigidbodies
 	for (int i = 0; i < kin_rigidbodies.size(); i++) {
 		rigidbody_t& rb = kin_rigidbodies[i];
-		// only goombas and ice powers ups move at all, the rest are static entirely
+
+		if (rb.use_gravity) continue;
+
 		if (rb.rb_type == PHYSICS_RB_TYPE::GOOMBA || rb.rb_type == PHYSICS_RB_TYPE::ICE_POWERUP) {
 			time_count_t delta_time = game::time_t::delta_time;
 
@@ -286,6 +293,7 @@ void update_rigidbodies() {
 				transform.global_position.y += rb.vel.y * delta_time;
 			}
 
+#if 0
 			rb.aabb_collider.x = transform.global_position.x;
 			rb.aabb_collider.y = transform.global_position.y;
 
@@ -296,9 +304,11 @@ void update_rigidbodies() {
 				debug_transform.global_position.x = rb.aabb_collider.x;
 				debug_transform.global_position.y = rb.aabb_collider.y;
 			}
+#endif
 		}
 	}
 
+	// update non-kinematic rigidbodies (which will also have no transform parents)
 	for (rigidbody_t& non_kin_rb : non_kin_rigidbodies) {
 
 		// update non kin rb position and velocity from gravity
@@ -312,6 +322,7 @@ void update_rigidbodies() {
 		transform.global_position.y += non_kin_rb.vel.y * delta_time;
 		transform.global_position.x += non_kin_rb.vel.x * delta_time;
 
+#if 0
 		non_kin_rb.aabb_collider.x = transform.global_position.x;
 		non_kin_rb.aabb_collider.y = transform.global_position.y;
 
@@ -322,6 +333,7 @@ void update_rigidbodies() {
 			debug_transform.global_position.x = non_kin_rb.aabb_collider.x;
 			debug_transform.global_position.y = non_kin_rb.aabb_collider.y;
 		}
+#endif
 
 		// if non kin rb is not detecting collision right now, just update positions and move on
 		if (!non_kin_rb.detect_col) {
@@ -375,6 +387,7 @@ void update_rigidbodies() {
 	
 			resolve(kin_rb, non_kin_rb, transform, col_dirs);
 
+#if 0
 			// update aabb positions
 			non_kin_rb.aabb_collider.x = transform.global_position.x;
 			non_kin_rb.aabb_collider.y = transform.global_position.y;
@@ -385,6 +398,7 @@ void update_rigidbodies() {
 			transform_t& collider_debug_transform = *col_transform_ptr;
 			collider_debug_transform.global_position.x = non_kin_rb.aabb_collider.x;
 			collider_debug_transform.global_position.y = non_kin_rb.aabb_collider.y;
+#endif
 		}
 
 	}
