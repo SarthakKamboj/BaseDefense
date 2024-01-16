@@ -39,7 +39,7 @@ void init_preview_base() {
 
 	preview_base.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f);
 	preview_base.quad_render_handle = create_quad_render(preview_base.transform_handle, create_color(60,90,30), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
-	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, false);
+	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYS_NONE, true, false);
 }
 
 void update_preview_base() {
@@ -71,7 +71,7 @@ void create_base(glm::vec3 pos) {
 
 	gun_base.transform_handle = create_transform(pos, glm::vec3(1), 0.f, 0.f);
 	gun_base.quad_render_handle = create_quad_render(gun_base.transform_handle, create_color(59,74,94), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
-	gun_base.rb_handle = create_rigidbody(gun_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
+	gun_base.rb_handle = create_rigidbody(gun_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYS_NONE, true, true);
 
 	gun_base.previewing = false;
 
@@ -183,7 +183,7 @@ int create_base_ext(glm::vec3 pos) {
 
 	base_ext.transform_handle = create_transform(pos, glm::vec3(1), 0.f, 0.f);
 	base_ext.quad_render_handle = create_quad_render(base_ext.transform_handle, create_color(240,74,94), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
-	base_ext.rb_handle = create_rigidbody(base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, false, true);
+	base_ext.rb_handle = create_rigidbody(base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_NONE, false, true);
 	base_ext.previewing = false;
 	base_ext.free = false;
 	base_ext.attachment_handle = preview_base_ext.attachment_handle;
@@ -240,7 +240,7 @@ void init_base_ext_preview() {
 
 	preview_base_ext.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f);
 	preview_base_ext.quad_render_handle = create_quad_render(preview_base_ext.transform_handle, create_color(145, 145, 145), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
-	preview_base_ext.rb_handle = create_rigidbody(preview_base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, false);
+	preview_base_ext.rb_handle = create_rigidbody(preview_base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_NONE, true, false);
 }
 
 void update_preview_base_ext() {
@@ -291,7 +291,7 @@ void init_preview_gun() {
 
 	preview_gun.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f, -1);
 	preview_gun.quad_render_handle = create_quad_render(preview_gun.transform_handle, create_color(45,45,45), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
-	preview_gun.rb_handle = create_rigidbody(preview_gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, false, false);
+	preview_gun.rb_handle = create_rigidbody(preview_gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYS_NONE, false, false);
 }
 
 const int gun_t::WIDTH = 80;
@@ -320,7 +320,7 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 	gun.transform_handle = create_transform(gun_pos, glm::vec3(1), 0.f, 0.f, att->transform_handle);
 	transform_t* g = get_transform(gun.transform_handle);
 	gun.quad_render_handle = create_quad_render(gun.transform_handle, create_color(30,0,120), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
-	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
+	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYS_NONE, true, true);
 
 	gun.previewing = false;
 	gun.free = false;
@@ -413,7 +413,7 @@ void create_bullet(glm::vec3& start_pos, glm::vec3& move_dir, float speed) {
 
 	bullet.transform_handle = create_transform(start_pos, glm::vec3(1), 0, 0, -1);
 	bullet.quad_render_handle = create_quad_render(bullet.transform_handle, glm::vec3(1,1,0), bullet_t::WIDTH, bullet_t::HEIGHT, false, 0, -1);
-	bullet.rb_handle = create_rigidbody(bullet.transform_handle, false, bullet_t::WIDTH, bullet_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
+	bullet.rb_handle = create_rigidbody(bullet.transform_handle, false, bullet_t::WIDTH, bullet_t::HEIGHT, true, PHYS_BULLET, true, true);
 
 	bullet.dir = move_dir;
 	bullet.speed = speed;
@@ -425,6 +425,14 @@ void update_bullet(bullet_t& bullet) {
 	transform_t* bullet_transform = get_transform(bullet.transform_handle);
 	game_assert_msg(bullet_transform, "bullet transform not found");
 	bullet_transform->global_position += bullet.dir * glm::vec3(bullet.speed * game::time_t::delta_time);
+
+	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(bullet.rb_handle, PHYS_BULLET);
+	for (kin_w_kin_col_t& col : cols) {
+		if (col.kin_type1 == PHYS_ENEMY || col.kin_type2 == PHYS_ENEMY) {
+			delete_bullet(bullet);
+			return;
+		}
+	}
 
 	if (bullet.creation_time + bullet_t::ALIVE_TIME < game::time_t::cur_time) {
 		delete_bullet(bullet);
@@ -453,7 +461,7 @@ void create_enemy(glm::vec3 pos, int dir, float speed) {
 	enemy.speed = speed;
 	enemy.transform_handle = create_transform(pos, glm::vec3(1), 0, 0, -1);
 	enemy.quad_render_handle = create_quad_render(enemy.transform_handle, create_color(75, 25, 25), enemy_t::WIDTH, enemy_t::HEIGHT, false, 0, -1);
-	enemy.rb_handle = create_rigidbody(enemy.transform_handle, true, enemy_t::WIDTH, enemy_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
+	enemy.rb_handle = create_rigidbody(enemy.transform_handle, false, enemy_t::WIDTH, enemy_t::HEIGHT, true, PHYS_ENEMY, true, true);
 	enemies.push_back(enemy);
 }
 
@@ -461,11 +469,25 @@ void update_enemy(enemy_t& enemy) {
 	transform_t* transform = get_transform(enemy.transform_handle);
 	game_assert_msg(transform, "transform for enemy not found");
 	transform->global_position += glm::vec3(enemy.speed * enemy.dir * game::time_t::delta_time,0,0);
+
+	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(enemy.rb_handle, PHYS_ENEMY);
+	for (kin_w_kin_col_t& col : cols) {
+		if (col.kin_type1 == PHYS_BULLET || col.kin_type2 == PHYS_BULLET) {
+			enemy.health -= 50;
+			if (enemy.health <= 0) {
+				delete_enemy(enemy.handle);
+			}
+		}
+	}
+
 }
 
 void delete_enemy(int enemy_handle) {
 	for (int i = 0; i < enemies.size(); i++) {
 		if (enemies[i].handle == enemy_handle) {
+			delete_transform(enemies[i].transform_handle);
+			delete_rigidbody(enemies[i].rb_handle);
+			delete_quad_render(enemies[i].quad_render_handle);
 			enemies.erase(enemies.begin() + i);
 		}
 	}
@@ -511,18 +533,13 @@ void gos_update() {
 		update_attachment(att);
 	}
 
-	// for (base_t& base : gun_bases) {
-	// 	update_base(base);
-	// }
 	update_preview_gun();
 	update_preview_base_ext();
 
 	for (gun_t& gun : attached_guns) {
 		update_attached_gun(gun);
 	}
-	// for (base_extension_t& att : attached_base_exts) {
-		// update_base_ext(att);
-	// }
+
 	for (bullet_t& bullet : bullets) {
 		update_bullet(bullet);
 	}

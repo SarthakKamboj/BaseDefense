@@ -7,14 +7,15 @@
 /**
  * @brief The type of rigidbody this will be, these are more game specific
 */
-enum class PHYSICS_RB_TYPE {
-	NONE,
-	PLAYER,
-	GROUND,
-	GOOMBA,
-	BRICK,
-	ICE_POWERUP,
-	FINAL_FLAG
+enum PHYSICS_RB_LAYER {
+	PHYS_NONE = 0,
+	PHYS_BASE,
+	PHYS_BASE_EXT,
+	PHYS_GUN,
+	PHYS_ENEMY,
+	PHYS_BULLET,
+
+	NUM_PHYS_OPTIONS
 };
 
 /**
@@ -42,7 +43,7 @@ enum CORNER {
 struct rigidbody_t {
     int handle = -1;
 
-	PHYSICS_RB_TYPE rb_type = PHYSICS_RB_TYPE::NONE;
+	PHYSICS_RB_LAYER rb_layer = PHYS_NONE;
 	aabb_collider_t aabb_collider;
 	glm::vec2 vel = glm::vec2(0.f, 0.f);
 	int transform_handle = -1;
@@ -62,17 +63,17 @@ struct rigidbody_t {
  * @brief Enum is specify collision direction
 */
 enum PHYSICS_COLLISION_DIR: uint8_t {
-	NONE,
-	VERTICAL,
-	HORIZONTAL
+	COL_DIR_NONE = 0,
+	COL_DIR_VERTICAL,
+	COL_DIR_HORIZONTAL
 };
 
-enum class PHYSICS_RELATIVE_DIR {
-	NONE = 0,
-	RIGHT = 1 << 0,
-	LEFT = 1 << 1,
-	TOP = 1 << 2,
-	BOTTOM = 1 << 3
+enum PHYSICS_RELATIVE_DIR {
+	REL_DIR_NONE = 0,
+	REL_DIR_RIGHT,
+	REL_DIR_LEFT,
+	REL_DIR_TOP,
+	REL_DIR_BOTTOM 
 };
 
 struct col_dirs_t {
@@ -89,7 +90,7 @@ struct col_dirs_t {
 struct diag_col_info_t {
 	float ratio_from_center = 1.f;
 	glm::vec2 displacement = glm::vec2(0.f);
-	PHYSICS_COLLISION_DIR dir = PHYSICS_COLLISION_DIR::NONE;
+	PHYSICS_COLLISION_DIR dir = COL_DIR_NONE;
 };
 
 /**
@@ -114,12 +115,12 @@ bool sat_detect_collision(rigidbody_t& rb1, rigidbody_t& rb2);
  * @param collider_width Width of the AABB collider
  * @param collider_height Height of the AABB collider
  * @param is_kinematic Whether it is kinematic (stationary) or not
- * @param rb_type What category this rigidbody is associated with
+ * @param rb_layer What category this rigidbody is associated with
  * @param detect_col Whether this rb should start off detecting collision
  * @param debug Whether you want to see the debug wireframe of the collider
  * @return The handle to the newly created rigidbody
 */
-int create_rigidbody(int transform_handle, bool use_gravity, float collider_width, float collider_height, bool is_kinematic, PHYSICS_RB_TYPE rb_type, bool detect_col = true, bool debug = true);
+int create_rigidbody(int transform_handle, bool use_gravity, float collider_width, float collider_height, bool is_kinematic, PHYSICS_RB_LAYER rb_layer, bool detect_col = true, bool debug = true);
 
 /**
  * @brief Iterates over every non kinematic rb and performs collision detection with every kinematic rb.
@@ -149,14 +150,19 @@ void delete_rigidbody(int rb_handle);
  * @brief General collision information about non kin rb type, kin rb type, relative direction of kin rb relative to
  * non_kin rb, and dir of collision
 */
-struct general_collision_info_t {
-	PHYSICS_RB_TYPE non_kin_type = PHYSICS_RB_TYPE::NONE;
-	PHYSICS_RB_TYPE kin_type = PHYSICS_RB_TYPE::NONE;
-	PHYSICS_COLLISION_DIR dir = PHYSICS_COLLISION_DIR::NONE;
-	PHYSICS_RELATIVE_DIR rel_dir = PHYSICS_RELATIVE_DIR::NONE;
+struct non_kin_w_kin_col_t {
+	PHYSICS_RB_LAYER non_kin_type = PHYS_NONE;
+	PHYSICS_RB_LAYER kin_type = PHYS_NONE;
+	PHYSICS_COLLISION_DIR dir = COL_DIR_NONE;
+	PHYSICS_RELATIVE_DIR rel_dir = REL_DIR_NONE;
 	int kin_handle = -1;
+};
 
-	general_collision_info_t(PHYSICS_RB_TYPE non_kin_type, PHYSICS_RB_TYPE kin_type, PHYSICS_COLLISION_DIR dir, PHYSICS_RELATIVE_DIR rel_dir, int kin_handle);
+struct kin_w_kin_col_t {
+	PHYSICS_RB_LAYER kin_type1 = PHYS_NONE;
+	int kin_handle1 = -1;
+	PHYSICS_RB_LAYER kin_type2 = PHYS_NONE;
+	int kin_handle2 = -1;
 };
 
 /**
@@ -165,6 +171,7 @@ struct general_collision_info_t {
  * @return All collisions for a particular non_kin rb type this frame (note this will be separate for different diagnals so if a
  * non_kin rb and kin rb have 2 collisions on 2 different diagnals, it records them both...this can be changed later if need be)
 */
-std::vector<general_collision_info_t> get_general_cols_for_non_kin_type(PHYSICS_RB_TYPE non_kin_type);
+std::vector<non_kin_w_kin_col_t> get_from_non_kin_w_kin_cols_w_non_kin(PHYSICS_RB_LAYER non_kin_type);
+std::vector<non_kin_w_kin_col_t> get_from_non_kin_w_kin_cols_w_kin(int kin_handle, PHYSICS_RB_LAYER kin_type);
 
-std::vector<general_collision_info_t> get_general_cols_for_kin(int kin_handle, PHYSICS_RB_TYPE kin_type);
+std::vector<kin_w_kin_col_t> get_from_kin_w_kin_cols(int kin_handle, PHYSICS_RB_LAYER kin_type);
