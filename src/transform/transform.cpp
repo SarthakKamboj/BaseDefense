@@ -5,6 +5,54 @@
 
 static std::vector<transform_t> transforms;
 
+/*
+
+// Q will be orthonormal
+QR(in A, out Q, out R) {
+    R[0][0] = len(A[0])
+    Q[0] = normalize(A[0])
+
+    R[1][0] = dot(A[1], Q[0])
+    a1_perpen = A[1] - R[1][0] (Q[0])
+    R[1][1] = len(a1_perpen)
+    Q[1] = normalize(a1_perpen)
+
+    R[2][0] = dot(A[2], Q[0])
+    R[2][1] = dot(A[2], Q[1])
+    a2_perpen = A[2] - R[2][0] (Q[0]) - R[2][1] (Q[1])
+    R[2][2] = len(a2_perpen)
+    Q[2] = normalize(a2_perpen)
+}
+
+Eigen(in A, out eigenvectors, out eigenvalues) {
+    cur_Q = []
+    cur_R = []
+    X = A
+    for (int i = 0; i < 30; i++) {
+        cur_R = QR(X, cur_Q, cur_R)
+        eigenvectors = eigenvector * cur_Q
+        eigenvalues = cur_R * cur_Q
+    }
+}
+
+SVD(in A, out U, out E, out V_t) {
+    E^2 = []
+    Eigen(A*At, U, E^2)    
+    E = sqrtroot(E^2)
+    V_t = E^-1 * U_t * A 
+}
+
+RotScaleTransform(in A, out rot, out scale, out transform) {
+    transform = A[3][0:2];
+    rot1 = []
+    scale = []
+    rot2 = []
+    SVD(A, rot1, scale, rot2)
+    rot = rot1 * rot2
+}
+
+*/
+
 int create_transform(glm::vec3 position, glm::vec3 scale, float rot_deg, float y_deg, int parent_transform_handle) {
     static int running_count = 0;
 	transform_t transform;
@@ -22,6 +70,19 @@ int create_transform(glm::vec3 position, glm::vec3 scale, float rot_deg, float y
         game_assert_msg(parent_transform, "parent transform of new transform doesn't exist");
         glm::mat4 cur_global_model = get_global_model_matrix(*parent_transform) * get_local_model_matrix(transform);
         transform.global_position = glm::vec3(cur_global_model[3].x, cur_global_model[3].y, cur_global_model[3].z);
+
+        // need to do decomposition to get these
+        glm::mat4 rot_mat;
+        glm::mat4 scale_mat;
+        transform.global_scale = glm::vec3(scale_mat[0][0], scale_mat[1][1], scale_mat[2][2]);
+
+        float rot_x = atan(cur_global_model[1].z / cur_global_model[2].z);
+        float rot_y = asin(-cur_global_model[0].z);
+        float rot_z = 0;
+        if (cos(rot_y) != 0) {
+            rot_z = acos(cur_global_model[0].x / cos(rot_y));
+        }
+        transform.global_rotation = glm::vec3(rot_x, rot_y, rot_z);
     }
 	// transform.global_position = position;
 	// transform.global_scale = scale;
