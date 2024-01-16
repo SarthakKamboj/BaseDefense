@@ -54,6 +54,8 @@ void update_preview_base() {
 
 	bool left_down = globals.window.user_input.left_mouse_down;
 	quad_render->render = left_down;
+
+	update_hierarchy_based_on_globals();
 }
 
 void create_base(glm::vec3 pos) {
@@ -141,6 +143,8 @@ void update_attachment(attachment_t& attachment) {
 		preview_base_ext.free = false;
 		preview_transform->global_position = transform->global_position;
 	}
+
+	update_hierarchy_based_on_globals();
 }
 
 attachment_t* get_attachment(int handle) {
@@ -281,6 +285,10 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 	game_assert_msg(att, "attachment not found to make gun");
 	att->attached = true;
 
+	transform_t* att_transform = get_transform(att->transform_handle);
+	game_assert_msg(att_transform, "transform of attachment not found");
+	// att_transform->ro
+
 	gun.fire_rate = fire_rate;
 	gun.facing_left = facing_left;
 
@@ -289,7 +297,6 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 
 	gun.transform_handle = create_transform(gun_pos, glm::vec3(1), 0.f, 0.f, att->transform_handle);
 	transform_t* g = get_transform(gun.transform_handle);
-	printf("local: (%f, %f, %f) and global: (%f, %f, %f)\n", g->local_position.x, g->local_position.y, g->local_position.z, g->global_position.x, g->global_position.y, g->global_position.z);
 	gun.quad_render_handle = create_quad_render(gun.transform_handle, create_color(30,0,120), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
 	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYSICS_RB_TYPE::NONE, true, true);
 
@@ -368,6 +375,11 @@ void update_attached_gun(gun_t& gun) {
 		gun.time_since_last_fire = game::time_t::cur_time;
 		create_bullet(attachment_transform->global_position, glm::vec3(to_mouse.x, to_mouse.y, 0), 800.f);
 	}
+
+	transform_t* g = gun_transform;
+	printf("local pos : (%f, %f, %f) and global pos: (%f, %f, %f)\n", g->local_position.x, g->local_position.y, g->local_position.z, g->global_position.x, g->global_position.y, g->global_position.z);
+	printf("local rot: (%f, %f, %f) and global rot: (%f, %f, %f)\n", g->local_rotation.x, g->local_rotation.y, g->local_rotation.z, g->global_rotation.x, g->global_rotation.y, g->global_rotation.z);
+
 }
 
 const float bullet_t::ALIVE_TIME = 1.f;
@@ -479,18 +491,18 @@ void gos_update() {
 		update_attachment(att);
 	}
 
-	for (base_t& base : gun_bases) {
-		update_base(base);
-	}
+	// for (base_t& base : gun_bases) {
+	// 	update_base(base);
+	// }
 	update_preview_gun();
 	update_preview_base_ext();
 
 	for (gun_t& gun : attached_guns) {
 		update_attached_gun(gun);
 	}
-	for (base_extension_t& att : attached_base_exts) {
-		update_base_ext(att);
-	}
+	// for (base_extension_t& att : attached_base_exts) {
+		// update_base_ext(att);
+	// }
 	for (bullet_t& bullet : bullets) {
 		update_bullet(bullet);
 	}
@@ -502,4 +514,6 @@ void gos_update() {
 	for (enemy_t& enemy : enemies) {
 		update_enemy(enemy);
 	}
+
+	update_hierarchy_based_on_globals();
 }

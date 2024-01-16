@@ -388,6 +388,34 @@ void update_rigidbodies() {
 		}
 
 	}
+
+	update_hierarchy_based_on_globals();
+
+	// update kinematic rigidbodies
+	for (int i = 0; i < kin_rigidbodies.size() + non_kin_rigidbodies.size(); i++) {
+		rigidbody_t* rb = NULL;
+		if (i < kin_rigidbodies.size()) {
+			rb = &kin_rigidbodies[i];
+		} else {
+			rb = &non_kin_rigidbodies[i];
+		}
+		transform_t* transform = get_transform(rb->transform_handle);
+		game_assert(transform);
+
+		rb->aabb_collider.x = transform->global_position.x;
+		rb->aabb_collider.y = transform->global_position.y;
+
+		if (rb->debug) {
+			transform_t* debug_transform = get_transform(rb->aabb_collider.collider_debug_transform_handle);
+			game_assert(debug_transform);
+			debug_transform->global_position = transform->global_position;
+			debug_transform->global_rotation = transform->global_rotation;
+			debug_transform->global_scale = transform->global_scale;
+			debug_transform->local_position = transform->local_position;
+			debug_transform->local_scale = transform->local_scale;
+			debug_transform->local_rotation = transform->local_rotation;
+		}
+	}
 }
 
 /**
