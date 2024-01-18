@@ -12,6 +12,7 @@
 #include "gfx/renderer.h"
 #include "globals.h"
 #include "utils/general.h"
+#include "utils/time.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H  
@@ -278,9 +279,9 @@ void update_ui_files() {
     struct stat ui_file_stat;
     // if (stat(main_menu_ui_xml_path, &ui_file_stat) < 0) return;
     if (stat(xml_path, &ui_file_stat) < 0) return;
-    _sleep(10);
 
     if (ui_file.last_modified_time == ui_file_stat.st_mtime) return;
+    _sleep(10);
     xml_document_free(ui_file.document, true);
 
 	// FILE* main_menu_ui = fopen(main_menu_ui_xml_path, "r");
@@ -306,7 +307,6 @@ void ui_start_of_frame() {
     shader_set_mat4(font_char_t::ui_opengl_data.shader, "projection", projection);
     ui_will_update = globals.window.resized;
 
-    // clicked_on_keys.clear();
     ui_text_values.clear();
     styles_stack.clear();
     style_t default_style;

@@ -26,6 +26,6 @@ void create_debug_timer(const char* msg, game_timer_t& debug_timer) {
 game_timer_t::~game_timer_t() {
     end_timer(*this);
     if (msg[0] != 0) {
-        printf("elapsed time was %lf. %s\n", this->elapsed_time_sec, this->msg);
+        printf("elapsed time was %lfs. %s\n", this->elapsed_time_sec, this->msg);
     }
 }
