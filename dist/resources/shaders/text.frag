@@ -4,6 +4,7 @@ out vec4 frag_color;
 
 in vec2 tex_coord;
 in vec2 pos;
+in vec3 out_color;
 
 uniform bool round_vertices;
 
@@ -17,11 +18,12 @@ uniform float border_radius;
 uniform sampler2D character_tex;
 uniform sampler2D image_tex;
 
-uniform vec3 color;
+// uniform vec3 color;
 uniform float tex_influence;
 uniform int is_character_tex;
 
 void main() {
+    vec3 color = out_color;
     float t = tex_influence;
     float c = texture(character_tex, tex_coord).r;
     vec4 character_tex_part = vec4(color, 1.0) * vec4(1,1,1,c);
