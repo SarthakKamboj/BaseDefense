@@ -16,6 +16,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H  
 
+static bool panel_left_used = false;
+
 extern globals_t globals;
 
 static char xml_path[256];
@@ -286,7 +288,7 @@ void update_ui_files() {
 }
 
 void start_of_frame() {
-
+    panel_left_used = false;
 #if UI_RELOADING
     update_ui_files();
 #endif
@@ -445,7 +447,12 @@ void create_panel(const char* panel_name) {
     panel.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
     panel.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
 
-    panel.x = panel_left;
+    if (strcmp(panel_name, "main panel") != 0) {
+        panel.x = panel_left;
+        panel_left_used = true;
+    } else {
+        panel.x = 0;
+    }
     panel.y = panel.height;
     panel.render_width = panel.width;
     panel.render_height = panel.height;

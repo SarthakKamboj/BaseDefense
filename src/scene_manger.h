@@ -5,7 +5,7 @@
 // level 0 is the test ui level
 struct scene_manager_t {
 	bool queue_level_load = false;
-	int cur_level = TEST_UI_LEVEL;
+	int cur_level = TEST_UI_LEVEL + 1;
 	int level_to_load = -1;
 };
 

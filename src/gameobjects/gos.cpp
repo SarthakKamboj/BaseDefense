@@ -9,6 +9,9 @@
 
 #include <vector>
 
+extern float panel_left;
+static bool ui_open = false;
+
 extern globals_t globals;
 
 static std::vector<base_t> gun_bases;
@@ -42,11 +45,14 @@ void init_preview_base() {
 	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYS_NONE, true, false);
 }
 
-void update_preview_base() {
-	if (preview_mode != PREVIEW_MODE::PREVIEW_BASE) return;
-
+void update_preview_base() {	
 	quad_render_t* quad_render = get_quad_render(preview_base.quad_render_handle);
 	game_assert_msg(quad_render, "quad render for base not found");	
+
+	if (preview_mode != PREVIEW_MODE::PREVIEW_BASE || ui_open) {
+		quad_render->render = false;
+		return;
+	}
 
 	glm::vec2 mouse = mouse_to_world_pos();
 	transform_t* preview_transform = get_transform(preview_base.transform_handle);
@@ -250,7 +256,7 @@ void update_preview_base_ext() {
 	quad_render_t* preview_quad = get_quad_render(preview_base_ext.quad_render_handle);
 	game_assert_msg(preview_quad, "quad render for preview attachment not found");
 
-	if (preview_mode != PREVIEW_MODE::PREVIEW_BASE_EXT) {
+	if (preview_mode != PREVIEW_MODE::PREVIEW_BASE_EXT || ui_open) {
 		preview_quad->render = false;
 		return;
 	}
@@ -335,7 +341,7 @@ void update_preview_gun() {
 	quad_render_t* preview_quad = get_quad_render(preview_gun.quad_render_handle);
 	game_assert_msg(preview_quad, "quad render for preview gun not found");
 
-	if (preview_mode != PREVIEW_MODE::PREVIEW_GUN) {
+	if (preview_mode != PREVIEW_MODE::PREVIEW_GUN || ui_open) {
 		preview_quad->render = false;
 		return;
 	}
@@ -513,7 +519,7 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 }
 
 void gos_update() {
-
+	ui_open = panel_left == 0;
 	if (globals.window.user_input.s_pressed) {
 		if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
 			preview_mode = PREVIEW_MODE::PREVIEW_BASE_EXT;

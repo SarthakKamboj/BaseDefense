@@ -75,6 +75,7 @@ void render() {
 	} else {
 		set_ui_value(std::string("open_close_icon"), std::string(">>"));
 	}
+	set_ui_value(std::string("store_credit"), std::string("10"));
 	draw_from_ui_file_layout();
 
 	if (get_if_key_clicked_on("Buy")) {
@@ -93,24 +94,25 @@ void render() {
 
 	draw_from_ui_file_layout();
 
-	// style_t panel_style;
-	// panel_style.vertical_align_val = ALIGN::CENTER;
-	// panel_style.horizontal_align_val = ALIGN::CENTER;
-	// push_style(panel_style);
-	// create_panel("main panel");
-	// pop_style();
+	style_t panel_style;
+	panel_style.vertical_align_val = ALIGN::START;
+	panel_style.horizontal_align_val = ALIGN::CENTER;
+	push_style(panel_style);
+	create_panel("main panel");
+	pop_style();
 
-	// if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
-	// 	create_text("preview gun mode");
-	// } else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
-	// 	create_text("preview base ext mode");
-	// } else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
-	// 	create_text("preview base mode");
-	// } else {
-	// 	create_text("unrecognized preview mode");
-	// }
+	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
+		create_text("preview gun mode");
+	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
+		create_text("preview base ext mode");
+	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
+		create_text("preview base mode");
+	} else {
+		create_text("unrecognized preview mode");
+	}
 
-	// end_panel();
+	end_panel();
+
 
 	autolayout_hierarchy();
 	end_imgui();
