@@ -51,9 +51,9 @@
             </container>
         </container>  
         <container id="open_close_section" width="0.03" height="1" widget_size_width="parent" widget_size_height="parent"
-        background_color="250,75,0" border_radius_mode="4-corners"
-        tr_border_radius="20" br_border_radius="20" ver_align="center" hor_align="center">
-            <text>[</text>
+        background_color="220,75,0" hover_background_color="180,115,0" border_radius_mode="4-corners"
+        tr_border_radius="20" br_border_radius="20" ver_align="center" hor_align="center" clickable="true">
+            <text>{{{open_close_icon}}}</text>
         </container>
     </container> 
 </panel>
