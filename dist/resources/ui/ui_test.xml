@@ -1,0 +1,59 @@
+<panel id="store_panel" hor_align="center" ver_align="center">
+    <container id="header_info" width="0.7" height="0.7" 
+    ver_align="space_between" hor_align="start"
+    background_color="150,75,0"
+    display_dir="horizontal"
+    border_radius="20"
+    widget_size_height="parent"
+    widget_size_width="parent"> 
+        <container id="main_section" width="0.97" height="1" widget_size_width="parent" widget_size_height="parent"
+        display_dir="vertical"
+        ver_align="space_between">
+            <container id="store_name" width="1" height="0.1" widget_size_width="parent" widget_size_height="parent"
+            display_dir="horizontal" ver_align="center" hor_align="center" margin="0,35">
+                <text text_size="title">Store</text>
+            </container>
+
+            <container id="selectable_ui" width="1" height="0.5" widget_size_width="parent" widget_size_height="parent"
+            display_dir="horizontal" ver_align="center" hor_align="space_around">
+                <container id="text_container1"
+                width="0.25" height="0.65" widget_size_width="parent" widget_size_height="parent"
+                display_dir="vertical" ver_align="space_between" hor_align="center" content_spacing="20">
+                    <text>Base Image</text>
+                    <text>Base</text>
+                </container>
+                <container id="text_container2"
+                width="0.25" height="0.65" widget_size_width="parent" widget_size_height="parent"
+                display_dir="vertical" ver_align="space_between" hor_align="center" content_spacing="20">
+                    <text>Base Extension Image</text>
+                    <text>Base Extension</text>
+                </container>
+                <container id="text_container3"
+                width="0.25" height="0.65" widget_size_width="parent" widget_size_height="parent"
+                display_dir="vertical" ver_align="space_between" hor_align="center" content_spacing="20">
+                    <text>Gun Image</text>
+                    <text>Gun</text>
+                </container>
+            </container>
+
+            <container id="selectable_ui"
+            width="1" height="0.2" widget_size_width="parent" widget_size_height="parent"
+            display_dir="horizontal" ver_align="center" hor_align="space_around">
+                <button background_color="220,75,0" hover_background_color="180,115,0"
+                padding="30,20" border_radius="10">Buy</button>
+            </container> 
+            
+            <container id="time"
+                background_color="255,255,255"
+                border_radius_mode="4-corners"
+                tl_border_radius="0" tr_border_radius="0" bl_border_radius="20" br_border_radius="0"
+                width="1" height="10" widget_size_width="parent" widget_size_height="pixel">
+            </container>
+        </container>  
+        <container id="open_close_section" width="0.03" height="1" widget_size_width="parent" widget_size_height="parent"
+        background_color="250,75,0" border_radius_mode="4-corners"
+        tr_border_radius="20" br_border_radius="20" ver_align="center" hor_align="center">
+            <text>[</text>
+        </container>
+    </container> 
+</panel>
