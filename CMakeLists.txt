@@ -36,6 +36,7 @@ function(configure_game)
         src/animation/animation.cpp
 
         src/ui/ui.cpp
+        src/ui/xml.c
 
         src/audio/audio.cpp
 
