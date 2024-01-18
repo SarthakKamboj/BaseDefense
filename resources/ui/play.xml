@@ -1,0 +1,13 @@
+<panel id="hi" hor_align="center">
+    <container id="header_info" width="0.9" height="0.2" 
+    ver_align="center" hor_align="space_between"
+    display_dir="horizontal"
+    widget_size_height="parent"
+    widget_size_width="parent">
+        <text>num enemies</text>
+        <text>
+            Score is {{{score}}} seconds
+        </text>
+        <text>num guns</text>
+    </container>
+</panel>

@@ -10,11 +10,14 @@
 #include "gfx/gfx_data/texture.h"
 #include "gfx/renderer.h"
 #include "globals.h"
+#include "utils/general.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H  
 
 extern globals_t globals;
+
+static ui_file_layout_t ui_file;
 
 static int cur_focused_internal_handle = -1;
 static int cur_final_focused_handle = -1;
@@ -45,6 +48,8 @@ static int constraint_running_cnt = 0;
 static bool ui_will_update = false;
 
 static std::unordered_map<int, hash_t> handle_hashes;
+
+static std::unordered_map<std::string, float> ui_text_values;
 
 bool is_same_hash(hash_t& hash1, hash_t& hash2) {
     for (int i = 0; i < 8; i++) {
@@ -255,7 +260,30 @@ hash_t hash(const char* key) {
     return sha;
 }
 
+void update_ui_files() {
+    char buffer[256]{};
+	get_resources_folder_path(buffer);
+    char main_menu_ui_xml_path[256]{};
+	sprintf(main_menu_ui_xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
+ 
+    struct stat ui_file_stat;
+    if (stat(main_menu_ui_xml_path, &ui_file_stat) < 0) return;
+    _sleep(10);
+
+    if (ui_file.last_modified_time == ui_file_stat.st_mtime) return;
+    xml_document_free(ui_file.document, true);
+
+	FILE* main_menu_ui = fopen(main_menu_ui_xml_path, "r");
+	game_assert_msg(main_menu_ui, "main menu file not found");
+	ui_file.document = xml_open_document(main_menu_ui);
+    ui_file.last_modified_time = ui_file_stat.st_mtime;
+}
+
 void start_of_frame() {
+
+#if UI_RELOADING
+    update_ui_files();
+#endif
 
     if (!globals.window.user_input.game_controller) {
         cur_focused_internal_handle = -1;
@@ -267,6 +295,7 @@ void start_of_frame() {
     shader_set_mat4(font_char_t::ui_opengl_data.shader, "projection", projection);
     ui_will_update = globals.window.resized;
 
+    ui_text_values.clear();
     styles_stack.clear();
     style_t default_style;
     styles_stack.push_back(default_style);
@@ -1176,25 +1205,21 @@ void resolve_constraints() {
 
 void render_ui_helper(widget_t& widget) {
 
-    // glm::vec
-
     if (widget.handle == cur_final_focused_handle) {
         if (widget.style.hover_background_color != TRANSPARENT_COLOR) {
+            widget.style.bck_mode = BCK_SOLID;
             widget.style.background_color = widget.style.hover_background_color;
         }
         if (widget.style.hover_color != TRANSPARENT_COLOR) {
             widget.style.color = widget.style.hover_color;
         }
-        // if (widget.style.color == DARK_BLUE) {
-        //     widget.style.color = WHITE;
-        // }
-        // widget.style.background_color.r += 0.05f;
-        // widget.style.background_color.g += 0.05f;
-        // widget.style.background_color. += 0.05f;
-    }
-
-    if (widget.style.background_color != TRANSPARENT_COLOR) {
         draw_background(widget);
+    } else {
+        if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
+            widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT
+        ) {
+            draw_background(widget);
+        }
     }
 
     if (widget.image_based) {
@@ -1207,6 +1232,191 @@ void render_ui_helper(widget_t& widget) {
     for (int child_handle : widget.children_widget_handles) {
         render_ui_helper(cur_arr[child_handle]);
     }
+}
+
+parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
+    parsed_ui_attributes_t ui_attrs;
+    style_t& style = ui_attrs.style;
+    size_t num_attrs = get_zero_terminated_array_attributes(attributes);
+    for (size_t i = 0; i < num_attrs; i++) {
+        xml_attribute* attr = attributes[i];
+        char* name = xml_get_zero_terminated_buffer(attr->name);
+        char* content = xml_get_zero_terminated_buffer(attr->content);
+        if (strcmp(name, "id") == 0) {
+            memcpy(ui_attrs.id, content, fmin(strlen(content), 64));
+        } else if (strcmp(name, "display_dir") == 0) {
+            style.display_dir = strcmp(content, "vertical") == 0 ? DISPLAY_DIR::VERTICAL : DISPLAY_DIR::HORIZONTAL;
+        } else if (strcmp(name, "hor_align") == 0) {
+            ALIGN hor_align = ALIGN::START;
+            if (strcmp(content, "start") == 0) {
+                hor_align = ALIGN::START;
+            } else if (strcmp(content, "center") == 0) {
+                hor_align = ALIGN::CENTER;
+            } else if (strcmp(content, "end") == 0) {
+                hor_align = ALIGN::END;
+            } else if (strcmp(content, "space_around") == 0) {
+                hor_align = ALIGN::SPACE_AROUND;
+            } else if (strcmp(content, "space_between") == 0) {
+                hor_align = ALIGN::SPACE_BETWEEN;
+            }
+            style.horizontal_align_val = hor_align;
+        } else if (strcmp(name, "ver_align") == 0) {
+            ALIGN ver_align = ALIGN::START;
+            if (strcmp(content, "start") == 0) {
+                ver_align = ALIGN::START;
+            } else if (strcmp(content, "center") == 0) {
+                ver_align = ALIGN::CENTER;
+            } else if (strcmp(content, "end") == 0) {
+                ver_align = ALIGN::END;
+            } else if (strcmp(content, "space_around") == 0) {
+                ver_align = ALIGN::SPACE_AROUND;
+            } else if (strcmp(content, "space_between") == 0) {
+                ver_align = ALIGN::SPACE_BETWEEN;
+            }
+            style.vertical_align_val = ver_align;
+        } else if (strcmp(name, "padding") == 0) {
+            glm::vec2 padding(0);
+            sscanf(content, "%f,%f", &padding.x, &padding.y);
+            style.padding = padding;
+        } else if (strcmp(name, "margin") == 0) {
+            glm::vec2 margin(0);
+            sscanf(content, "%f,%f", &margin.x, &margin.y);
+            style.margin = margin;
+        } else if (strcmp(name, "content_spacing") == 0) {
+            style.content_spacing = atof(content);
+        } else if (strcmp(name, "background_color") == 0) {
+            glm::vec3 color(0);
+            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+            style.background_color = create_color(color.r, color.g, color.b);
+        }  else if (strcmp(name, "color") == 0) {
+            glm::vec3 color(0);
+            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+            style.color = create_color(color.r, color.g, color.b);
+        } else if (strcmp(name, "border_radius") == 0) {
+            style.border_radius = atof(content);
+        } else if (strcmp(name, "hover_background_color") == 0) {
+            glm::vec3 color(0);
+            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+            style.hover_background_color = create_color(color.r, color.g, color.b);
+        } else if (strcmp(name, "hover_color") == 0) {
+            glm::vec3 color(0);
+            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+            style.hover_color = create_color(color.r, color.g, color.b);
+        } else if (strcmp(name, "width") == 0) {
+            ui_attrs.width = atof(content);
+        } else if (strcmp(name, "height") == 0) {
+            ui_attrs.height = atof(content);
+        } else if (strcmp(name, "widget_size_width") == 0) {
+            WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
+            if (strcmp(content, "pixel") == 0) {
+                size = WIDGET_SIZE::PIXEL_BASED;
+            } else if (strcmp(content, "parent") == 0) {
+                size = WIDGET_SIZE::PARENT_PERCENT_BASED;
+            } else if (strcmp(content, "fit") == 0) {
+                size = WIDGET_SIZE::FIT_CONTENT;
+            }
+            ui_attrs.widget_size_width = size;
+        } else if (strcmp(name, "widget_size_height") == 0) {
+            WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
+            if (strcmp(content, "pixel") == 0) {
+                size = WIDGET_SIZE::PIXEL_BASED;
+            } else if (strcmp(content, "parent") == 0) {
+                size = WIDGET_SIZE::PARENT_PERCENT_BASED;
+            } else if (strcmp(content, "fit") == 0) {
+                size = WIDGET_SIZE::FIT_CONTENT;
+            }
+            ui_attrs.widget_size_height = size;
+        } else if (strcmp(name, "text_size") == 0) {
+            TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
+            if (strcmp(content, "regular") == 0) {
+                text_size = TEXT_SIZE::REGULAR;
+            } else if (strcmp(content, "title") == 0) {
+                text_size = TEXT_SIZE::TITLE;
+            }
+            ui_attrs.text_size = text_size;
+        } else if (strcmp(name, "bck_mode") == 0) {
+            BCK_MODE bck_mode = BCK_SOLID;
+            if (strcmp(content, "solid") == 0) {
+                bck_mode = BCK_SOLID;
+            } else if (strcmp(content, "gradient-tl-br") == 0) {
+                bck_mode = BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT;
+            }
+            ui_attrs.style.bck_mode = bck_mode;
+        } else if (strcmp(name, "tl_bck") == 0) {
+            glm::vec3 color(0);
+            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+            style.top_left_bck_color = create_color(color.r, color.g, color.b);
+        } else if (strcmp(name, "br_bck") == 0) {
+            glm::vec3 color(0);
+            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+            style.bottom_right_bck_color = create_color(color.r, color.g, color.b);
+        }
+        free(name);
+        free(content);
+    }
+    return ui_attrs;
+}
+
+void set_ui_value(std::string& key, float val) {
+    ui_text_values[key] = val;
+}
+
+void draw_from_ui_file_layout_helper(xml_node* node) {
+    xml_string* name = node->name;
+    char* zero_terminated_name = xml_get_zero_terminated_buffer(name);
+    
+    parsed_ui_attributes_t attrs = get_style_and_key(node->attributes);
+    push_style(attrs.style);
+    if (strcmp(zero_terminated_name, "panel") == 0) {
+        game_assert_msg(attrs.id[0] != '\0', "panel not given a name through id attribute");
+        create_panel(attrs.id);
+    } else if (strcmp(zero_terminated_name, "container") == 0) {
+        game_assert_msg(attrs.id[0] != '\0', "container not given a name through id attribute");
+        create_container(attrs.width, attrs.height, attrs.widget_size_width, attrs.widget_size_height, attrs.id);
+    }  else if (strcmp(zero_terminated_name, "text") == 0) {
+        xml_string* content = node->content;
+        char* zero_terminated_content = xml_get_zero_terminated_buffer(content);
+        char* first_curly_braces = strstr(zero_terminated_content, "{{{");
+        if (first_curly_braces != NULL) {
+            *first_curly_braces = 0;
+            char* key = first_curly_braces + 3;
+            char* ending_curly_braces = strstr(key, "}}}");
+            *ending_curly_braces = 0;
+            char* remaining_str = ending_curly_braces + 3;
+            
+            char* final_str = (char*)malloc(content->length * sizeof(char));
+            std::string key_string = key;
+
+            sprintf(final_str, "%s%i%s", zero_terminated_content, (int)ui_text_values[key_string], remaining_str);
+            create_text(final_str, attrs.text_size, false);
+
+            free(final_str);
+        } else {
+            create_text(zero_terminated_content, attrs.text_size, false);
+        }
+        free(zero_terminated_content);
+    }
+    pop_style();
+
+    size_t num_children = get_zero_terminated_array_nodes(node->children); 
+    for (size_t i = 0; i < num_children; i++) {
+        xml_node* child = node->children[i];
+        draw_from_ui_file_layout_helper(child);
+    }
+
+    if (strcmp(zero_terminated_name, "panel") == 0) {
+        end_panel();
+    } else if (strcmp(zero_terminated_name, "container") == 0) {
+        end_container();
+    }
+    
+    free(zero_terminated_name);
+}
+
+void draw_from_ui_file_layout() {
+    ui_file_layout_t& file_layout = ui_file;
+    xml_node* root = file_layout.document->root;
+    draw_from_ui_file_layout_helper(root);
 }
 
 void render_ui() {  
@@ -1296,7 +1506,8 @@ void init_ui() {
 
 	bind_vao(data.vao);
 	vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
-	vao_enable_attribute(data.vao, data.vbo, 1, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
+	vao_enable_attribute(data.vao, data.vbo, 1, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
+	vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
 	bind_ebo(data.ebo);
 	unbind_vao();
 	unbind_ebo();
@@ -1312,6 +1523,19 @@ void init_ui() {
 	} else {
 		std::cout << "successfully init ui data" << std::endl;
     }
+
+    char buffer[256]{};
+	get_resources_folder_path(buffer);
+    char xml_path[256]{};
+	// sprintf(main_menu_ui_xml_path, "%s\\%s\\main_menu.xml", buffer, UI_FOLDER);
+	sprintf(xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
+	FILE* ui_file_c = fopen(xml_path, "r");
+	game_assert_msg(ui_file_c, "play file not found");
+	ui_file.document = xml_open_document(ui_file_c);
+
+    struct stat ui_file_stat;
+    if (stat(xml_path, &ui_file_stat) < 0) return;
+    ui_file.last_modified_time = ui_file_stat.st_mtime;
 }
 
 text_dim_t get_text_dimensions(const char* text, TEXT_SIZE text_size) {
@@ -1333,7 +1557,7 @@ text_dim_t get_text_dimensions(const char* text, TEXT_SIZE text_size) {
 }
 
 void draw_background(widget_t& widget) {
-	shader_set_vec3(font_char_t::ui_opengl_data.shader, "color", widget.style.background_color);
+	// shader_set_vec3(font_char_t::ui_opengl_data.shader, "color", widget.style.background_color);
 	shader_set_float(font_char_t::ui_opengl_data.shader, "tex_influence", 0.f);
 	shader_set_int(font_char_t::ui_opengl_data.shader, "round_vertices", 1);
 	shader_set_float(font_char_t::ui_opengl_data.shader, "border_radius", widget.style.border_radius);
@@ -1351,11 +1575,25 @@ void draw_background(widget_t& widget) {
     updated_vertices[2] = create_vertex(glm::vec3(x - (width / 2), y - (height / 2), 0.0f), glm::vec3(0,1,0), glm::vec2(0,0)); // bottom left
     updated_vertices[3] = create_vertex(glm::vec3(x - (width / 2), y + (height / 2), 0.0f), glm::vec3(1,0,0), glm::vec2(0,0)); // top left
 #else
+
+    glm::vec3 top_left_color(0), top_right_color(0), bottom_left_color(0), bottom_right_color(0);
+    if (widget.style.bck_mode == BCK_SOLID) {
+        top_left_color = widget.style.background_color;
+        top_right_color = widget.style.background_color;
+        bottom_left_color = widget.style.background_color;
+        bottom_right_color = widget.style.background_color;
+    } else if (widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT) {
+        top_left_color = widget.style.top_left_bck_color;
+        bottom_right_color = widget.style.bottom_right_bck_color;
+        bottom_left_color = (top_left_color + bottom_right_color) / glm::vec3(2.f);
+        top_right_color = (top_left_color + bottom_right_color) / glm::vec3(2.f);
+    }
+
 	glm::vec3 origin = glm::vec3(x, y, 0);
-    updated_vertices[0] = create_vertex(origin + glm::vec3(width, 0, 0.0f), glm::vec3(0,1,1), glm::vec2(0,0)); // top right
-    updated_vertices[1] = create_vertex(origin + glm::vec3(width, -height, 0.0f), glm::vec3(0,0,1), glm::vec2(0,0)); // bottom right
-    updated_vertices[2] = create_vertex(origin + glm::vec3(0, -height, 0.0f), glm::vec3(0,1,0), glm::vec2(0,0)); // bottom left
-    updated_vertices[3] = create_vertex(origin, glm::vec3(1,0,0), glm::vec2(0,0)); // top left
+    updated_vertices[0] = create_vertex(origin + glm::vec3(width, 0, 0.0f), top_right_color, glm::vec2(0,0)); // top right
+    updated_vertices[1] = create_vertex(origin + glm::vec3(width, -height, 0.0f), bottom_right_color, glm::vec2(0,0)); // bottom right
+    updated_vertices[2] = create_vertex(origin + glm::vec3(0, -height, 0.0f), bottom_left_color, glm::vec2(0,0)); // bottom left
+    updated_vertices[3] = create_vertex(origin, top_left_color, glm::vec2(0,0)); // top left
 #endif
     update_vbo_data(font_char_t::ui_opengl_data.vbo, (float*)updated_vertices, sizeof(updated_vertices));
 
@@ -1370,7 +1608,7 @@ void draw_background(widget_t& widget) {
 }
 
 void draw_text(const char* text, glm::vec2 starting_pos, TEXT_SIZE text_size, glm::vec3& color) {
-	shader_set_vec3(font_char_t::ui_opengl_data.shader, "color", color);
+	// shader_set_vec3(font_char_t::ui_opengl_data.shader, "color", color);
 	shader_set_float(font_char_t::ui_opengl_data.shader, "tex_influence", 1.f);
 	shader_set_int(font_char_t::ui_opengl_data.shader, "is_character_tex", 1);
 	shader_set_int(font_char_t::ui_opengl_data.shader, "round_vertices", 0);
@@ -1389,10 +1627,10 @@ void draw_text(const char* text, glm::vec2 starting_pos, TEXT_SIZE text_size, gl
                     running_pos.x = origin.x + fc.bearing.x + (fc.width / 2);
                     running_pos.y = origin.y + fc.bearing.y - (fc.height / 2);
 
-                    updated_vertices[0] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), glm::vec3(0,1,1), glm::vec2(1,0)); // top right
-                    updated_vertices[1] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), glm::vec3(0,0,1), glm::vec2(1,1)); // bottom right
-                    updated_vertices[2] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), glm::vec3(0,1,0), glm::vec2(0,1)); // bottom left
-                    updated_vertices[3] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), glm::vec3(1,0,0), glm::vec2(0,0)); // top left
+                    updated_vertices[0] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), color, glm::vec2(1,0)); // top right
+                    updated_vertices[1] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), color, glm::vec2(1,1)); // bottom right
+                    updated_vertices[2] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), color, glm::vec2(0,1)); // bottom left
+                    updated_vertices[3] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), color, glm::vec2(0,0)); // top left
                     update_vbo_data(font_char_t::ui_opengl_data.vbo, (float*)updated_vertices, sizeof(updated_vertices));
 
                     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

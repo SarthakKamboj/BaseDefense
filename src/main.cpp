@@ -9,6 +9,8 @@
 #include "gfx/quad.h"
 #include "globals.h"
 
+#include "ui/xml.h"
+
 #define WANT_EXTRA_INFO 1
 
 globals_t globals;
@@ -36,11 +38,11 @@ int main(int argc, char *argv[])
 	char resource_path_info[512]{};
 	sprintf(resource_path_info, "resource path: %s\n", buffer);
 	game_info_log(resource_path_info);
-#endif
+#endif	
 
 	init();	
 
-	game_info_log("finished init");
+	game_info_log("finished init\n");
 
 	while (globals.running)
     {

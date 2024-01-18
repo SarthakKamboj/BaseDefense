@@ -15,6 +15,7 @@
 #define ART_FOLDER "art"
 #define FONTS_FOLDER "fonts"
 #define SHADERS_FOLDER "shaders"
+#define UI_FOLDER "ui"
 
 #define BACKGROUND_MUSIC "eden_electro.wav"
 #define JUMP_SOUND_EFFECT "jump.wav"

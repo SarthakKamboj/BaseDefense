@@ -2,11 +2,15 @@
 
 #include <vector>
 #include <unordered_map>
+#include "sys/stat.h"
 
 #include "constants.h"
 #include "gfx/gfx_data/object_data.h"
 
 #include "glm/glm.hpp"
+#include "xml.h"
+
+#define UI_RELOADING 1
 
 #define GREEN glm::vec3(0, 1, 0)
 #define BLUE glm::vec3(0, 0, 1)
@@ -104,6 +108,11 @@ enum class ALIGN {
 
 #define TRANSPARENT_COLOR glm::vec3(-1)
 
+enum BCK_MODE {
+    BCK_SOLID = 0,
+    BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT
+};
+
 struct style_t {
     DISPLAY_DIR display_dir = DISPLAY_DIR::VERTICAL;
     ALIGN horizontal_align_val = ALIGN::START;
@@ -111,7 +120,12 @@ struct style_t {
     glm::vec2 padding = glm::vec2(0);
     glm::vec2 margin = glm::vec2(0);
     float content_spacing = 0;
+
+    BCK_MODE bck_mode = BCK_SOLID;
     glm::vec3 background_color = TRANSPARENT_COLOR;
+    glm::vec3 top_left_bck_color = TRANSPARENT_COLOR;
+    glm::vec3 bottom_right_bck_color = TRANSPARENT_COLOR;
+
     float border_radius = 0;
     glm::vec3 color = glm::vec3(1,1,1);
 
@@ -184,6 +198,8 @@ struct widget_t {
 void start_of_frame();
 void end_imgui();
 
+void update_ui_files();
+
 void traverse_to_right_focusable();
 void traverse_to_left_focusable();
 
@@ -232,4 +248,24 @@ void resolve_constraints();
 void draw_background(widget_t& widget);
 void draw_image_container(widget_t& widget);
 void draw_text(const char* text, glm::vec2 starting_pos, TEXT_SIZE text_size, glm::vec3& color);
+
+struct parsed_ui_attributes_t {
+    style_t style;
+    char id[64]{};
+    float width = 0;
+    float height = 0;
+    WIDGET_SIZE widget_size_width = WIDGET_SIZE::NONE;
+    WIDGET_SIZE widget_size_height = WIDGET_SIZE::NONE;
+    TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
+};
+parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes);
+
+struct ui_file_layout_t {
+    xml_document* document = NULL;
+    time_t last_modified_time = 0;
+};
+
+void set_ui_value(std::string& key, float val);
+
+void draw_from_ui_file_layout();
 void render_ui();
