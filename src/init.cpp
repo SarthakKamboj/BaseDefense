@@ -14,7 +14,7 @@
 #include "constants.h"
 #include "window.h"
 #include "globals.h"
-#include "gameobjects/gos.h"
+#include "gameplay/gos.h"
 
 extern globals_t globals;
 

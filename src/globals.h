@@ -9,4 +9,5 @@ struct globals_t {
     camera_t camera;
     bool running = true;
     scene_manager_t scene_manager;
+    bool ui_clicked_on = false;
 };

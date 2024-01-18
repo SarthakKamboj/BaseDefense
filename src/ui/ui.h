@@ -210,7 +210,7 @@ struct widget_t {
 
 };
 
-void start_of_frame();
+void ui_start_of_frame();
 void end_imgui();
 
 void update_ui_files();
@@ -285,6 +285,8 @@ struct ui_file_layout_t {
     xml_document* document = NULL;
     time_t last_modified_time = 0;
 };
+
+bool is_some_element_clicked_on();
 
 void set_ui_value(std::string& key, std::string& val);
 bool get_if_key_clicked_on(const char* key);

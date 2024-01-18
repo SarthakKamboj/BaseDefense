@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SDL.h"
-#include "gameobjects/gos.h"
+#include "gameplay/gos.h"
 #include "camera.h"
 
 #include "constants.h"

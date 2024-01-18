@@ -31,7 +31,8 @@ function(configure_game)
 
         src/transform/transform.cpp
 
-        src/gameobjects/gos.cpp
+        src/gameplay/gos.cpp
+        src/gameplay/store.cpp
 
         src/animation/animation.cpp
 

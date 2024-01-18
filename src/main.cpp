@@ -10,6 +10,7 @@
 #include "globals.h"
 
 #include "ui/xml.h"
+#include "ui/ui.h"
 
 #define WANT_EXTRA_INFO 1
 
@@ -47,6 +48,7 @@ int main(int argc, char *argv[])
 	while (globals.running)
     {
 		clear_debug_pts();
+		ui_start_of_frame();
 
 		game_timer_t frame_timer;
 		start_timer(frame_timer);
@@ -54,6 +56,7 @@ int main(int argc, char *argv[])
 		process_input();
 
 		globals.running = !globals.window.user_input.quit;
+		globals.ui_clicked_on = is_some_element_clicked_on();	
 
 		update();
 		render();

@@ -30,7 +30,7 @@ list(APPEND BASE_FILES
     src/renderer/opengl/resources.cpp
     src/renderer/opengl/vertex.cpp
     src/transform/transform.cpp
-    src/gameobjects/gos.cpp
+    src/gameplay/gos.cpp
     src/animation/animation.cpp
     src/ui/ui.cpp
     src/audio/audio.cpp

@@ -32,16 +32,20 @@ static int cur_widget_count = 0;
 
 static std::vector<int> widget_stack1;
 static std::vector<widget_t> widgets_arr1;
+static std::unordered_set<std::string> clicked_on_keys1;
 
 static std::vector<int> widget_stack2;
 static std::vector<widget_t> widgets_arr2;
+static std::unordered_set<std::string> clicked_on_keys2;
 
 static std::vector<int>* curframe_widget_stack = &widget_stack2;
 static std::vector<widget_t>* curframe_widget_arr = &widgets_arr2;
+static std::unordered_set<std::string>* curframe_clicked_on_keys;
 static bool stacked_nav_widget_in_stack = false;
 
 static std::vector<int>* prevframe_widget_stack = &widget_stack1;
 static std::vector<widget_t>* prevframe_widget_arr = &widgets_arr1;
+static std::unordered_set<std::string>* prevframe_clicked_on_keys;
 
 static std::vector<style_t> styles_stack;
 
@@ -55,7 +59,6 @@ static bool ui_will_update = false;
 static std::unordered_map<int, hash_t> handle_hashes;
 
 static std::unordered_map<std::string, std::string> ui_text_values;
-static std::unordered_set<std::string> clicked_on_keys;
 
 bool is_same_hash(hash_t& hash1, hash_t& hash2) {
     for (int i = 0; i < 8; i++) {
@@ -287,7 +290,7 @@ void update_ui_files() {
     ui_file.last_modified_time = ui_file_stat.st_mtime;
 }
 
-void start_of_frame() {
+void ui_start_of_frame() {
     panel_left_used = false;
 #if UI_RELOADING
     update_ui_files();
@@ -303,7 +306,7 @@ void start_of_frame() {
     shader_set_mat4(font_char_t::ui_opengl_data.shader, "projection", projection);
     ui_will_update = globals.window.resized;
 
-    clicked_on_keys.clear();
+    // clicked_on_keys.clear();
     ui_text_values.clear();
     styles_stack.clear();
     style_t default_style;
@@ -312,17 +315,22 @@ void start_of_frame() {
     if (curframe_widget_arr == &widgets_arr1) {
         curframe_widget_arr = &widgets_arr2;
         curframe_widget_stack = &widget_stack2;
+        curframe_clicked_on_keys = &clicked_on_keys2;
         prevframe_widget_arr = &widgets_arr1;
         prevframe_widget_stack = &widget_stack1;
+        prevframe_clicked_on_keys = &clicked_on_keys1;
     } else {
         curframe_widget_arr = &widgets_arr1;
         curframe_widget_stack = &widget_stack1;
+        curframe_clicked_on_keys = &clicked_on_keys1;
         prevframe_widget_arr = &widgets_arr2;
         prevframe_widget_stack = &widget_stack2;
+        prevframe_clicked_on_keys = &clicked_on_keys2;
     }
 
     curframe_widget_arr->clear();
     curframe_widget_stack->clear();
+    curframe_clicked_on_keys->clear();
 
     cur_widget_count = 0;
 
@@ -423,12 +431,12 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
         }
 
         if (mouse_over_widget && input_state.left_mouse_release) {
-            clicked_on_keys.insert(std::string(key));
+            curframe_clicked_on_keys->insert(std::string(key));
             info.clicked_on = true;
         }
 
         if (widget.handle == cur_final_focused_handle && (input_state.enter_pressed || input_state.controller_a_pressed)) {
-            clicked_on_keys.insert(std::string(key));
+            curframe_clicked_on_keys->insert(std::string(key));
             info.clicked_on = true;
         }
     }
@@ -1805,5 +1813,32 @@ void draw_image_container(widget_t& widget) {
 }
 
 bool get_if_key_clicked_on(const char* key) {
-    return clicked_on_keys.find(std::string(key)) != clicked_on_keys.end();
+    // return clicked_on_keys.find(std::string(key)) != clicked_on_keys.end();
+    return prevframe_clicked_on_keys->find(std::string(key)) != prevframe_clicked_on_keys->end();
+}
+
+bool is_some_element_clicked_on() {
+    // return prevframe_clicked_on_keys->size() != 0;
+    for (int i = 0; i < prevframe_widget_arr->size(); i++) {
+        widget_t& widget = (*prevframe_widget_arr)[i];
+        if (widget.properties & UI_PROP_CLICKABLE) {
+            auto& prev_arr = *prevframe_widget_arr;
+            widget_t& cached_widget = prev_arr[widget.handle];
+
+            user_input_t& input_state = globals.window.user_input;
+            bool mouse_over_widget = input_state.mouse_x >= (cached_widget.x + cached_widget.style.margin.x) &&
+                    input_state.mouse_x <= (cached_widget.x + cached_widget.render_width + cached_widget.style.margin.x) &&
+                    // render x and render y specified as the top left pivot and y in ui is 0 on the
+                    // bottom and WINDOW_HEIGHT on the top, so cached_widget.y is the top y of the 
+                    // widget and cached_widget.y - cached_widget.render_height is the bottom y 
+                    // of the widget
+                    input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
+                    input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
+
+            if (mouse_over_widget && !input_state.game_controller && globals.window.user_input.left_mouse_release) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
