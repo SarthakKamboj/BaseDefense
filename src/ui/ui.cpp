@@ -17,6 +17,8 @@
 
 extern globals_t globals;
 
+static char xml_path[256];
+
 static ui_file_layout_t ui_file;
 
 static int cur_focused_internal_handle = -1;
@@ -261,19 +263,21 @@ hash_t hash(const char* key) {
 }
 
 void update_ui_files() {
-    char buffer[256]{};
-	get_resources_folder_path(buffer);
-    char main_menu_ui_xml_path[256]{};
-	sprintf(main_menu_ui_xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
+    // char buffer[256]{};
+	// get_resources_folder_path(buffer);
+    // char main_menu_ui_xml_path[256]{};
+	// sprintf(main_menu_ui_xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
  
     struct stat ui_file_stat;
-    if (stat(main_menu_ui_xml_path, &ui_file_stat) < 0) return;
+    // if (stat(main_menu_ui_xml_path, &ui_file_stat) < 0) return;
+    if (stat(xml_path, &ui_file_stat) < 0) return;
     _sleep(10);
 
     if (ui_file.last_modified_time == ui_file_stat.st_mtime) return;
     xml_document_free(ui_file.document, true);
 
-	FILE* main_menu_ui = fopen(main_menu_ui_xml_path, "r");
+	// FILE* main_menu_ui = fopen(main_menu_ui_xml_path, "r");
+	FILE* main_menu_ui = fopen(xml_path, "r");
 	game_assert_msg(main_menu_ui, "main menu file not found");
 	ui_file.document = xml_open_document(main_menu_ui);
     ui_file.last_modified_time = ui_file_stat.st_mtime;
@@ -349,11 +353,11 @@ void pop_widget() {
 static font_mode_t font_modes[2] = {
     font_mode_t {
         TEXT_SIZE::TITLE,
-        45
+        65
     },
     font_mode_t {
         TEXT_SIZE::REGULAR,
-        20
+        25
     }
 };
 
@@ -1216,7 +1220,8 @@ void render_ui_helper(widget_t& widget) {
         draw_background(widget);
     } else {
         if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
-            widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT
+            widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT ||
+            widget.style.bck_mode == BCK_GRADIENT_4_CORNERS
         ) {
             draw_background(widget);
         }
@@ -1340,6 +1345,8 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
                 bck_mode = BCK_SOLID;
             } else if (strcmp(content, "gradient-tl-br") == 0) {
                 bck_mode = BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT;
+            } else if (strcmp(content, "gradient") == 0) {
+                bck_mode = BCK_GRADIENT_4_CORNERS;
             }
             ui_attrs.style.bck_mode = bck_mode;
         } else if (strcmp(name, "tl_bck") == 0) {
@@ -1350,6 +1357,14 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
             glm::vec3 color(0);
             sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
             style.bottom_right_bck_color = create_color(color.r, color.g, color.b);
+        } else if (strcmp(name, "bl_bck") == 0) {
+            glm::vec3 color(0);
+            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+            style.bottom_left_bck_color = create_color(color.r, color.g, color.b);
+        } else if (strcmp(name, "tr_bck") == 0) {
+            glm::vec3 color(0);
+            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+            style.top_right_bck_color = create_color(color.r, color.g, color.b);
         }
         free(name);
         free(content);
@@ -1452,7 +1467,8 @@ void init_ui() {
         char resource_path[256]{};
         get_resources_folder_path(resource_path);
         char font_path[256]{};
-        sprintf(font_path, "%s\\%s\\Courier_Prime\\CourierPrime-Regular.ttf", resource_path, FONTS_FOLDER);
+        // sprintf(font_path, "%s\\%s\\Courier_Prime\\CourierPrime-Regular.ttf", resource_path, FONTS_FOLDER);
+        sprintf(font_path, "%s\\%s\\Prosto_One\\ProstoOne-Regular.ttf", resource_path, FONTS_FOLDER);
 
         if (FT_New_Face(lib, font_path, 0, &face))
         {
@@ -1526,9 +1542,8 @@ void init_ui() {
 
     char buffer[256]{};
 	get_resources_folder_path(buffer);
-    char xml_path[256]{};
-	// sprintf(main_menu_ui_xml_path, "%s\\%s\\main_menu.xml", buffer, UI_FOLDER);
 	sprintf(xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
+	// sprintf(xml_path, "%s\\%s\\main_menu.xml", buffer, UI_FOLDER);
 	FILE* ui_file_c = fopen(xml_path, "r");
 	game_assert_msg(ui_file_c, "play file not found");
 	ui_file.document = xml_open_document(ui_file_c);
@@ -1587,6 +1602,11 @@ void draw_background(widget_t& widget) {
         bottom_right_color = widget.style.bottom_right_bck_color;
         bottom_left_color = (top_left_color + bottom_right_color) / glm::vec3(2.f);
         top_right_color = (top_left_color + bottom_right_color) / glm::vec3(2.f);
+    } else if (widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
+        top_left_color = widget.style.top_left_bck_color;
+        top_right_color = widget.style.top_right_bck_color;
+        bottom_left_color = widget.style.bottom_left_bck_color;
+        bottom_right_color = widget.style.bottom_right_bck_color;
     }
 
 	glm::vec3 origin = glm::vec3(x, y, 0);

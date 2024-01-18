@@ -1,10 +1,12 @@
 <panel id="hi" ver_align="space_between"
-    bck_mode="gradient-tl-br" tl_bck="246,120,54" br_bck="106,109,22" background_color="56,24,58">
+    bck_mode="gradient" 
+    background_color="0,0,255"
+    tl_bck="24,21,59" br_bck="83,22,51" tr_bck="35,25,62" bl_bck="32,6,43">
     <container id="games_container" width="1" height="0.4" 
         widget_size_width="parent" widget_size_height="parent" 
         ver_align="end" hor_align="center" 
         content_spacing="10">
-        <text text_size="title" color="31,44,65">BASE DEFENSE :)</text>
+        <text text_size="title" color="250,72,83">BASE DEFENSE</text>
     </container>
     <container id="buttons" width="1" height="0.5"
         widget_size_width="parent" widget_size_height="parent" 
@@ -12,17 +14,17 @@
         content_spacing="30">
         <text padding="30,20"
             border_radius="20"
-            background_color="31,44,65">
+            background_color="250,72,83">
             Play Game
         </text>
         <text padding="30,20"
             border_radius="20"
-            background_color="31,44,65">
+            background_color="250,72,83">
             Settings
         </text>
         <text padding="30,20"
             border_radius="20"
-            background_color="31,44,65">
+            background_color="250,72,83">
             Quit
         </text>
     </container>

@@ -110,7 +110,8 @@ enum class ALIGN {
 
 enum BCK_MODE {
     BCK_SOLID = 0,
-    BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT
+    BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT,
+    BCK_GRADIENT_4_CORNERS
 };
 
 struct style_t {
@@ -124,7 +125,9 @@ struct style_t {
     BCK_MODE bck_mode = BCK_SOLID;
     glm::vec3 background_color = TRANSPARENT_COLOR;
     glm::vec3 top_left_bck_color = TRANSPARENT_COLOR;
+    glm::vec3 top_right_bck_color = TRANSPARENT_COLOR;
     glm::vec3 bottom_right_bck_color = TRANSPARENT_COLOR;
+    glm::vec3 bottom_left_bck_color = TRANSPARENT_COLOR;
 
     float border_radius = 0;
     glm::vec3 color = glm::vec3(1,1,1);

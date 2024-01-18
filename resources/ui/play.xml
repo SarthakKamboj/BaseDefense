@@ -6,7 +6,7 @@
     widget_size_width="parent">
         <text>num enemies</text>
         <text>
-            Score is {{{score}}} seconds
+            Time: {{{score}}}s
         </text>
         <text>num guns</text>
     </container>
