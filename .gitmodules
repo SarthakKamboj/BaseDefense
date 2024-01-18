@@ -15,3 +15,6 @@
 [submodule "external/libsndfile"]
 	path = external/libsndfile
 	url = https://github.com/libsndfile/libsndfile
+[submodule "external/xml"]
+	path = external/xml
+	url = https://github.com/ooxi/xml.c
