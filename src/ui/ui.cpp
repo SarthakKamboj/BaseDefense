@@ -364,7 +364,10 @@ static font_mode_t font_modes[2] = {
     }
 };
 
-int register_widget(widget_t& widget, const char* key, bool push_onto_stack) {
+widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack) {
+
+    widget_registration_info_t info;
+
     widget.handle = cur_widget_count++;
     memcpy(widget.key, key, strlen(key));
     hash_t new_hash = hash(key);
@@ -396,8 +399,42 @@ int register_widget(widget_t& widget, const char* key, bool push_onto_stack) {
             stacked_nav_widget_in_stack = true;
         }
     }
-    return widget.handle;
+    
+    info.widget_handle = widget.handle;
+    
+    if (!ui_will_update && (widget.properties & UI_PROP_CLICKABLE)) {
+        auto& prev_arr = *prevframe_widget_arr;
+        widget_t& cached_widget = prev_arr[widget.handle];
+
+        user_input_t& input_state = globals.window.user_input;
+        bool mouse_over_widget = input_state.mouse_x >= (cached_widget.x + cached_widget.style.margin.x) &&
+                input_state.mouse_x <= (cached_widget.x + cached_widget.render_width + cached_widget.style.margin.x) &&
+                // render x and render y specified as the top left pivot and y in ui is 0 on the
+                // bottom and WINDOW_HEIGHT on the top, so cached_widget.y is the top y of the 
+                // widget and cached_widget.y - cached_widget.render_height is the bottom y 
+                // of the widget
+                input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
+                input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
+
+        if (mouse_over_widget && !input_state.game_controller) {
+            cur_focused_internal_handle = widget.handle;
+        }
+
+        if (mouse_over_widget && input_state.left_mouse_release) {
+            clicked_on_keys.insert(std::string(key));
+            info.clicked_on = true;
+        }
+
+        if (widget.handle == cur_final_focused_handle && (input_state.enter_pressed || input_state.controller_a_pressed)) {
+            clicked_on_keys.insert(std::string(key));
+            info.clicked_on = true;
+        }
+    }
+
+    return info;
 }
+
+float panel_left = 0;
 
 void create_panel(const char* panel_name) {
     widget_t panel;
@@ -408,7 +445,7 @@ void create_panel(const char* panel_name) {
     panel.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
     panel.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
 
-    panel.x = 0;
+    panel.x = panel_left;
     panel.y = panel.height;
     panel.render_width = panel.width;
     panel.render_height = panel.height;
@@ -431,6 +468,10 @@ void create_container(float width, float height, WIDGET_SIZE widget_size_width, 
     container.width = width;
     container.widget_size_width = widget_size_width;
     container.widget_size_height = widget_size_height;
+
+    if (strcmp(container.key, "open_close_section") == 0) {
+        int a = 5;
+    }
 
     if (focusable) {
         container.properties = container.properties | UI_PROP_FOCUSABLE;
@@ -587,48 +628,49 @@ bool create_button(const char* text, TEXT_SIZE text_size, int user_handle) {
     widget.render_width = widget.width;
     widget.render_height = widget.height;
 
-    widget.properties = static_cast<UI_PROPERTIES>(UI_PROPERTIES::UI_PROP_CLICKABLE);
+    widget.properties = widget.properties | UI_PROP_CLICKABLE;
     auto& stack = *curframe_widget_stack;
     if (stacked_nav_widget_in_stack) {
         widget.user_handle = user_handle;
     } else {
-        widget.properties = static_cast<UI_PROPERTIES>(widget.properties | UI_PROPERTIES::UI_PROP_FOCUSABLE);
+        widget.properties = widget.properties | UI_PROP_FOCUSABLE;
     }
 
-    int widget_handle = register_widget(widget, key);
+    widget_registration_info_t widget_info = register_widget(widget, key);
+    return widget_info.clicked_on;
 
-    if (!ui_will_update) {
-        auto& prev_arr = *prevframe_widget_arr;
-        widget_t& cached_widget = prev_arr[widget_handle];
+    // if (!ui_will_update) {
+    //     auto& prev_arr = *prevframe_widget_arr;
+    //     widget_t& cached_widget = prev_arr[widget_handle];
 
-        user_input_t& input_state = globals.window.user_input;
-        bool mouse_over_widget = input_state.mouse_x >= (cached_widget.x + cached_widget.style.margin.x) &&
-                input_state.mouse_x <= (cached_widget.x + cached_widget.render_width + cached_widget.style.margin.x) &&
-                // render x and render y specified as the top left pivot and y in ui is 0 on the
-                // bottom and WINDOW_HEIGHT on the top, so cached_widget.y is the top y of the 
-                // widget and cached_widget.y - cached_widget.render_height is the bottom y 
-                // of the widget
-                input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
-                input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
+    //     user_input_t& input_state = globals.window.user_input;
+    //     bool mouse_over_widget = input_state.mouse_x >= (cached_widget.x + cached_widget.style.margin.x) &&
+    //             input_state.mouse_x <= (cached_widget.x + cached_widget.render_width + cached_widget.style.margin.x) &&
+    //             // render x and render y specified as the top left pivot and y in ui is 0 on the
+    //             // bottom and WINDOW_HEIGHT on the top, so cached_widget.y is the top y of the 
+    //             // widget and cached_widget.y - cached_widget.render_height is the bottom y 
+    //             // of the widget
+    //             input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
+    //             input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
 
-        if (mouse_over_widget && !input_state.game_controller) {
-            cur_focused_internal_handle = widget_handle;
-        }
+    //     if (mouse_over_widget && !input_state.game_controller) {
+    //         cur_focused_internal_handle = widget_handle;
+    //     }
 
-        if (mouse_over_widget && input_state.left_mouse_release) {
-            clicked_on_keys.insert(std::string(key));
-            return true;
-        }
+    //     if (mouse_over_widget && input_state.left_mouse_release) {
+    //         clicked_on_keys.insert(std::string(key));
+    //         return true;
+    //     }
 
-        if (widget_handle == cur_final_focused_handle && (input_state.enter_pressed || input_state.controller_a_pressed)) {
-            clicked_on_keys.insert(std::string(key));
-            return true;
-        }
+    //     if (widget_handle == cur_final_focused_handle && (input_state.enter_pressed || input_state.controller_a_pressed)) {
+    //         clicked_on_keys.insert(std::string(key));
+    //         return true;
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
-    return false;
+    // return false;
 }
 
 
@@ -1405,6 +1447,8 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
             glm::vec3 color(0);
             sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
             style.top_right_bck_color = create_color(color.r, color.g, color.b);
+        } else if (strcmp(name, "clickable") == 0) {
+            ui_attrs.ui_properties = ui_attrs.ui_properties | UI_PROP_CLICKABLE;
         }
         free(name);
         free(content);
@@ -1431,7 +1475,7 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
             // make memory location of node the id
             sprintf(attrs.id, "%i\n", node);
         }
-        create_container(attrs.width, attrs.height, attrs.widget_size_width, attrs.widget_size_height, attrs.id);
+        create_container(attrs.width, attrs.height, attrs.widget_size_width, attrs.widget_size_height, attrs.id, false, 0, attrs.ui_properties);
     }  else if (strcmp(zero_terminated_name, "text") == 0 || strcmp(zero_terminated_name, "button") == 0) {
         bool is_text_element = strcmp(zero_terminated_name, "text") == 0;
         xml_string* content = node->content;

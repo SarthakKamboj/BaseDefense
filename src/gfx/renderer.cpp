@@ -13,15 +13,32 @@ extern globals_t globals;
 
 extern PREVIEW_MODE preview_mode;
 
+extern float panel_left;
+
 void render() {
 	clear_window();
 
 	if (globals.scene_manager.cur_level == TEST_UI_LEVEL) {
 		start_of_frame();
+
+		if (panel_left == 0) {
+			set_ui_value(std::string("open_close_icon"), std::string("<<"));
+		} else {
+			set_ui_value(std::string("open_close_icon"), std::string(">>"));
+		}
 		draw_from_ui_file_layout();
 
 		if (get_if_key_clicked_on("Buy")) {
 			printf("buy button pressed\n");
+		}
+
+		if (get_if_key_clicked_on("open_close_section")) {
+			if (panel_left == 0) {
+				panel_left = -globals.window.window_width * 0.829f;
+			} else {
+				panel_left = 0;
+			}
+			printf("open close section pressed\n");
 		}
 
 		autolayout_hierarchy();
@@ -36,6 +53,7 @@ void render() {
 
 	start_of_frame();
 
+#if 0
 	char buffer[32]{};
 	int_to_string((int)game::time_t::cur_time, buffer);
 	set_ui_value(std::string("score"), std::string(buffer));
@@ -51,6 +69,27 @@ void render() {
 		preview_mode_str = "unrecognized preview mode";
 	}
 	set_ui_value(std::string("preview_mode"), preview_mode_str);
+#else
+	if (panel_left == 0) {
+		set_ui_value(std::string("open_close_icon"), std::string("<<"));
+	} else {
+		set_ui_value(std::string("open_close_icon"), std::string(">>"));
+	}
+	draw_from_ui_file_layout();
+
+	if (get_if_key_clicked_on("Buy")) {
+		printf("buy button pressed\n");
+	}
+
+	if (get_if_key_clicked_on("open_close_section")) {
+		if (panel_left == 0) {
+			panel_left = -globals.window.window_width * 0.829f;
+		} else {
+			panel_left = 0;
+		}
+		printf("open close section pressed\n");
+	}
+#endif
 
 	draw_from_ui_file_layout();
 

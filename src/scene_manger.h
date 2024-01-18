@@ -2,7 +2,7 @@
 
 #include "constants.h"
 
-// level 0 is the main menu
+// level 0 is the test ui level
 struct scene_manager_t {
 	bool queue_level_load = false;
 	int cur_level = TEST_UI_LEVEL;

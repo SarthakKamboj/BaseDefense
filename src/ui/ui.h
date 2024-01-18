@@ -229,7 +229,12 @@ void end_panel();
 void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable = false, stacked_nav_handler_func_t func = NULL, UI_PROPERTIES ui_properties = UI_PROP_NONE);
 void end_container();
 
-int register_widget(widget_t& widget, const char* key, bool push_onto_stack = false);
+struct widget_registration_info_t {
+    int widget_handle = -1;
+    bool clicked_on = false;
+};
+
+widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack = false);
 
 void autolayout_hierarchy();
 
@@ -272,6 +277,7 @@ struct parsed_ui_attributes_t {
     WIDGET_SIZE widget_size_width = WIDGET_SIZE::NONE;
     WIDGET_SIZE widget_size_height = WIDGET_SIZE::NONE;
     TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
+    UI_PROPERTIES ui_properties = UI_PROP_NONE;
 };
 parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes);
 
