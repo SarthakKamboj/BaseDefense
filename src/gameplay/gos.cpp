@@ -6,8 +6,11 @@
 #include "constants.h"
 #include "utils/time.h"
 #include "globals.h"
+#include "store.h"
 
 #include <vector>
+
+static int num_enemies_killed = 0;
 
 extern float panel_left;
 static bool ui_open = false;
@@ -481,6 +484,7 @@ void update_enemy(enemy_t& enemy) {
 		if (col.kin_type1 == PHYS_BULLET || col.kin_type2 == PHYS_BULLET) {
 			enemy.health -= 50;
 			if (enemy.health <= 0) {
+				add_store_credit(1);
 				delete_enemy(enemy.handle);
 			}
 		}
@@ -518,8 +522,9 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 	spawner.last_spawn_time = game::time_t::cur_time;
 }
 
+
 void gos_update() {
-	ui_open = panel_left == 0;
+	ui_open = panel_left == 0 || globals.ui_clicked_on;
 	if (globals.window.user_input.s_pressed) {
 		if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
 			preview_mode = PREVIEW_MODE::PREVIEW_BASE_EXT;
