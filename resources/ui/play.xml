@@ -9,5 +9,6 @@
             Time: {{{score}}}s
         </text>
         <text>num guns</text>
+        <text>{{{preview_mode}}}</text>
     </container>
 </panel>

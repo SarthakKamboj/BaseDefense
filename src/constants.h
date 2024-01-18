@@ -22,7 +22,9 @@
 #define STOMP_SOUND_EFFECT "stomp.wav"
 #define LEVEL_FINISH_SOUND_EFFECT "level_finish.wav"
 
-#define MAIN_MENU_LEVEL 0
+#define UI_TESTING
+
+#define TEST_UI_LEVEL 0
 #define GAME_OVER_SCREEN_LEVEL 1024
 #define SETTINGS_LEVEL 1025
 #define QUIT_LEVEL 1026
@@ -36,5 +38,10 @@
 
 #define game_info_log(msg) printf(msg)
 #define game_error_log(msg) printf("ERROR: %s", msg)
+
+#define OR_ENUM_DECLARATION(ENUM_TYPE) \
+    inline ENUM_TYPE operator|(ENUM_TYPE a, ENUM_TYPE b) { \
+        return static_cast<ENUM_TYPE>(static_cast<int>(a) | static_cast<int>(b)); \
+    }
 
 #define _TESTING 0

@@ -38,13 +38,14 @@ enum class TEXT_SIZE {
     TITLE, REGULAR
 };
 
-enum UI_PROPERTIES : unsigned int {
+enum UI_PROPERTIES : int {
     UI_PROP_NONE = 0,
     UI_PROP_CLICKABLE = 1<<0,
     UI_PROP_HOVERABLE = 1<<1,
     UI_PROP_FOCUSABLE = 1<<2,
     UI_PROP_CURRENTLY_FOCUSED = 1<<3
 };
+OR_ENUM_DECLARATION(UI_PROPERTIES)
 
 enum class WIDGET_SIZE {
     NONE,
@@ -114,6 +115,11 @@ enum BCK_MODE {
     BCK_GRADIENT_4_CORNERS
 };
 
+enum BORDER_RADIUS_MODE {
+    BR_SINGLE_VALUE = 0,
+    BR_4_CORNERS
+};
+
 struct style_t {
     DISPLAY_DIR display_dir = DISPLAY_DIR::VERTICAL;
     ALIGN horizontal_align_val = ALIGN::START;
@@ -129,7 +135,13 @@ struct style_t {
     glm::vec3 bottom_right_bck_color = TRANSPARENT_COLOR;
     glm::vec3 bottom_left_bck_color = TRANSPARENT_COLOR;
 
+    BORDER_RADIUS_MODE border_radius_mode = BR_SINGLE_VALUE;
     float border_radius = 0;
+    float tl_border_radius = 0;
+    float tr_border_radius = 0;
+    float bl_border_radius = 0;
+    float br_border_radius = 0;
+
     glm::vec3 color = glm::vec3(1,1,1);
 
     // hover
@@ -214,7 +226,7 @@ void pop_widget();
 void create_panel(const char* panel_name);
 void end_panel();
 
-void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable = false, stacked_nav_handler_func_t func = NULL);
+void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable = false, stacked_nav_handler_func_t func = NULL, UI_PROPERTIES ui_properties = UI_PROP_NONE);
 void end_container();
 
 int register_widget(widget_t& widget, const char* key, bool push_onto_stack = false);
@@ -268,7 +280,8 @@ struct ui_file_layout_t {
     time_t last_modified_time = 0;
 };
 
-void set_ui_value(std::string& key, float val);
+void set_ui_value(std::string& key, std::string& val);
+bool get_if_key_clicked_on(const char* key);
 
 void draw_from_ui_file_layout();
 void render_ui();

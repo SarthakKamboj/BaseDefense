@@ -2,6 +2,7 @@
 
 #include "utils/time.h"
 #include "glm/glm.hpp"
+#include "constants.h"
 
 #define NUM_BASE_ATTACH_PTS 3
 #define NUM_BASE_EXT_ATTACH_PTS 2
@@ -60,14 +61,12 @@ int create_base_ext(glm::vec3 pos);
 void update_base_ext(base_extension_t& attachment);
 base_extension_t* get_base_ext();
 
-enum ATTACHMENT_TYPE {
+enum ATTACHMENT_TYPE : int {
 	ATTMNT_NONE = 0,
 	ATTMNT_GUN = 1 << 0,
 	ATTMNT_BASE_EXT = 1 << 2,
 };
-inline ATTACHMENT_TYPE operator|(ATTACHMENT_TYPE a, ATTACHMENT_TYPE b) {
-	return static_cast<ATTACHMENT_TYPE>(static_cast<int>(a) | static_cast<int>(b));
-}
+OR_ENUM_DECLARATION(ATTACHMENT_TYPE)
 
 struct attachment_t {
 	int handle = -1;

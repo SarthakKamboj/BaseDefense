@@ -11,3 +11,10 @@ void scene_manager_load_level(scene_manager_t& sm, int level_num) {
 	sm.level_to_load = level_num;
 }
 
+void scene_manager_update(scene_manager_t& sm) {
+    if (sm.queue_level_load) {
+        sm.queue_level_load = false;
+        sm.cur_level = sm.level_to_load;
+        sm.level_to_load = -1;
+    }
+}

@@ -13,7 +13,10 @@ uniform vec3 top_right;
 uniform vec3 bottom_left;
 uniform vec3 bottom_right;
 
-uniform float border_radius;
+uniform float tl_border_radius;
+uniform float tr_border_radius;
+uniform float bl_border_radius;
+uniform float br_border_radius;
 
 uniform sampler2D character_tex;
 uniform sampler2D image_tex;
@@ -32,32 +35,31 @@ void main() {
     frag_color = (t * tex_part) + ((1-t) * vec4(color, 1));
 
     if (round_vertices) {
-        vec3 top_left_inner = top_left + vec3(border_radius, -border_radius, 0);
-        vec3 top_right_inner = top_right + vec3(-border_radius, -border_radius, 0);
-        vec3 bottom_left_inner = bottom_left + vec3(border_radius, border_radius, 0);
-        vec3 bottom_right_inner = bottom_right + vec3(-border_radius, border_radius, 0);
+        vec3 top_left_inner = top_left + vec3(tl_border_radius, -tl_border_radius, 0);
+        vec3 top_right_inner = top_right + vec3(-tr_border_radius, -tr_border_radius, 0);
+        vec3 bottom_left_inner = bottom_left + vec3(bl_border_radius, bl_border_radius, 0);
+        vec3 bottom_right_inner = bottom_right + vec3(-br_border_radius, br_border_radius, 0);
 
         if (pos.x >= top_right_inner.x && pos.y >= top_right_inner.y) {
             vec2 pos_rel_inner = pos - top_right_inner.xy;
-            if (dot(pos_rel_inner, pos_rel_inner) >= border_radius * border_radius) {
+            if (dot(pos_rel_inner, pos_rel_inner) >= tr_border_radius * tr_border_radius) {
                 frag_color = vec4(0,0,0,0);
             }
         } else if (pos.x <= top_left_inner.x && pos.y >= top_left_inner.y) {
             vec2 pos_rel_inner = pos - top_left_inner.xy;
-            if (dot(pos_rel_inner, pos_rel_inner) >= border_radius * border_radius) {
+            if (dot(pos_rel_inner, pos_rel_inner) >= tl_border_radius * tl_border_radius) {
                 frag_color = vec4(0,0,0,0);
             }
         } else if (pos.x >= bottom_right_inner.x && pos.y <= bottom_right_inner.y) {
             vec2 pos_rel_inner = pos - bottom_right_inner.xy;
-            if (dot(pos_rel_inner, pos_rel_inner) >= border_radius * border_radius) {
+            if (dot(pos_rel_inner, pos_rel_inner) >= br_border_radius * br_border_radius) {
                 frag_color = vec4(0,0,0,0);
             }
         } else if (pos.x <= bottom_left_inner.x && pos.y <= bottom_left_inner.y) {
             vec2 pos_rel_inner = pos - bottom_left_inner.xy;
-            if (dot(pos_rel_inner, pos_rel_inner) >= border_radius * border_radius) {
+            if (dot(pos_rel_inner, pos_rel_inner) >= bl_border_radius * bl_border_radius) {
                 frag_color = vec4(0,0,0,0);
             }
         }
-
     }
 }

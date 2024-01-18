@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "constants.h"
 #include "utils/io.h"
@@ -51,7 +52,8 @@ static bool ui_will_update = false;
 
 static std::unordered_map<int, hash_t> handle_hashes;
 
-static std::unordered_map<std::string, float> ui_text_values;
+static std::unordered_map<std::string, std::string> ui_text_values;
+static std::unordered_set<std::string> clicked_on_keys;
 
 bool is_same_hash(hash_t& hash1, hash_t& hash2) {
     for (int i = 0; i < 8; i++) {
@@ -186,7 +188,7 @@ hash_t hash(const char* key) {
     uint512_t input{};
     int key_len = strlen(key);
     uint64_t size = 8 * key_len;
-    assert(size < 512);
+    game_assert_msg(size < 512, "key size must be less than 512 bits");
     
     memcpy(&input, key, key_len);
 
@@ -299,6 +301,7 @@ void start_of_frame() {
     shader_set_mat4(font_char_t::ui_opengl_data.shader, "projection", projection);
     ui_will_update = globals.window.resized;
 
+    clicked_on_keys.clear();
     ui_text_values.clear();
     styles_stack.clear();
     style_t default_style;
@@ -421,7 +424,7 @@ void end_panel() {
 }
 
 // void create_container(float width, float height, WIDGET_SIZE widget_size) {
-void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable, stacked_nav_handler_func_t func) {
+void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable, stacked_nav_handler_func_t func, UI_PROPERTIES ui_properties) {
     widget_t container;
     memcpy(container.key, container_name, strlen(container_name));
     container.height = height;
@@ -430,10 +433,12 @@ void create_container(float width, float height, WIDGET_SIZE widget_size_width, 
     container.widget_size_height = widget_size_height;
 
     if (focusable) {
-        container.properties = static_cast<UI_PROPERTIES>(UI_PROPERTIES::UI_PROP_FOCUSABLE);
+        container.properties = container.properties | UI_PROP_FOCUSABLE;
         container.stacked_navigation = true;
         container.stack_nav_handler_func = func;
     }
+
+    container.properties = container.properties | ui_properties;
 
     register_widget(container, container_name, true); 
 }
@@ -611,10 +616,12 @@ bool create_button(const char* text, TEXT_SIZE text_size, int user_handle) {
         }
 
         if (mouse_over_widget && input_state.left_mouse_release) {
+            clicked_on_keys.insert(std::string(key));
             return true;
         }
 
         if (widget_handle == cur_final_focused_handle && (input_state.enter_pressed || input_state.controller_a_pressed)) {
+            clicked_on_keys.insert(std::string(key));
             return true;
         }
 
@@ -1110,6 +1117,17 @@ helper_info_t resolve_dimensions(int cur_widget_handle, int parent_width_handle,
     return helper_info;    
 }
 
+/*
+
+<!-- <container id="top_part" width="0.9" height="60" widget_size_width="parent" widget_size_height="pixel" ver_align="center">
+                <button background_color="220,75,0" hover_background_color="180,115,0"
+                padding="15,10" border_radius="10">Back</button>
+            </container> -->
+
+
+
+*/
+
 void autolayout_hierarchy() {
 
     game_assert(curframe_widget_stack->size() == 0);
@@ -1250,7 +1268,13 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
         if (strcmp(name, "id") == 0) {
             memcpy(ui_attrs.id, content, fmin(strlen(content), 64));
         } else if (strcmp(name, "display_dir") == 0) {
-            style.display_dir = strcmp(content, "vertical") == 0 ? DISPLAY_DIR::VERTICAL : DISPLAY_DIR::HORIZONTAL;
+            DISPLAY_DIR dir = DISPLAY_DIR::HORIZONTAL;
+            if (strcmp(content, "vertical") == 0) {
+                dir = DISPLAY_DIR::VERTICAL;
+            } else if (strcmp(content, "horizontal") == 0) {
+                dir = DISPLAY_DIR::HORIZONTAL;
+            }
+            style.display_dir = dir;
         } else if (strcmp(name, "hor_align") == 0) {
             ALIGN hor_align = ALIGN::START;
             if (strcmp(content, "start") == 0) {
@@ -1299,6 +1323,22 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
             style.color = create_color(color.r, color.g, color.b);
         } else if (strcmp(name, "border_radius") == 0) {
             style.border_radius = atof(content);
+        } else if (strcmp(name, "tl_border_radius") == 0) {
+            style.tl_border_radius = atof(content);
+        } else if (strcmp(name, "tr_border_radius") == 0) {
+            style.tr_border_radius = atof(content);
+        } else if (strcmp(name, "bl_border_radius") == 0) {
+            style.bl_border_radius = atof(content);
+        } else if (strcmp(name, "br_border_radius") == 0) {
+            style.br_border_radius = atof(content);
+        } else if (strcmp(name, "border_radius_mode") == 0) {
+            BORDER_RADIUS_MODE mode = BR_SINGLE_VALUE;
+            if (strcmp(content, "single") == 0) {
+                mode = BR_SINGLE_VALUE;
+            } else if (strcmp(content, "4-corners") == 0) {
+                mode = BR_4_CORNERS;
+            }
+            style.border_radius_mode = mode;
         } else if (strcmp(name, "hover_background_color") == 0) {
             glm::vec3 color(0);
             sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
@@ -1372,7 +1412,7 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
     return ui_attrs;
 }
 
-void set_ui_value(std::string& key, float val) {
+void set_ui_value(std::string& key, std::string& val) {
     ui_text_values[key] = val;
 }
 
@@ -1386,9 +1426,14 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
         game_assert_msg(attrs.id[0] != '\0', "panel not given a name through id attribute");
         create_panel(attrs.id);
     } else if (strcmp(zero_terminated_name, "container") == 0) {
-        game_assert_msg(attrs.id[0] != '\0', "container not given a name through id attribute");
+        if (attrs.id[0] == '\0') {
+            game_error_log("container not given a name through id attribute");
+            // make memory location of node the id
+            sprintf(attrs.id, "%i\n", node);
+        }
         create_container(attrs.width, attrs.height, attrs.widget_size_width, attrs.widget_size_height, attrs.id);
-    }  else if (strcmp(zero_terminated_name, "text") == 0) {
+    }  else if (strcmp(zero_terminated_name, "text") == 0 || strcmp(zero_terminated_name, "button") == 0) {
+        bool is_text_element = strcmp(zero_terminated_name, "text") == 0;
         xml_string* content = node->content;
         char* zero_terminated_content = xml_get_zero_terminated_buffer(content);
         char* first_curly_braces = strstr(zero_terminated_content, "{{{");
@@ -1399,15 +1444,24 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
             *ending_curly_braces = 0;
             char* remaining_str = ending_curly_braces + 3;
             
-            char* final_str = (char*)malloc(content->length * sizeof(char));
+            char* final_str = (char*)calloc(64, sizeof(char));
             std::string key_string = key;
-
-            sprintf(final_str, "%s%i%s", zero_terminated_content, (int)ui_text_values[key_string], remaining_str);
-            create_text(final_str, attrs.text_size, false);
+            std::string val = ui_text_values[key_string];
+            sprintf(final_str, "%s%s%s", zero_terminated_content, val.c_str(), remaining_str);
+            
+            if (is_text_element) {
+                create_text(final_str, attrs.text_size, false);
+            } else {
+                create_button(final_str, attrs.text_size, -1);
+            }
 
             free(final_str);
         } else {
-            create_text(zero_terminated_content, attrs.text_size, false);
+            if (is_text_element) {
+                create_text(zero_terminated_content, attrs.text_size, false);
+            } else {
+                create_button(zero_terminated_content, attrs.text_size, -1);
+            }
         }
         free(zero_terminated_content);
     }
@@ -1542,7 +1596,11 @@ void init_ui() {
 
     char buffer[256]{};
 	get_resources_folder_path(buffer);
+#ifdef UI_TESTING
+	sprintf(xml_path, "%s\\%s\\ui_test.xml", buffer, UI_FOLDER);
+ #else
 	sprintf(xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
+#endif
 	// sprintf(xml_path, "%s\\%s\\main_menu.xml", buffer, UI_FOLDER);
 	FILE* ui_file_c = fopen(xml_path, "r");
 	game_assert_msg(ui_file_c, "play file not found");
@@ -1575,7 +1633,18 @@ void draw_background(widget_t& widget) {
 	// shader_set_vec3(font_char_t::ui_opengl_data.shader, "color", widget.style.background_color);
 	shader_set_float(font_char_t::ui_opengl_data.shader, "tex_influence", 0.f);
 	shader_set_int(font_char_t::ui_opengl_data.shader, "round_vertices", 1);
-	shader_set_float(font_char_t::ui_opengl_data.shader, "border_radius", widget.style.border_radius);
+
+    if (widget.style.border_radius_mode == BR_SINGLE_VALUE) {
+        shader_set_float(font_char_t::ui_opengl_data.shader, "tl_border_radius", widget.style.border_radius);
+        shader_set_float(font_char_t::ui_opengl_data.shader, "tr_border_radius", widget.style.border_radius);
+        shader_set_float(font_char_t::ui_opengl_data.shader, "bl_border_radius", widget.style.border_radius);
+        shader_set_float(font_char_t::ui_opengl_data.shader, "br_border_radius", widget.style.border_radius);
+    } else if (widget.style.border_radius_mode == BR_4_CORNERS) {
+        shader_set_float(font_char_t::ui_opengl_data.shader, "tl_border_radius", widget.style.tl_border_radius);
+        shader_set_float(font_char_t::ui_opengl_data.shader, "tr_border_radius", widget.style.tr_border_radius);
+        shader_set_float(font_char_t::ui_opengl_data.shader, "bl_border_radius", widget.style.bl_border_radius);
+        shader_set_float(font_char_t::ui_opengl_data.shader, "br_border_radius", widget.style.br_border_radius);
+    }
 
     float x = widget.x + widget.style.margin.x;
     float y = widget.y - widget.style.margin.y;
@@ -1682,4 +1751,8 @@ void draw_image_container(widget_t& widget) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     // draw the rectangle render after setting all shader parameters
     draw_obj(font_char_t::ui_opengl_data);
+}
+
+bool get_if_key_clicked_on(const char* key) {
+    return clicked_on_keys.find(std::string(key)) != clicked_on_keys.end();
 }
