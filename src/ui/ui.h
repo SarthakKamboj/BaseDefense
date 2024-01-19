@@ -278,6 +278,7 @@ struct parsed_ui_attributes_t {
     WIDGET_SIZE widget_size_height = WIDGET_SIZE::NONE;
     TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
     UI_PROPERTIES ui_properties = UI_PROP_NONE;
+    char image_path[256]{};
 };
 parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes);
 

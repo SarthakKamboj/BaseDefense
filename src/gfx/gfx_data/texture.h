@@ -7,7 +7,7 @@
 struct texture_t {
 	GLuint id;
     int handle = -1;
-    char path[1024];
+    char path[1024]{};
     unsigned tex_slot = 0;
     int width = -1;
     int height = -1;

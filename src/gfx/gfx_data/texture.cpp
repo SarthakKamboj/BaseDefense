@@ -41,6 +41,7 @@ int create_texture(const char* path, int tex_slot) {
 	stbi_image_free(data);
     texture.handle = tex_running_cnt;
     tex_running_cnt++;
+	memcpy(texture.path, path, strlen(path));
 
     textures.push_back(texture);
 

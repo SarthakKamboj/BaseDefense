@@ -23,7 +23,8 @@
                 <container id="base_img" width="0" height="0"
                 widget_size_width="fit"
                 widget_size_height="fit">
-                    <text>BASEs</text>
+                    <image image_src="base_icon.png" width="40" height="40"
+                    widget_size_width="pixel" widget_size_height="pixel" />
                 </container>
                 <text>{{{num_bases}}}</text>
             </container>
@@ -34,7 +35,8 @@
                 <container id="base_img" width="40" height="40"
                 widget_size_width="fit"
                 widget_size_height="fit">
-                    <text>EXTs</text>
+                    <image image_src="ext.png" width="60" height="40"
+                    widget_size_width="pixel" widget_size_height="pixel" />
                 </container>
                 <text>{{{num_base_exts}}}</text>
             </container>
@@ -45,7 +47,8 @@
                 <container id="base_img" width="40" height="40"
                 widget_size_width="fit"
                 widget_size_height="fit">
-                    <text>GUNs</text>
+                    <image image_src="gun.png" width="60" height="40"
+                    widget_size_width="pixel" widget_size_height="pixel" />
                 </container>
                 <text>{{{num_guns}}}</text>
             </container>

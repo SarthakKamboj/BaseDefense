@@ -1328,6 +1328,10 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
         char* content = xml_get_zero_terminated_buffer(attr->content);
         if (strcmp(name, "id") == 0) {
             memcpy(ui_attrs.id, content, fmin(strlen(content), 64));
+        } else if (strcmp(name, "image_src") == 0) {
+            char buffer[256]{};
+            get_resources_folder_path(buffer);
+            sprintf(ui_attrs.image_path, "%s\\%s\\%s", buffer, UI_FOLDER, content);
         } else if (strcmp(name, "display_dir") == 0) {
             DISPLAY_DIR dir = DISPLAY_DIR::HORIZONTAL;
             if (strcmp(content, "vertical") == 0) {
@@ -1480,23 +1484,23 @@ void set_ui_value(std::string& key, std::string& val) {
 }
 
 void draw_from_ui_file_layout_helper(xml_node* node) {
-    xml_string* name = node->name;
-    char* zero_terminated_name = xml_get_zero_terminated_buffer(name);
+    xml_string* element_name = node->name;
+    char* zero_terminated_element_name = xml_get_zero_terminated_buffer(element_name);
     
     parsed_ui_attributes_t attrs = get_style_and_key(node->attributes);
     push_style(attrs.style);
-    if (strcmp(zero_terminated_name, "panel") == 0) {
+    if (strcmp(zero_terminated_element_name, "panel") == 0) {
         game_assert_msg(attrs.id[0] != '\0', "panel not given a name through id attribute");
         create_panel(attrs.id);
-    } else if (strcmp(zero_terminated_name, "container") == 0) {
+    } else if (strcmp(zero_terminated_element_name, "container") == 0) {
         if (attrs.id[0] == '\0') {
             game_error_log("container not given a name through id attribute");
             // make memory location of node the id
             sprintf(attrs.id, "%i\n", node);
         }
         create_container(attrs.width, attrs.height, attrs.widget_size_width, attrs.widget_size_height, attrs.id, false, 0, attrs.ui_properties);
-    }  else if (strcmp(zero_terminated_name, "text") == 0 || strcmp(zero_terminated_name, "button") == 0) {
-        bool is_text_element = strcmp(zero_terminated_name, "text") == 0;
+    }  else if (strcmp(zero_terminated_element_name, "text") == 0 || strcmp(zero_terminated_element_name, "button") == 0) {
+        bool is_text_element = strcmp(zero_terminated_element_name, "text") == 0;
         xml_string* content = node->content;
         char* zero_terminated_content = xml_get_zero_terminated_buffer(content);
         char* first_curly_braces = strstr(zero_terminated_content, "{{{");
@@ -1527,6 +1531,9 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
             }
         }
         free(zero_terminated_content);
+    } else if (strcmp(zero_terminated_element_name, "image") == 0) {
+        int texture_handle = create_texture(attrs.image_path, 1);
+        create_image_container(texture_handle, attrs.width, attrs.height, attrs.widget_size_width, attrs.widget_size_height, 1 + strrchr(attrs.image_path, '\\'));
     }
     pop_style();
 
@@ -1536,13 +1543,13 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
         draw_from_ui_file_layout_helper(child);
     }
 
-    if (strcmp(zero_terminated_name, "panel") == 0) {
+    if (strcmp(zero_terminated_element_name, "panel") == 0) {
         end_panel();
-    } else if (strcmp(zero_terminated_name, "container") == 0) {
+    } else if (strcmp(zero_terminated_element_name, "container") == 0) {
         end_container();
     }
     
-    free(zero_terminated_name);
+    free(zero_terminated_element_name);
 }
 
 void draw_from_ui_file_layouts() {
