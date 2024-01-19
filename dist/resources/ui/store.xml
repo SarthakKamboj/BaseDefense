@@ -11,7 +11,7 @@
         ver_align="space_between">
             <container id="store_name" width="1" height="0.1" widget_size_width="parent" widget_size_height="parent"
             display_dir="horizontal" ver_align="center" hor_align="center" margin="0,35">
-                <text text_size="title">Store</text>
+                <text text_size="title" font_size="50">Store</text>
             </container>
 
             <container id="selectable_ui" width="1" height="0.5" widget_size_width="parent" widget_size_height="parent"
@@ -22,7 +22,7 @@
                     <image image_src="base_icon.png" width=".6" height=".6"
                     widget_size_width="parent" widget_size_height="parent" />
                     <text>Base - ${{{base_cost}}}</text>
-                    <text>Own: {{{num_bases}}}</text>
+                    <text font_size="20">Own: {{{num_bases}}}</text>
                 </container>
                 <container id="base_ext_container"
                 border_radius="20"
@@ -31,7 +31,7 @@
                     <image image_src="ext.png" width=".6" height=".6"
                     widget_size_width="parent" widget_size_height="parent" />
                     <text>Extension - ${{{base_ext_cost}}}</text>
-                    <text>Own: {{{num_base_exts}}}</text>
+                    <text font_size="20">Own: {{{num_base_exts}}}</text>
                 </container>
                 <container id="gun_container"
                 border_radius="20"
@@ -39,8 +39,8 @@
                 display_dir="vertical" ver_align="space_around" hor_align="center" content_spacing="20" hover_background_color="180,115,0" clickable="true">
                     <image image_src="gun.png" width=".6" height=".6"
                     widget_size_width="parent" widget_size_height="parent" />
-                    <text>Gun- ${{{gun_cost}}}</text>
-                    <text>Own: {{{num_guns}}}</text>
+                    <text>Gun - ${{{gun_cost}}}</text>
+                    <text font_size="20">Own: {{{num_guns}}}</text>
                 </container>
             </container>
 
