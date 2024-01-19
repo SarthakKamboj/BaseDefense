@@ -3,6 +3,7 @@ out
 external
 vids
 old_resources
+*.pur
 # # Prerequisites
 # *.d
 
