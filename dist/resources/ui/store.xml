@@ -16,23 +16,26 @@
 
             <container id="selectable_ui" width="1" height="0.5" widget_size_width="parent" widget_size_height="parent"
             display_dir="horizontal" ver_align="center" hor_align="space_around">
-                <container id="text_container1"
-                width="0.25" height="0.65" widget_size_width="parent" widget_size_height="parent"
-                display_dir="vertical" ver_align="space_between" hor_align="center" content_spacing="20">
-                    <text>Base Image</text>
-                    <text>Base</text>
+                <container id="base_container"
+                width="0.25" height="0.95" widget_size_width="parent" widget_size_height="parent"
+                display_dir="vertical" ver_align="space_around" hor_align="center" content_spacing="20" hover_background_color="180,115,0" clickable="true">
+                    <container id="base_image" width=".8" height=".6" widget_size_width="parent" widget_size_height="parent" background_color="200,75,0" border_radius="20" />
+                    <text>Base - ${{{base_cost}}}</text>
+                    <text>Own: {{{num_bases}}}</text>
                 </container>
-                <container id="text_container2"
-                width="0.25" height="0.65" widget_size_width="parent" widget_size_height="parent"
-                display_dir="vertical" ver_align="space_between" hor_align="center" content_spacing="20">
-                    <text>Base Extension Image</text>
-                    <text>Base Extension</text>
+                <container id="base_ext_container"
+                width="0.25" height="0.95" widget_size_width="parent" widget_size_height="parent"
+                display_dir="vertical" ver_align="space_around" hor_align="center" content_spacing="20" hover_background_color="180,115,0" clickable="true">
+                    <container id="base_ext_image" width=".8" height=".6" widget_size_width="parent" widget_size_height="parent" background_color="200,75,0" border_radius="20" />
+                    <text>Base Extension - ${{{base_ext_cost}}}</text>
+                    <text>Own: {{{num_base_exts}}}</text>
                 </container>
-                <container id="text_container3"
-                width="0.25" height="0.65" widget_size_width="parent" widget_size_height="parent"
-                display_dir="vertical" ver_align="space_between" hor_align="center" content_spacing="20">
-                    <text>Gun Image</text>
-                    <text>Gun</text>
+                <container id="gun_container"
+                width="0.25" height="0.95" widget_size_width="parent" widget_size_height="parent"
+                display_dir="vertical" ver_align="space_around" hor_align="center" content_spacing="20" hover_background_color="180,115,0" clickable="true">
+                    <container id="gun_image" width=".8" height=".6" widget_size_width="parent" widget_size_height="parent" background_color="200,75,0" border_radius="20" />
+                    <text>Gun- ${{{gun_cost}}}</text>
+                    <text>Own: {{{num_guns}}}</text>
                 </container>
             </container>
 
