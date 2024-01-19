@@ -34,9 +34,9 @@ struct font_char_t {
 	static render_object_data ui_opengl_data;
 };
 
-enum class TEXT_SIZE {
-    TITLE, REGULAR
-};
+// enum class TEXT_SIZE {
+//     TITLE, REGULAR
+// };
 
 enum UI_PROPERTIES : int {
     UI_PROP_NONE = 0,
@@ -55,10 +55,12 @@ enum class WIDGET_SIZE {
 };
 
 struct font_mode_t {
-    TEXT_SIZE text_size;
+    // TEXT_SIZE text_size;
     int font_size = 0;
     std::unordered_map<unsigned char, font_char_t> chars;
+    bool used_last_frame = true;
 };
+void load_font(int font_size);
 
 struct text_dim_t {
 	float width = 0;
@@ -66,6 +68,8 @@ struct text_dim_t {
     float max_height_above_baseline = 0;
 	float max_height_below_baseline = 0;
 };
+// text_dim_t get_text_dimensions(const char* text, TEXT_SIZE text_size);
+text_dim_t get_text_dimensions(const char* text, int font_size);
 
 union hash_t {
     uint64_t unsigned_double[4];
@@ -97,7 +101,6 @@ hash_t hash(const char* key);
 
 void init_ui();
 
-text_dim_t get_text_dimensions(const char* text, TEXT_SIZE text_size);
 
 enum class DISPLAY_DIR {
     VERTICAL, HORIZONTAL
@@ -151,10 +154,14 @@ struct style_t {
 
 struct text_t {
     char text[256]{};
-    TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
+    // TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
+    int font_size = 25;
 };
-void create_text(const char* text, TEXT_SIZE text_size = TEXT_SIZE::REGULAR, bool focusable = false);
-bool create_button(const char* text, TEXT_SIZE text_size = TEXT_SIZE::REGULAR, int user_handle = -1);
+// void create_text(const char* text, TEXT_SIZE text_size = TEXT_SIZE::REGULAR, bool focusable = false);
+// bool create_button(const char* text, TEXT_SIZE text_size = TEXT_SIZE::REGULAR, int user_handle = -1);
+
+void create_text(const char* text, int font_size = 0, bool focusable = false);
+bool create_button(const char* text, int font_size = 0, int user_handle = -1);
 
 struct image_container_t {
     int texture_handle = -1;
@@ -279,7 +286,8 @@ void set_background_color_gradient_4_corners_override(const char* widget_key, gl
 
 void draw_background(widget_t& widget);
 void draw_image_container(widget_t& widget);
-void draw_text(const char* text, glm::vec2 starting_pos, TEXT_SIZE text_size, glm::vec3& color);
+// void draw_text(const char* text, glm::vec2 starting_pos, TEXT_SIZE text_size, glm::vec3& color);
+void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec3& color);
 
 struct parsed_ui_attributes_t {
     style_t style;
@@ -288,7 +296,8 @@ struct parsed_ui_attributes_t {
     float height = 0;
     WIDGET_SIZE widget_size_width = WIDGET_SIZE::NONE;
     WIDGET_SIZE widget_size_height = WIDGET_SIZE::NONE;
-    TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
+    // TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
+    int font_size = 25;
     UI_PROPERTIES ui_properties = UI_PROP_NONE;
     char image_path[256]{};
 };

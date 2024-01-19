@@ -64,6 +64,18 @@ static std::unordered_map<int, hash_t> handle_hashes;
 
 static std::unordered_map<std::string, std::string> ui_text_values;
 
+static std::vector<font_mode_t> font_modes;
+// static font_mode_t font_modes[2] = {
+//     font_mode_t {
+//         // TEXT_SIZE::TITLE,
+//         65
+//     },
+//     font_mode_t {
+//         // TEXT_SIZE::REGULAR,
+//         25
+//     }
+// };
+
 bool is_same_hash(hash_t& hash1, hash_t& hash2) {
     for (int i = 0; i < 8; i++) {
         if (hash1.unsigned_ints[i] != hash2.unsigned_ints[i]) {
@@ -313,6 +325,10 @@ void ui_start_of_frame() {
     shader_set_mat4(font_char_t::ui_opengl_data.shader, "projection", projection);
     ui_will_update = globals.window.resized;
 
+    for (int i = 0; i < font_modes.size(); i++) {
+        font_modes[i].used_last_frame = false;
+    }
+
     bck_color_overrides.clear();
     ui_text_values.clear();
     styles_stack.clear();
@@ -369,17 +385,6 @@ void pop_widget() {
         stack.pop_back();
     }
 }
-
-static font_mode_t font_modes[2] = {
-    font_mode_t {
-        TEXT_SIZE::TITLE,
-        65
-    },
-    font_mode_t {
-        TEXT_SIZE::REGULAR,
-        25
-    }
-};
 
 widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack) {
 
@@ -555,7 +560,7 @@ bool create_selector(int selected_option, const char** options, int num_options,
         push_style(disabled);
     }
     
-    if (create_button("<", TEXT_SIZE::REGULAR, left_arrow_user_handle)) {
+    if (create_button("<", 10, left_arrow_user_handle)) {
         if (can_go_left) {
             updated_selected_option = selected_option - 1;
             changed = true;
@@ -573,7 +578,7 @@ bool create_selector(int selected_option, const char** options, int num_options,
     } else {
         push_style(disabled);
     }
-    if (create_button(">", TEXT_SIZE::REGULAR, right_arrow_user_handle)) {
+    if (create_button(">", 10, right_arrow_user_handle)) {
         if (can_go_right) {
             updated_selected_option = selected_option + 1;
             changed = true;
@@ -585,8 +590,7 @@ bool create_selector(int selected_option, const char** options, int num_options,
     return changed;
 }
 
-void create_text(const char* text, TEXT_SIZE text_size, bool focusable) {
-
+void create_text(const char* text, int font_size, bool focusable) {
     const char* key = text;
     int text_len = strlen(text);
     const char* triple_hash = strstr(text, "###");
@@ -598,13 +602,13 @@ void create_text(const char* text, TEXT_SIZE text_size, bool focusable) {
     widget_t widget;
     widget.text_based = true;
     memcpy(widget.text_info.text, text, fmin(sizeof(widget.text_info.text), text_len));
-    widget.text_info.text_size = text_size;
+    widget.text_info.font_size = font_size;
 
     if (focusable) {
         widget.properties = static_cast<UI_PROPERTIES>(UI_PROPERTIES::UI_PROP_FOCUSABLE);
     }
 
-    text_dim_t text_dim = get_text_dimensions(text, text_size);
+    text_dim_t text_dim = get_text_dimensions(text, font_size);
 
     widget.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
     widget.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
@@ -620,7 +624,7 @@ void create_text(const char* text, TEXT_SIZE text_size, bool focusable) {
     register_widget(widget, key);
 }
 
-bool create_button(const char* text, TEXT_SIZE text_size, int user_handle) {
+bool create_button(const char* text, int font_size, int user_handle) {
 
     const char* key = text;
     int text_len = strlen(text);
@@ -633,9 +637,9 @@ bool create_button(const char* text, TEXT_SIZE text_size, int user_handle) {
     widget_t widget;
     widget.text_based = true;
     memcpy(widget.text_info.text, text, fmin(sizeof(widget.text_info.text), text_len));
-    widget.text_info.text_size = text_size;
+    widget.text_info.font_size = font_size;
 
-    text_dim_t text_dim = get_text_dimensions(text, text_size);
+    text_dim_t text_dim = get_text_dimensions(text, font_size);
 
     widget.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
     widget.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
@@ -832,7 +836,7 @@ void end_imgui() {
 
     } else { 
         cur_final_focused_handle = cur_focused_internal_handle;
-    } 
+    }  
 }
 
 struct helper_info_t {
@@ -1066,7 +1070,7 @@ helper_info_t resolve_dimensions(int cur_widget_handle, int parent_width_handle,
     auto& cur_arr = *curframe_widget_arr;
     widget_t& widget = cur_arr[cur_widget_handle];
     if (widget.text_based) {
-        text_dim_t text_dim = get_text_dimensions(widget.text_info.text, widget.text_info.text_size);
+        text_dim_t text_dim = get_text_dimensions(widget.text_info.text, widget.text_info.font_size);
         widget.width = text_dim.width;
         // widget.height = text_dim.height;
         widget.height = text_dim.max_height_above_baseline;
@@ -1329,7 +1333,7 @@ void render_ui_helper(widget_t& widget) {
     if (widget.image_based) {
         draw_image_container(widget);
     } else if (widget.text_based) { 
-        draw_text(widget.text_info.text, glm::vec2(widget.x + widget.style.padding.x + widget.style.margin.x, widget.y - widget.style.padding.y - widget.style.margin.y), widget.text_info.text_size, widget.style.color);
+        draw_text(widget.text_info.text, glm::vec2(widget.x + widget.style.padding.x + widget.style.margin.x, widget.y - widget.style.padding.y - widget.style.margin.y), widget.text_info.font_size, widget.style.color);
     } 
 
     auto& cur_arr = *curframe_widget_arr;
@@ -1456,14 +1460,9 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
                 size = WIDGET_SIZE::FIT_CONTENT;
             }
             ui_attrs.widget_size_height = size;
-        } else if (strcmp(name, "text_size") == 0) {
-            TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
-            if (strcmp(content, "regular") == 0) {
-                text_size = TEXT_SIZE::REGULAR;
-            } else if (strcmp(content, "title") == 0) {
-                text_size = TEXT_SIZE::TITLE;
-            }
-            ui_attrs.text_size = text_size;
+        } else if (strcmp(name, "font_size") == 0) {
+            int font_size = 0;
+            sscanf(content, "%i", &ui_attrs.font_size);
         } else if (strcmp(name, "bck_mode") == 0) {
             BCK_MODE bck_mode = BCK_SOLID;
             if (strcmp(content, "solid") == 0) {
@@ -1537,17 +1536,17 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
             sprintf(final_str, "%s%s%s", zero_terminated_content, val.c_str(), remaining_str);
             
             if (is_text_element) {
-                create_text(final_str, attrs.text_size, false);
+                create_text(final_str, attrs.font_size, false);
             } else {
-                create_button(final_str, attrs.text_size, -1);
+                create_button(final_str, attrs.font_size, -1);
             }
 
             free(final_str);
         } else {
             if (is_text_element) {
-                create_text(zero_terminated_content, attrs.text_size, false);
+                create_text(zero_terminated_content, attrs.font_size, false);
             } else {
-                create_button(zero_terminated_content, attrs.text_size, -1);
+                create_button(zero_terminated_content, attrs.font_size, -1);
             }
         }
         free(zero_terminated_content);
@@ -1595,64 +1594,89 @@ void render_ui() {
     }
 
     ui_will_update = false;
+    for (int i = 0; i < font_modes.size(); i++) {
+        if (!font_modes[i].used_last_frame) {
+            for (unsigned char c = 0; c < 128; c++) {
+                font_char_t& char_data = font_modes[i].chars[c];
+                delete_texture(char_data.texture_handle);
+            }
+            font_modes[i].chars.clear();
+            font_modes.erase(font_modes.begin() + i);
+            i--;
+        }
+    }
 }
 
 render_object_data font_char_t::ui_opengl_data{};
 
+void load_font(int font_size) {
+
+    for (font_mode_t& font_mode : font_modes) {
+        if (font_mode.font_size == font_size) return;
+    }
+
+    font_mode_t font_mode;
+    std::unordered_map<unsigned char, font_char_t>& chars = font_mode.chars;
+    font_mode.font_size = font_size;
+
+    FT_Library lib;
+    if (FT_Init_FreeType(&lib)) {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+        return;
+    }
+    FT_Face face;
+
+    char resource_path[256]{};
+    get_resources_folder_path(resource_path);
+    char font_path[256]{};
+    // sprintf(font_path, "%s\\%s\\Courier_Prime\\CourierPrime-Regular.ttf", resource_path, FONTS_FOLDER);
+    sprintf(font_path, "%s\\%s\\Prosto_One\\ProstoOne-Regular.ttf", resource_path, FONTS_FOLDER);
+
+    if (FT_New_Face(lib, font_path, 0, &face))
+    {
+        std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;  
+        return;
+    }
+    FT_Set_Pixel_Sizes(face, 0, font_mode.font_size);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    for (unsigned char c = 0; c < 128; c++) {
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+            std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+            return;
+        }
+
+        font_char_t font_char;
+        font_char.c = c; 
+        if (c == ' ') {
+            font_char.width = font_mode.font_size * 0.35f;
+            font_char.advance = font_char.width;
+            font_char.height = 20;
+            font_char.bearing.x = 5;
+            font_char.bearing.y = 5;
+            font_char.texture_handle = -1;
+        } else {
+            font_char.width = face->glyph->bitmap.width;
+            font_char.advance = font_char.width * 1.025f;
+            if (c == '.') {
+                font_char.advance = font_char.width * 2.f;
+            }
+            font_char.height = face->glyph->bitmap.rows;
+            font_char.bearing.x = face->glyph->bitmap_left;
+            font_char.bearing.y = face->glyph->bitmap_top;
+            font_char.texture_handle = create_texture(face->glyph->bitmap.buffer, font_char.width, font_char.height, 0);
+        }
+
+        chars[c] = font_char;
+    }
+
+    font_modes.push_back(font_mode);
+}
+
 void init_ui() {
     // int font_sizes
-    for (font_mode_t& font_mode : font_modes) {
-        std::unordered_map<unsigned char, font_char_t>& chars = font_mode.chars;
-        FT_Library lib;
-        if (FT_Init_FreeType(&lib)) {
-            std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
-            return;
-        }
-        FT_Face face;
-
-        char resource_path[256]{};
-        get_resources_folder_path(resource_path);
-        char font_path[256]{};
-        // sprintf(font_path, "%s\\%s\\Courier_Prime\\CourierPrime-Regular.ttf", resource_path, FONTS_FOLDER);
-        sprintf(font_path, "%s\\%s\\Prosto_One\\ProstoOne-Regular.ttf", resource_path, FONTS_FOLDER);
-
-        if (FT_New_Face(lib, font_path, 0, &face))
-        {
-            std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;  
-            return;
-        }
-        FT_Set_Pixel_Sizes(face, 0, font_mode.font_size);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        for (unsigned char c = 0; c < 128; c++) {
-            if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-                std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
-                return;
-            }
-
-            font_char_t font_char;
-            font_char.c = c; 
-            if (c == ' ') {
-                font_char.width = font_mode.font_size * 0.35f;
-                font_char.advance = font_char.width;
-                font_char.height = 20;
-                font_char.bearing.x = 5;
-                font_char.bearing.y = 5;
-                font_char.texture_handle = -1;
-            } else {
-                font_char.width = face->glyph->bitmap.width;
-                font_char.advance = font_char.width * 1.025f;
-				if (c == '.') {
-                    font_char.advance = font_char.width * 2.f;
-				}
-                font_char.height = face->glyph->bitmap.rows;
-                font_char.bearing.x = face->glyph->bitmap_left;
-                font_char.bearing.y = face->glyph->bitmap_top;
-                font_char.texture_handle = create_texture(face->glyph->bitmap.buffer, font_char.width, font_char.height, 0);
-            }
-
-            chars[c] = font_char;
-        }
-    }
+    // for (font_mode_t& font_mode : font_modes) {
+        
+    // }
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	
 	render_object_data& data = font_char_t::ui_opengl_data;
@@ -1712,10 +1736,10 @@ void init_ui() {
     }
 }
 
-text_dim_t get_text_dimensions(const char* text, TEXT_SIZE text_size) {
+text_dim_t get_text_dimensions(const char* text, int font_size) {
 	text_dim_t running_dim;
     for (font_mode_t& font_mode : font_modes) {
-        if (font_mode.text_size == text_size) {
+        if (font_mode.font_size == font_size) {
             for (int i = 0; i < strlen(text); i++) {
                 unsigned char c = text[i];	
                 font_char_t& fc = font_mode.chars[c];
@@ -1797,16 +1821,20 @@ void draw_background(widget_t& widget) {
     draw_obj(font_char_t::ui_opengl_data);
 }
 
-void draw_text(const char* text, glm::vec2 starting_pos, TEXT_SIZE text_size, glm::vec3& color) {
+void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec3& color) {
 	// shader_set_vec3(font_char_t::ui_opengl_data.shader, "color", color);
 	shader_set_float(font_char_t::ui_opengl_data.shader, "tex_influence", 1.f);
 	shader_set_int(font_char_t::ui_opengl_data.shader, "is_character_tex", 1);
 	shader_set_int(font_char_t::ui_opengl_data.shader, "round_vertices", 0);
-    text_dim_t text_dim = get_text_dimensions(text, text_size);
+    text_dim_t text_dim = get_text_dimensions(text, font_size);
 	glm::vec2 origin = starting_pos - glm::vec2(0, text_dim.max_height_above_baseline);
 	vertex_t updated_vertices[4];
+
+    load_font(font_size);
+
     for (font_mode_t& font_mode : font_modes) {
-        if (font_mode.text_size == text_size) {
+        if (font_mode.font_size == font_size) {
+            font_mode.used_last_frame = true;
             for (int i = 0; i < strlen(text); i++) {
                 unsigned char c = text[i];	
                 font_char_t& fc = font_mode.chars[c];

@@ -47,3 +47,5 @@ void bind_texture(int handle, bool required_bind = false);
 /// Unbind the texture on what texture slot is currently active
 /// </summary>
 void unbind_texture();
+
+void delete_texture(int tex_handle);

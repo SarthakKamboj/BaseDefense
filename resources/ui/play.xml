@@ -12,9 +12,9 @@
     widget_size_height="parent" widget_size_width="parent" hor_align="end">
         <container id="inventory_summary" width="0.15" height="1"
         widget_size_height="parent" widget_size_width="parent"
-       display_dir="vertical" ver_align="start"
+        display_dir="vertical" ver_align="start"
         hor_align="center"
-        content_spacing="20">
+        content_spacing="0">
             <text>Inventory</text>
             <container id="base_count" width="1" height="80"
             widget_size_width="parent" widget_size_height="pixel"
@@ -26,7 +26,7 @@
                     <image image_src="base_icon.png" width="40" height="40"
                     widget_size_width="pixel" widget_size_height="pixel" />
                 </container>
-                <text>{{{num_bases}}}</text>
+                <text font_size="20">x{{{num_bases}}}</text>
             </container>
             <container id="base_ext_count" width="1" height="80"
             widget_size_width="parent" widget_size_height="pixel"
@@ -35,10 +35,10 @@
                 <container id="base_img" width="40" height="40"
                 widget_size_width="fit"
                 widget_size_height="fit">
-                    <image image_src="ext.png" width="60" height="40"
+                    <image image_src="ext.png" width="45" height="40"
                     widget_size_width="pixel" widget_size_height="pixel" />
                 </container>
-                <text>{{{num_base_exts}}}</text>
+                <text font_size="20">x{{{num_base_exts}}}</text>
             </container>
             <container id="gun_count" width="1" height="80"
             widget_size_width="parent" widget_size_height="pixel"
@@ -50,7 +50,7 @@
                     <image image_src="gun.png" width="60" height="40"
                     widget_size_width="pixel" widget_size_height="pixel" />
                 </container>
-                <text>{{{num_guns}}}</text>
+                <text font_size="20">x{{{num_guns}}}</text>
             </container>
         </container>
     </container>

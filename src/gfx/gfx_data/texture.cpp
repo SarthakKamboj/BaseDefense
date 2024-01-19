@@ -112,3 +112,11 @@ texture_t* get_tex(int handle) {
     }
     return NULL;
 }
+
+void delete_texture(int handle) {
+	for (int i = 0; i < textures.size(); i++) {
+        if (textures[i].handle == handle) {
+			glDeleteTextures(1, &textures[i].id);
+        }
+    }
+}
