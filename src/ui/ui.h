@@ -284,6 +284,7 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes);
 struct ui_file_layout_t {
     xml_document* document = NULL;
     time_t last_modified_time = 0;
+    char path[256]{};
 };
 
 bool is_some_element_clicked_on();
@@ -291,5 +292,5 @@ bool is_some_element_clicked_on();
 void set_ui_value(std::string& key, std::string& val);
 bool get_if_key_clicked_on(const char* key);
 
-void draw_from_ui_file_layout();
+void draw_from_ui_file_layouts();
 void render_ui();

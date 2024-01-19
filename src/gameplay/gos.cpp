@@ -10,6 +10,11 @@
 
 #include <vector>
 
+static glm::vec3 invalid_placement_color = create_color(144,66,71);
+static glm::vec3 valid_placement_color = create_color(45,45,45);
+
+extern inventory_t inventory;
+
 static int num_enemies_killed = 0;
 
 extern float panel_left;
@@ -63,8 +68,15 @@ void update_preview_base() {
 
 	preview_transform->global_position = glm::vec3(mouse.x, base_t::HEIGHT * 0.5f, 0.f);
 
-	if (globals.window.user_input.left_mouse_release) {
+	if (inventory.num_bases == 0) {
+		quad_render->color = invalid_placement_color;
+	} else {
+		quad_render->color = valid_placement_color;
+	}
+
+	if (globals.window.user_input.left_mouse_release && inventory.num_bases > 0) {
 		create_base(preview_transform->global_position);
+		inventory.num_bases--;
 	}
 
 	bool left_down = globals.window.user_input.left_mouse_down;
@@ -266,11 +278,18 @@ void update_preview_base_ext() {
 
 	preview_quad->render = left_down;
 
+	if (inventory.num_base_exts == 0) {
+		preview_quad->color = invalid_placement_color;
+	} else {
+		preview_quad->color = valid_placement_color;
+	}
+
 	transform_t* transform = get_transform(preview_base_ext.transform_handle);
 	game_assert_msg(transform, "transform of preview attachment not found");
-	if(left_release && !preview_base_ext.free) {
+	if(left_release && !preview_base_ext.free && inventory.num_base_exts > 0) {
 		preview_base_ext.free = true;
 		create_base_ext(transform->global_position);
+		inventory.num_base_exts--;
 		return;
 	}	
 
@@ -299,7 +318,7 @@ void init_preview_gun() {
 	preview_gun.attachment_handle = -1;
 
 	preview_gun.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0.f, 0.f, -1);
-	preview_gun.quad_render_handle = create_quad_render(preview_gun.transform_handle, create_color(45,45,45), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
+	preview_gun.quad_render_handle = create_quad_render(preview_gun.transform_handle, valid_placement_color, gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
 	preview_gun.rb_handle = create_rigidbody(preview_gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYS_NONE, false, false);
 }
 
@@ -351,10 +370,17 @@ void update_preview_gun() {
 
 	preview_quad->render = left_down;
 
-	if(left_release && !preview_gun.free) {
+	if (inventory.num_guns == 0) {
+		preview_quad->color = invalid_placement_color;
+	} else {
+		preview_quad->color = valid_placement_color;
+	}
+
+	if(left_release && !preview_gun.free && inventory.num_guns > 0) {
 		attachment_t* att = get_attachment(preview_gun.attachment_handle);
 		game_assert_msg(att, "attachment to create gun not found");
 		create_attached_gun(preview_gun.attachment_handle, att->facing_left, 2.f);
+		inventory.num_guns--;
 		preview_gun.free = true;
 		return;
 	}	

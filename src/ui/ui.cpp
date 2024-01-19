@@ -21,9 +21,10 @@ static bool panel_left_used = false;
 
 extern globals_t globals;
 
-static char xml_path[256];
+// static char xml_path[256];
 
-static ui_file_layout_t ui_file;
+// static ui_file_layout_t ui_file;
+static std::vector<ui_file_layout_t> ui_files;
 
 static int cur_focused_internal_handle = -1;
 static int cur_final_focused_handle = -1;
@@ -276,19 +277,22 @@ void update_ui_files() {
     // char main_menu_ui_xml_path[256]{};
 	// sprintf(main_menu_ui_xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
  
-    struct stat ui_file_stat;
-    // if (stat(main_menu_ui_xml_path, &ui_file_stat) < 0) return;
-    if (stat(xml_path, &ui_file_stat) < 0) return;
+    for (int i = 0; i < ui_files.size(); i++) {
+        ui_file_layout_t& ui_file = ui_files[i];
+        struct stat ui_file_stat {};
+        // if (stat(main_menu_ui_xml_path, &ui_file_stat) < 0) return;
+        if (stat(ui_file.path, &ui_file_stat) < 0) continue;
 
-    if (ui_file.last_modified_time == ui_file_stat.st_mtime) return;
-    _sleep(10);
-    xml_document_free(ui_file.document, true);
+        if (ui_file.last_modified_time == ui_file_stat.st_mtime) continue;
+        _sleep(10);
+        xml_document_free(ui_file.document, true);
 
-	// FILE* main_menu_ui = fopen(main_menu_ui_xml_path, "r");
-	FILE* main_menu_ui = fopen(xml_path, "r");
-	game_assert_msg(main_menu_ui, "main menu file not found");
-	ui_file.document = xml_open_document(main_menu_ui);
-    ui_file.last_modified_time = ui_file_stat.st_mtime;
+        // FILE* main_menu_ui = fopen(main_menu_ui_xml_path, "r");
+        FILE* file = fopen(ui_file.path, "r");
+        game_assert_msg(file, "ui file not found");
+        ui_file.document = xml_open_document(file);
+        ui_file.last_modified_time = ui_file_stat.st_mtime;
+    }
 }
 
 void ui_start_of_frame() {
@@ -455,7 +459,7 @@ void create_panel(const char* panel_name) {
     panel.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
     panel.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
 
-    if (strcmp(panel_name, "main panel") != 0) {
+    if (strcmp(panel_name, "store_panel") == 0) {
         panel.x = panel_left;
         panel_left_used = true;
     } else {
@@ -1541,10 +1545,12 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
     free(zero_terminated_name);
 }
 
-void draw_from_ui_file_layout() {
-    ui_file_layout_t& file_layout = ui_file;
-    xml_node* root = file_layout.document->root;
-    draw_from_ui_file_layout_helper(root);
+void draw_from_ui_file_layouts() {
+    for (ui_file_layout_t& ui_layout : ui_files) {
+        // ui_file_layout_t& file_layout = ui_file;
+        xml_node* root = ui_layout.document->root;
+        draw_from_ui_file_layout_helper(root);
+    }
 }
 
 void render_ui() {  
@@ -1653,21 +1659,30 @@ void init_ui() {
 		std::cout << "successfully init ui data" << std::endl;
     }
 
-    char buffer[256]{};
-	get_resources_folder_path(buffer);
-#ifdef UI_TESTING
-	sprintf(xml_path, "%s\\%s\\ui_test.xml", buffer, UI_FOLDER);
- #else
-	sprintf(xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
-#endif
-	// sprintf(xml_path, "%s\\%s\\main_menu.xml", buffer, UI_FOLDER);
-	FILE* ui_file_c = fopen(xml_path, "r");
-	game_assert_msg(ui_file_c, "play file not found");
-	ui_file.document = xml_open_document(ui_file_c);
+    const char* files[2]{"store.xml", "play.xml"};
 
-    struct stat ui_file_stat;
-    if (stat(xml_path, &ui_file_stat) < 0) return;
-    ui_file.last_modified_time = ui_file_stat.st_mtime;
+    for (int i = 0; i < 2; i++) {
+        char xml_path[256]{};
+        char buffer[256]{};
+        get_resources_folder_path(buffer);
+#ifdef UI_TESTING
+        sprintf(xml_path, "%s\\%s\\%s", buffer, UI_FOLDER, files[i]);
+#else
+        sprintf(xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
+#endif
+        // sprintf(xml_path, "%s\\%s\\main_menu.xml", buffer, UI_FOLDER);
+        FILE* ui_file_c = fopen(xml_path, "r");
+        game_assert_msg(ui_file_c, "play file not found");
+        ui_file_layout_t ui_file;
+        ui_file.document = xml_open_document(ui_file_c);
+
+        struct stat ui_file_stat;
+        if (stat(xml_path, &ui_file_stat) < 0) return;
+        ui_file.last_modified_time = ui_file_stat.st_mtime;
+        memcpy(ui_file.path, xml_path, strlen(xml_path));
+
+        ui_files.push_back(ui_file);
+    }
 }
 
 text_dim_t get_text_dimensions(const char* text, TEXT_SIZE text_size) {
@@ -1818,7 +1833,6 @@ bool get_if_key_clicked_on(const char* key) {
 }
 
 bool is_some_element_clicked_on() {
-    // return prevframe_clicked_on_keys->size() != 0;
     for (int i = 0; i < prevframe_widget_arr->size(); i++) {
         widget_t& widget = (*prevframe_widget_arr)[i];
         if (widget.properties & UI_PROP_CLICKABLE) {

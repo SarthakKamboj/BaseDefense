@@ -53,26 +53,36 @@ void render() {
 
 	// ui_start_of_frame();	
 
-	draw_from_ui_file_layout();
-
-	style_t panel_style;
-	panel_style.vertical_align_val = ALIGN::START;
-	panel_style.horizontal_align_val = ALIGN::CENTER;
-	push_style(panel_style);
-	create_panel("main panel");
-	pop_style();
-
 	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
-		create_text("preview gun mode");
+		set_ui_value(std::string("preview_mode"), std::string("preview gun mode"));
 	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
-		create_text("preview base ext mode");
+		set_ui_value(std::string("preview_mode"), std::string("preview base ext mode"));
 	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
-		create_text("preview base mode");
+		set_ui_value(std::string("preview_mode"), std::string("preview base mode"));
 	} else {
-		create_text("unrecognized preview mode");
+		set_ui_value(std::string("preview_mode"), std::string("unrecognized preview mode"));
 	}
 
-	end_panel();
+	draw_from_ui_file_layouts();
+
+	// style_t panel_style;
+	// panel_style.vertical_align_val = ALIGN::START;
+	// panel_style.horizontal_align_val = ALIGN::CENTER;
+	// push_style(panel_style);
+	// create_panel("main panel");
+	// pop_style();
+
+	// if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
+	// 	create_text("preview gun mode");
+	// } else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
+	// 	create_text("preview base ext mode");
+	// } else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
+	// 	create_text("preview base mode");
+	// } else {
+	// 	create_text("unrecognized preview mode");
+	// }
+
+	// end_panel();
 
 
 	autolayout_hierarchy();

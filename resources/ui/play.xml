@@ -1,14 +1,54 @@
-<panel id="hi" hor_align="center">
-    <container id="header_info" width="0.9" height="0.2" 
-    ver_align="center" hor_align="space_between"
+<panel id="hi" hor_align="center" display_dir="vertical">
+    <container id="header_info" width="0.9" height="0.1"
+    ver_align="center" hor_align="center"
     display_dir="horizontal"
     widget_size_height="parent"
     widget_size_width="parent">
-        <text>num enemies</text>
         <text>
-            Time: {{{score}}}s
+            {{{preview_mode}}}
         </text>
-        <text>num guns</text>
-        <text>{{{preview_mode}}}</text>
+    </container>
+    <container id="inventory_summary_container" width="1.0" height="0.9" 
+    widget_size_height="parent" widget_size_width="parent" hor_align="end">
+        <container id="inventory_summary" width="0.15" height="1"
+        widget_size_height="parent" widget_size_width="parent"
+       display_dir="vertical" ver_align="start"
+        hor_align="center"
+        content_spacing="20">
+            <text>Inventory</text>
+            <container id="base_count" width="1" height="80"
+            widget_size_width="parent" widget_size_height="pixel"
+            ver_align="center"
+            display_dir="horizontal" hor_align="space_around">
+                <container id="base_img" width="0" height="0"
+                widget_size_width="fit"
+                widget_size_height="fit">
+                    <text>BASEs</text>
+                </container>
+                <text>{{{num_bases}}}</text>
+            </container>
+            <container id="base_ext_count" width="1" height="80"
+            widget_size_width="parent" widget_size_height="pixel"
+            ver_align="center"
+            display_dir="horizontal" hor_align="space_around">
+                <container id="base_img" width="40" height="40"
+                widget_size_width="fit"
+                widget_size_height="fit">
+                    <text>EXTs</text>
+                </container>
+                <text>{{{num_base_exts}}}</text>
+            </container>
+            <container id="gun_count" width="1" height="80"
+            widget_size_width="parent" widget_size_height="pixel"
+            ver_align="center"
+            display_dir="horizontal" hor_align="space_around">
+                <container id="base_img" width="40" height="40"
+                widget_size_width="fit"
+                widget_size_height="fit">
+                    <text>GUNs</text>
+                </container>
+                <text>{{{num_guns}}}</text>
+            </container>
+        </container>
     </container>
 </panel>
