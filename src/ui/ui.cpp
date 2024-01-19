@@ -19,6 +19,8 @@
 
 static bool panel_left_used = false;
 
+static std::vector<bck_color_override_t> bck_color_overrides;
+
 extern globals_t globals;
 
 // static char xml_path[256];
@@ -311,6 +313,7 @@ void ui_start_of_frame() {
     shader_set_mat4(font_char_t::ui_opengl_data.shader, "projection", projection);
     ui_will_update = globals.window.resized;
 
+    bck_color_overrides.clear();
     ui_text_values.clear();
     styles_stack.clear();
     style_t default_style;
@@ -486,11 +489,7 @@ void create_container(float width, float height, WIDGET_SIZE widget_size_width, 
     container.height = height;
     container.width = width;
     container.widget_size_width = widget_size_width;
-    container.widget_size_height = widget_size_height;
-
-    if (strcmp(container.key, "open_close_section") == 0) {
-        int a = 5;
-    }
+    container.widget_size_height = widget_size_height; 
 
     if (focusable) {
         container.properties = container.properties | UI_PROP_FOCUSABLE;
@@ -1296,12 +1295,33 @@ void render_ui_helper(widget_t& widget) {
         if (widget.style.hover_color != TRANSPARENT_COLOR) {
             widget.style.color = widget.style.hover_color;
         }
+        for (int i = 0; i < bck_color_overrides.size(); i++) {
+            bck_color_override_t& ovrride = bck_color_overrides[i];
+            if (strcmp(ovrride.widget_key, widget.key) == 0) {
+                widget.style.bck_mode = ovrride.bck_mode;
+                widget.style.background_color = ovrride.background_color;
+                widget.style.top_left_bck_color = ovrride.top_left_bck_color;
+                widget.style.top_right_bck_color = ovrride.top_right_bck_color;
+                widget.style.bottom_left_bck_color = ovrride.bottom_left_bck_color;
+                widget.style.bottom_right_bck_color = ovrride.bottom_right_bck_color;
+            }
+        }
         draw_background(widget);
-    } else {
+    } else { 
+        for (int i = 0; i < bck_color_overrides.size(); i++) {
+            bck_color_override_t& ovrride = bck_color_overrides[i];
+            if (strcmp(ovrride.widget_key, widget.key) == 0) {
+                widget.style.bck_mode = ovrride.bck_mode;
+                widget.style.background_color = ovrride.background_color;
+                widget.style.top_left_bck_color = ovrride.top_left_bck_color;
+                widget.style.top_right_bck_color = ovrride.top_right_bck_color;
+                widget.style.bottom_left_bck_color = ovrride.bottom_left_bck_color;
+                widget.style.bottom_right_bck_color = ovrride.bottom_right_bck_color;
+            }
+        }
         if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
             widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT ||
-            widget.style.bck_mode == BCK_GRADIENT_4_CORNERS
-        ) {
+            widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
             draw_background(widget);
         }
     }
@@ -1862,4 +1882,19 @@ bool is_some_element_clicked_on() {
         }
     }
     return false;
+}
+
+void set_background_color_override(const char* widget_key, glm::vec3 color) {
+    bck_color_override_t ovrride;
+    memcpy(ovrride.widget_key, widget_key, strlen(widget_key));
+    ovrride.background_color = color;
+    ovrride.bck_mode = BCK_SOLID;
+    bck_color_overrides.push_back(ovrride);
+}
+
+void set_background_color_gradient_4_corners_override(const char* widget_key, glm::vec3 top_left_color, glm::vec3 bottom_right_color) {
+    bck_color_override_t ovrride;
+    memcpy(ovrride.widget_key, widget_key, strlen(widget_key));
+    ovrride.top_left_bck_color = top_left_color;
+    ovrride.bottom_right_bck_color = bottom_right_color;
 }

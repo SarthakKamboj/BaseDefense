@@ -2,6 +2,7 @@
 
 #include "ui/ui.h"
 #include "globals.h"
+#include "utils/general.h"
 
 extern globals_t globals;
 
@@ -38,9 +39,24 @@ void update_store() {
     } else if (get_if_key_clicked_on("gun_container")) {
         store.selected_item = ITEM_GUN;
     }
+
+    glm::vec3 selected_color = create_color(220,115,0);
+    switch (store.selected_item) {
+        case ITEM_BASE: {
+            set_background_color_override("base_container", selected_color);
+            break;
+        }
+        case ITEM_BASE_EXT: {
+            set_background_color_override("base_ext_container", selected_color);
+            break;
+        }
+        case ITEM_GUN: {
+            set_background_color_override("gun_container", selected_color);
+            break;
+        }
+    }
     
     if (get_if_key_clicked_on("Buy") && store.selected_item != ITEM_NONE && store.store_credit >= store_items[store.selected_item-1].cost) {
-		printf("buy button pressed\n");
         store.store_credit -= store_items[store.selected_item-1].cost;
         switch (store.selected_item) {
             case ITEM_BASE: {
@@ -82,6 +98,5 @@ void update_store() {
             store.selected_item = ITEM_NONE;
 			panel_left = -globals.window.window_width * 0.829f;
 		}
-		printf("open close section pressed\n");
 	}
 }

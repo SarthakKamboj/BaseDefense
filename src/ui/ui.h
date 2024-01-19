@@ -265,6 +265,18 @@ void make_constraint_value_constant(int constraint_handle, float value);
 void create_constraint(int constraint_var_handle, std::vector<constraint_term_t>& right_side_terms, float constant);
 void resolve_constraints();
 
+struct bck_color_override_t {
+    char widget_key[256]{};
+    BCK_MODE bck_mode = BCK_SOLID;
+    glm::vec3 background_color = TRANSPARENT_COLOR;
+    glm::vec3 top_left_bck_color = TRANSPARENT_COLOR;
+    glm::vec3 top_right_bck_color = TRANSPARENT_COLOR;
+    glm::vec3 bottom_right_bck_color = TRANSPARENT_COLOR;
+    glm::vec3 bottom_left_bck_color = TRANSPARENT_COLOR;
+};
+void set_background_color_override(const char* widget_key, glm::vec3 color);
+void set_background_color_gradient_4_corners_override(const char* widget_key, glm::vec3 top_left_color, glm::vec3 bottom_right_color);
+
 void draw_background(widget_t& widget);
 void draw_image_container(widget_t& widget);
 void draw_text(const char* text, glm::vec2 starting_pos, TEXT_SIZE text_size, glm::vec3& color);
