@@ -5,6 +5,7 @@
 #include "ui/ui.h"
 #include "gameplay/bck.h"
 #include "gameplay/gos.h"
+#include "gameplay/preview_manager.h"
 #include "utils/time.h"
 #include "globals.h"
 #include "utils/general.h"
@@ -29,18 +30,9 @@ void render() {
 
 	// regular stuff
 	draw_quad_renders();
+	render_preview_mode();
 
-	// ui_start_of_frame();	
-
-	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
-		set_ui_value(std::string("preview_mode"), std::string("preview gun mode"));
-	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
-		set_ui_value(std::string("preview_mode"), std::string("preview base ext mode"));
-	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
-		set_ui_value(std::string("preview_mode"), std::string("preview base mode"));
-	} else {
-		set_ui_value(std::string("preview_mode"), std::string("unrecognized preview mode"));
-	}
+	// ui_start_of_frame();		
 
 	draw_from_ui_file_layouts();
 

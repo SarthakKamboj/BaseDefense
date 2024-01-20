@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 		// game::time_t::delta_time = frame_timer.elapsed_time_sec;
 		game::time_t::cur_time += game::time_t::delta_time;	
 
-		if (globals.window.user_input.p_pressed) {
+		if (get_down('p')) {
 			std::cout << "delta time " << game::time_t::delta_time << std::endl;
 			std::cout << "cur time " << game::time_t::cur_time << std::endl;
 			std::cout << "fps: " << 1 / game::time_t::delta_time << std::endl;

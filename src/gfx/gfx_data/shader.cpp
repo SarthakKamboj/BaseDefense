@@ -100,6 +100,15 @@ void shader_set_vec3(shader_t& shader, const char* var_name, const glm::vec3& v)
 	glUniform3fv(loc, 1, glm::value_ptr(v));
 }
 
+void shader_set_vec2(shader_t& shader, const char* var_name, const glm::vec2& v) {
+	glUseProgram(shader.id);
+	GLint loc = glGetUniformLocation(shader.id, var_name);
+    if (loc == -1) {
+        std::cout << var_name << " does not exist in shader " << shader.id << std::endl;
+    }
+	glUniform2fv(loc, 1, glm::value_ptr(v));
+}
+
 void shader_set_float(shader_t& shader, const char* var_name, const float val) {
 	glUseProgram(shader.id);
 	GLint loc = glGetUniformLocation(shader.id, var_name);

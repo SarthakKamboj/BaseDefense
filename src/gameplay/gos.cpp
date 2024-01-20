@@ -8,6 +8,7 @@
 #include "globals.h"
 #include "store.h"
 #include "ui/ui.h"
+#include "preview_manager.h"
 
 #include <vector>
 
@@ -37,7 +38,8 @@ static base_extension_t preview_base_ext;
 static base_t preview_base;
 PREVIEW_MODE preview_mode = PREVIEW_MODE::PREVIEW_BASE;
 
-void init_preview() {
+void init_preview_items() {
+	init_preview_mode();
 	init_preview_gun();
 	init_base_ext_preview();
 	init_preview_base();
@@ -561,15 +563,15 @@ void update_score() {
 
 void gos_update() {
 	ui_open = panel_left == 0 || globals.ui_clicked_on;
-	if (globals.window.user_input.s_pressed) {
-		if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
-			preview_mode = PREVIEW_MODE::PREVIEW_BASE_EXT;
-		} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
-			preview_mode = PREVIEW_MODE::PREVIEW_BASE;
-		} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
-			preview_mode = PREVIEW_MODE::PREVIEW_GUN;
-		}
-	}	
+	// if (globals.window.user_input.down['s']) {
+	// 	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
+	// 		preview_mode = PREVIEW_MODE::PREVIEW_BASE_EXT;
+	// 	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
+	// 		preview_mode = PREVIEW_MODE::PREVIEW_BASE;
+	// 	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
+	// 		preview_mode = PREVIEW_MODE::PREVIEW_GUN;
+	// 	}
+	// }	
 
 	update_preview_base();
 

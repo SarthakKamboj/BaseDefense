@@ -10,6 +10,7 @@
 #include "globals.h"
 #include "gameplay/store.h"
 #include "ui/ui.h"
+#include "gameplay/preview_manager.h"
 
 extern globals_t globals;
 
@@ -37,6 +38,7 @@ void update() {
         update_image_anim_players();
         gos_update();
         update_store();
+        update_preview_mode();
     }
 
     scene_manager_update(globals.scene_manager);

@@ -55,6 +55,8 @@ void shader_set_int(shader_t& shader, const char* var_name, const int val);
 /// <param name="v">Vector3 data</param>
 void shader_set_vec3(shader_t& shader, const char* var_name, const glm::vec3& v);
 
+void shader_set_vec2(shader_t& shader, const char* var_name, const glm::vec2& v);
+
 /// <summary>
 /// Get the vector3 for a particular shader
 /// </summary>

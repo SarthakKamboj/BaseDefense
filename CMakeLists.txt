@@ -33,6 +33,7 @@ function(configure_game)
 
         src/gameplay/gos.cpp
         src/gameplay/store.cpp
+        src/gameplay/preview_manager.cpp
 
         src/animation/animation.cpp
 

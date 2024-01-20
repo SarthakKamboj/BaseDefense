@@ -28,12 +28,17 @@ struct user_input_t {
     bool some_key_pressed = false;
 
     // true just on the initial click, but false even if button is down
-    bool w_pressed = false;
-    bool a_pressed = false;
-    bool s_pressed = false;
-    bool d_pressed = false;
-    bool p_pressed = false;
-    bool l_pressed = false;
+    // bool w_pressed = false;
+    // bool a_pressed = false;
+    // bool s_pressed = false;
+    // bool d_pressed = false;
+    // bool p_pressed = false;
+    // bool l_pressed = false;
+    // bool z_pressed = false;
+    // bool pressed[26]{};
+    bool down[26]{};
+    bool released[26]{};
+    
     bool space_pressed = false;
     bool enter_pressed = false;
     
@@ -44,12 +49,13 @@ struct user_input_t {
     bool controller_start_pressed = false;
 
     // true while continuously button is down
-    bool w_down = false;
-    bool a_down = false;
-    bool s_down = false;
-    bool d_down = false;
-    bool p_down = false;
-    bool l_down = false;
+    // bool w_down = false;
+    // bool a_down = false;
+    // bool s_down = false;
+    // bool d_down = false;
+    // bool p_down = false;
+    // bool l_down = false;
+    // bool z_down = false;
     bool enter_down = false;
 
     bool controller_a_down = false;
@@ -98,5 +104,7 @@ void render_window();
 /// process the input for the frame
 /// </summary>
 void process_input();
+bool get_down(char key);
+bool get_released(char key);
 
 bool detect_window_error();

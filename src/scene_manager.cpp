@@ -36,7 +36,7 @@ void scene_manager_update(scene_manager_t& sm) {
         } else if (sm.cur_level == LEVELS_DISPLAY) {
             add_active_ui_file("levels_display.xml");
         } else {
-            init_preview();
+            init_preview_items();
             create_enemy_spawner(glm::vec3(50, 50, 0));
             add_active_ui_file("play.xml");
             add_active_ui_file("store.xml");

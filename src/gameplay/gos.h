@@ -3,19 +3,12 @@
 #include "utils/time.h"
 #include "glm/glm.hpp"
 #include "constants.h"
+#include "preview_manager.h"
 
 #define NUM_BASE_ATTACH_PTS 3
 #define NUM_BASE_EXT_ATTACH_PTS 2
 
-enum PREVIEW_MODE {
-	PREVIEW_GUN = 0,
-	PREVIEW_BASE_EXT,
-	PREVIEW_BASE,
-	NUM_PREVIEWABLE_ITEMS,
-
-	PREVIEW_NONE
-};
-void init_preview();
+void init_preview_items();
 
 struct base_t {
 	int handle = -1;

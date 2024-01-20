@@ -1,4 +1,4 @@
-<panel id="store_panel" hor_align="center" ver_align="center" background_color="23,34,56">
+<panel id="levels_display_panel" hor_align="center" ver_align="center" background_color="23,34,56">
     <container id="header_info" 
     ver_align="start" hor_align="center"
     bck_mode="gradient-tl-br"

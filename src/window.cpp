@@ -164,12 +164,14 @@ void process_input() {
     user_input.mouse_y = globals.window.window_height - user_input.mouse_y;
 
     user_input.some_key_pressed = false;
-    user_input.w_pressed = false;
-    user_input.a_pressed = false;
-    user_input.s_pressed = false;
-    user_input.d_pressed = false;
-    user_input.p_pressed = false;
-    user_input.l_pressed = false;
+    memset(user_input.released, 0, sizeof(user_input.released));
+    // user_input.w_pressed = false;
+    // user_input.a_pressed = false;
+    // user_input.s_pressed = false;
+    // user_input.d_pressed = false;
+    // user_input.p_pressed = false;
+    // user_input.l_pressed = false;
+    // user_input.z_pressed = false;
     user_input.space_pressed = false;
     user_input.enter_pressed = false;
 
@@ -346,88 +348,102 @@ void process_input() {
                 break;
             }
             case SDL_KEYUP: {
-                switch (event.key.keysym.sym) {	
-                    case SDLK_w: {
-                        user_input.w_down = false;
-                        break;
-                    }
-                    case SDLK_a: {
-                        user_input.a_down = false;
-                        break;
-                    }
-                    case SDLK_s: {
-                        user_input.s_down = false;
-                        break;
-                    }
-                    case SDLK_d: {
-                        user_input.d_down = false;
-                        break;
-                    }
-                    case SDLK_p: {
-                        user_input.p_down = false;
-                        break;
-                    }
-                    case SDLK_l: {
-                        user_input.l_down = false;
-                        break;
-                    }
-                    case SDLK_RETURN: {
-                        user_input.enter_down = false;
-                        break;
-                    }
-                    default: break;
-                }
+                user_input.released[event.key.keysym.sym - 'a'] = true;
+                user_input.down[event.key.keysym.sym - 'a'] = false;
+                // switch (event.key.keysym.sym) {	
+                //     case SDLK_w: {
+                //         user_input.w_down = false;
+                //         break;
+                //     }
+                //     case SDLK_a: {
+                //         user_input.a_down = false;
+                //         break;
+                //     }
+                //     case SDLK_s: {
+                //         user_input.s_down = false;
+                //         break;
+                //     }
+                //     case SDLK_d: {
+                //         user_input.d_down = false;
+                //         break;
+                //     }
+                //     case SDLK_p: {
+                //         user_input.p_down = false;
+                //         break;
+                //     }
+                //     case SDLK_l: {
+                //         user_input.l_down = false;
+                //         break;
+                //     }
+                //     case SDLK_RETURN: {
+                //         user_input.enter_down = false;
+                //         break;
+                //     }
+                //     case SDLK_z: {
+                //         user_input.z_down = false;
+                //         break;
+                //     }
+                //     default: break;
+                // }
             }
             break;
             case SDL_KEYDOWN: {
                 user_input.some_key_pressed = true;
-                switch (event.key.keysym.sym) {
-                    case SDLK_ESCAPE: {
-                        user_input.quit = true;
-                        break;
-                    }
-                    case SDLK_w: {
-                        user_input.w_pressed = true;
-                        user_input.w_down = true;
-                        break;
-                    }
-                    case SDLK_a: {
-                        user_input.a_pressed = true;
-                        user_input.a_down = true;
-                        break;
-                    }
-                    case SDLK_s: {
-                        user_input.s_pressed = true;
-                        user_input.s_down = true;
-                        break;
-                    }
-                    case SDLK_d: {
-                        user_input.d_pressed = true;
-                        user_input.d_down = true;
-                        break;
-                    }
-                    case SDLK_l: {
-                        user_input.l_pressed = true;
-                        user_input.l_down = true;
-                        break;
-                    }
-                    case SDLK_SPACE: {
-                        user_input.space_pressed = true;
-                        break;
-                    }
-                    case SDLK_p: {
-                        user_input.p_pressed = true;
-                        user_input.p_down = true;
-                        break;
-                    }
-                    case SDLK_RETURN: {
-                        user_input.enter_down = true;
-                        user_input.enter_pressed = true;
-                        break;
-                    }
-                    default:
-                        break;
-                }
+                user_input.down[event.key.keysym.sym - 'a'] = true;
+                user_input.released[event.key.keysym.sym - 'a'] = false;
+                // switch (event.key.keysym.sym) {
+                    // case SDLK_ESCAPE: {
+                    //     user_input.quit = true;
+                    //     break;
+                    // }
+                    // case SDLK_w: {
+                    //     user_input.w_pressed = true;
+                    //     user_input.w_down = true;
+                    //     break;
+                    // }
+                    // case SDLK_a: {
+                    //     user_input.a_pressed = true;
+                    //     user_input.a_down = true;
+                    //     break;
+                    // }
+                    // case SDLK_s: {
+                    //     user_input.s_pressed = true;
+                    //     user_input.s_down = true;
+                    //     break;
+                    // }
+                    // case SDLK_d: {
+                    //     user_input.d_pressed = true;
+                    //     user_input.d_down = true;
+                    //     break;
+                    // }
+                    // case SDLK_l: {
+                    //     user_input.l_pressed = true;
+                    //     user_input.l_down = true;
+                    //     break;
+                    // }
+                    // case SDLK_SPACE: {
+                    //     user_input.space_pressed = true;
+                    //     break;
+                    // }
+                    // case SDLK_p: {
+                    //     user_input.p_pressed = true;
+                    //     user_input.p_down = true;
+                    //     break;
+                    // }
+                    // case SDLK_RETURN: {
+                    //     user_input.enter_down = true;
+                    //     user_input.enter_pressed = true;
+                    //     break;
+                    // }
+                    // case SDLK_z: {
+                    //     user_input.z_down = true;
+                    //     user_input.z_pressed = true;
+                    //     printf("z pressed\n");
+                    //     break;
+                    // }
+                    // default:
+                    //     break;
+                // }
             }
             break;
         }
@@ -444,4 +460,12 @@ bool detect_window_error() {
         return true;
     }	
     return false;
+}
+
+bool get_down(char key) {
+    return globals.window.user_input.down[key - 'a'];
+}
+
+bool get_released(char key) {
+    return globals.window.user_input.released[key - 'a'];
 }

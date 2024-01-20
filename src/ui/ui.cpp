@@ -780,28 +780,28 @@ void end_imgui() {
     if (controller_centered_x && input_state.controller_x_axis >= 0.9f) {
         right_move = true;
         controller_centered_x = false;
-    } else if (input_state.d_pressed) {
+    } else if (get_down('d')) {
         right_move = true;
     }
 
     if (controller_centered_x && input_state.controller_x_axis <= -0.9f) {
         left_move = true;
         controller_centered_x = false;
-    } else if (input_state.a_pressed) {
+    } else if (get_down('a')) {
         left_move = true;
     }
 
     if (controller_centered_y && input_state.controller_y_axis <= -0.9f) {
         down_move = true;
         controller_centered_y = false;
-    } else if (input_state.s_pressed) {
+    } else if (get_down('s')) {
         down_move = true;
     }
 
     if (controller_centered_y && input_state.controller_y_axis >= 0.9f) {
         up_move = true;
         controller_centered_y = false;
-    } else if (input_state.w_pressed) {
+    } else if (get_down('w')) {
         up_move = true;
     } 
 
@@ -1946,7 +1946,8 @@ void clear_active_ui_files() {
 
 void add_active_ui_file(const char* file_name) {
     for (ui_file_layout_t& file_layout : ui_files) {
-        if (strstr(file_layout.path, file_name) != NULL) {
+        const char* ui_file_file_name = strrchr(file_layout.path, '\\') + 1;
+        if (strcmp(ui_file_file_name, file_name) == 0) {
             active_ui_file_handles.push_back(file_layout.handle);
             return;
         }
