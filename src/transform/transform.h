@@ -70,3 +70,5 @@ glm::vec3 get_world_pos(transform_t* transform);
  * @param handle 
 */
 void delete_transform(int handle);
+
+void delete_transforms();

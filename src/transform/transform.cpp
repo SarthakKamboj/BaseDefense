@@ -322,3 +322,7 @@ void update_hierarchy_based_on_locals() {
         }
     }
 }
+
+void delete_transforms() {
+    transforms.clear();
+}

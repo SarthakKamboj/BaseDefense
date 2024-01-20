@@ -540,12 +540,4 @@ void init() {
 	}
 
 	init_camera();	
-
-	init_preview();
-
-	create_enemy_spawner(glm::vec3(50, 50, 0));
-	// create_base();
-	// int base_attachment_handle = create_base_attachment();
-	// create_gun(base_attachment_handle, true);
-	// create_gun(base_attachment_handle, false);
 }

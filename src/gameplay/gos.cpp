@@ -16,8 +16,7 @@ static glm::vec3 valid_placement_color = create_color(45,45,45);
 
 extern inventory_t inventory;
 
-static int num_enemies_killed = 0;
-static score_t score;
+score_t score;
 
 extern float panel_left;
 static bool ui_open = false;
@@ -514,7 +513,7 @@ void update_enemy(enemy_t& enemy) {
 			if (enemy.health <= 0) {
 				add_store_credit(1);
 				delete_enemy(enemy.handle);
-				num_enemies_killed++;
+				score.enemies_left_to_kill = MAX(0, score.enemies_left_to_kill-1);
 			}
 		}
 	}
@@ -552,8 +551,8 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 }
 
 void update_score() {
-	score.enemies_left_to_kill = MAX(0, 10-num_enemies_killed);
-    set_ui_value(std::string("remaining_time"), std::to_string(score.enemies_left_to_kill));
+	// score.enemies_left_to_kill = MAX(0, 10-num_enemies_killed);
+    set_ui_value(std::string("num_enemies_left_to_kill"), std::to_string(score.enemies_left_to_kill));
 	if (score.enemies_left_to_kill == 0) {
 		globals.scene_manager.queue_level_load = true;
 		globals.scene_manager.level_to_load = GAME_OVER_SCREEN_LEVEL;
@@ -602,4 +601,16 @@ void gos_update() {
 
 	update_hierarchy_based_on_globals();
 	update_score();
+}
+
+void delete_gos() {
+	attachments.clear();
+	attached_guns.clear();
+	bullets.clear();
+	enemy_spawners.clear();
+	enemies.clear();
+
+	preview_base = base_t();
+	preview_base_ext = base_extension_t();
+	preview_gun = gun_t();
 }

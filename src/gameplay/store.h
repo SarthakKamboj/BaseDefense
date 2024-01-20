@@ -18,7 +18,7 @@ struct store_t {
     int store_credit = 0;
     static const float TIME_BETWEEN_PURCHASES;
     time_count_t last_buy_time = TIME_BETWEEN_PURCHASES;
-    bool open = true;
+    bool open = false;
     ITEM selected_item = ITEM_NONE;
 };
 

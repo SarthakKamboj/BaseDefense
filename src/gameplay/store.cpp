@@ -6,7 +6,7 @@
 
 extern globals_t globals;
 
-static store_t store;
+store_t store;
 inventory_t inventory;
 
 const float store_t::TIME_BETWEEN_PURCHASES = 4.f;
@@ -91,12 +91,11 @@ void update_store() {
 
 	if (get_if_key_clicked_on("open_close_section")) {
         store.open = !store.open;
-		if (store.open) {
-            store.selected_item = ITEM_NONE;
-			panel_left = 0;
-		} else {
-            store.selected_item = ITEM_NONE;
-			panel_left = -globals.window.window_width * 0.829f;
-		}
+        store.selected_item = ITEM_NONE;	
 	}
+    if (store.open) {
+        panel_left = 0;
+    } else {
+        panel_left = -globals.window.window_width * 0.829f;
+    }
 }

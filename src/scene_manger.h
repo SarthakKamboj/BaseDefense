@@ -9,6 +9,7 @@ struct scene_manager_t {
 	int level_to_load = MAIN_MENU_LEVEL;
 };
 
+void unload_level();
 // void scene_manager_load_level(scene_manager_t& sm, int level_num);
 void scene_manager_update(scene_manager_t& sm);
 

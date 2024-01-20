@@ -530,3 +530,10 @@ std::vector<kin_w_kin_col_t> get_from_kin_w_kin_cols(int kin_handle, PHYSICS_RB_
 	}
 	return col_infos;
 }
+
+void delete_rbs() {
+	non_kin_rigidbodies.clear();
+	kin_rigidbodies.clear();
+	frame_non_kin_w_kin_cols.clear();
+	frame_kin_w_kin_cols.clear();
+}

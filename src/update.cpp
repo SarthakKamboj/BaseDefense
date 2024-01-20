@@ -15,7 +15,9 @@ extern globals_t globals;
 
 void update() {
 
-	if (globals.scene_manager.cur_level == MAIN_MENU_LEVEL) {
+    if (globals.scene_manager.cur_level < 0) {
+
+    } else if (globals.scene_manager.cur_level == MAIN_MENU_LEVEL) {
         if (get_if_key_clicked_on("Play Game")) {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = LEVEL_1;

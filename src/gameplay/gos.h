@@ -147,7 +147,6 @@ struct enemy_t {
 void create_enemy(glm::vec3 pos, int dir, float speed);
 void update_enemy(enemy_t& enemy);
 void delete_enemy(int enemy_handle);
-int get_num_enemies_killed();
 
 struct enemy_spawner_t {
 	int handle = -1;
@@ -174,3 +173,4 @@ void update_score();
  * @brief Update all gameobjects
 */
 void gos_update();
+void delete_gos();

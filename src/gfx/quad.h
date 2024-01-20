@@ -64,3 +64,5 @@ void draw_quad_renders();
  * @param quad_handle 
 */
 void delete_quad_render(int quad_handle);
+
+void delete_quad_renders();

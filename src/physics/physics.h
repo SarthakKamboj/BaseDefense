@@ -175,3 +175,5 @@ std::vector<non_kin_w_kin_col_t> get_from_non_kin_w_kin_cols_w_non_kin(PHYSICS_R
 std::vector<non_kin_w_kin_col_t> get_from_non_kin_w_kin_cols_w_kin(int kin_handle, PHYSICS_RB_LAYER kin_type);
 
 std::vector<kin_w_kin_col_t> get_from_kin_w_kin_cols(int kin_handle, PHYSICS_RB_LAYER kin_type);
+
+void delete_rbs();
