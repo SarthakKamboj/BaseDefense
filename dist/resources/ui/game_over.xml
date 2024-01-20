@@ -6,7 +6,7 @@
         widget_size_width="parent" widget_size_height="parent" 
         ver_align="end" hor_align="center" 
         content_spacing="10">
-        <text font_size="108" color="250,72,83">BASE DEFENSE</text>
+        <text font_size="108" color="250,72,83">Game Over</text>
     </container>
     <container id="buttons" width="1" height="0.5"
         widget_size_width="parent" widget_size_height="parent" 
@@ -17,21 +17,7 @@
             border_radius="20"
             hover_background_color="250,32,43"
             background_color="250,72,83">
-            Play Game
-        </button>
-        <button padding="30,20"
-            border_radius="20"
-            font_size="40"
-            hover_background_color="250,32,43"
-            background_color="250,72,83">
-            Settings
-        </button>
-        <button padding="30,20"
-            border_radius="20"
-            font_size="40"
-            hover_background_color="250,32,43"
-            background_color="250,72,83">
-            Quit
+            Continue
         </button>
     </container>
 </panel>

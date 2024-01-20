@@ -1,11 +1,15 @@
 <panel id="hi" hor_align="center" display_dir="vertical">
     <container id="header_info" width="0.9" height="0.1"
     ver_align="center" hor_align="center"
-    display_dir="horizontal"
+    content_spacing="10"
+    display_dir="vertical"
     widget_size_height="parent"
     widget_size_width="parent">
         <text>
             {{{preview_mode}}}
+        </text>
+        <text>
+            Time Left: {{{remaining_time}}}
         </text>
     </container>
     <container id="inventory_summary_container" width="1.0" height="0.9" 
