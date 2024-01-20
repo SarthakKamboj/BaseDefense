@@ -1,0 +1,126 @@
+<panel id="store_panel" hor_align="center" ver_align="center" background_color="23,34,56">
+    <container id="header_info" 
+    ver_align="start" hor_align="center"
+    bck_mode="gradient-tl-br"
+    tl_bck="45,50,150"
+    br_bck="10,103,59"
+    display_dir="vertical"
+    border_radius="20"
+    width="0.7" height="0.7"
+    widget_size_width="parent" widget_size_height="parent">
+        <container id="top_border"
+            background_color="255,255,255"
+            border_radius_mode="4-corners"
+            tr_border_radius="20" tl_border_radius="20"
+            width="1" height=".02" widget_size_width="parent" widget_size_height="parent">
+        </container>
+
+        <container id="level_select_name" width="1" height="0.15" widget_size_width="fit" widget_size_height="parent"
+        display_dir="horizontal" ver_align="center" hor_align="center" padding="30,0" background_color="41,34,88"
+        border_radius_mode="4-corners"
+        br_border_radius="20" bl_border_radius="20">
+            <text font_size="50" color="249,246,8">LEVEL SELECT</text>
+        </container>
+
+        <container id="levels_btns"
+        display_dir="vertical" hor_align="center" ver_align="center" 
+        content_spacing="30"
+        width="1" height=".81" widget_size_width="parent" widget_size_height="parent">
+            <container id="top_row" width="1" widget_size_width="parent" height="1" widget_size_height="parent" display_dir="horizontal"
+            hor_align="center" content_spacing="30" ver_align="center">
+                <container id="1_container" 
+                width="0.15" widget_size_width="parent" 
+                height="0.3" widget_size_height="parent" 
+                hor_align="center" ver_align="space_between"
+                border_radius="15" background_color="249,246,8"
+                hover_background_color="249,246,158" clickable="true">
+                    <container id="num_container" width="1" height=".8"
+                    widget_size_width="parent" widget_size_height="parent" 
+                    ver_align="center" hor_align="center">
+                        <text font_size="50" color="63,62,57">1</text>
+                    </container>
+                    <container id="bottom_border"
+                        background_color="107,128,69"
+                        border_radius_mode="4-corners"
+                        br_border_radius="15" bl_border_radius="15"
+                        width="1" height=".2" widget_size_width="parent" widget_size_height="parent" />
+                </container>
+                <container id="2_container" 
+                width="0.15" widget_size_width="parent" 
+                height="0.3" widget_size_height="parent" 
+                hor_align="center" ver_align="space_between"
+                border_radius="15" background_color="249,246,8"
+                hover_background_color="249,246,158" clickable="true">
+                    <container id="num_container" width="1" height=".8"
+                    widget_size_width="parent" widget_size_height="parent" 
+                    ver_align="center" hor_align="center">
+                        <text font_size="50" color="63,62,57">2</text>
+                    </container>
+                    <container id="bottom_border"
+                        background_color="107,128,69"
+                        border_radius_mode="4-corners"
+                        br_border_radius="15" bl_border_radius="15"
+                        width="1" height=".2" widget_size_width="parent" widget_size_height="parent" />
+                </container>
+                <container id="3_container" 
+                width="0.15" widget_size_width="parent" 
+                height="0.3" widget_size_height="parent" 
+                hor_align="center" ver_align="space_between"
+                border_radius="15" background_color="249,246,8"
+                hover_background_color="249,246,158" clickable="true">
+                    <container id="num_container" width="1" height=".8"
+                    widget_size_width="parent" widget_size_height="parent" 
+                    ver_align="center" hor_align="center">
+                        <text font_size="50" color="63,62,57">3</text>
+                    </container>
+                    <container id="bottom_border"
+                        background_color="107,128,69"
+                        border_radius_mode="4-corners"
+                        br_border_radius="15" bl_border_radius="15"
+                        width="1" height=".2" widget_size_width="parent" widget_size_height="parent" />
+                </container>
+                <container id="4_container" 
+                width="0.15" widget_size_width="parent" 
+                height="0.3" widget_size_height="parent" 
+                hor_align="center" ver_align="space_between"
+                border_radius="15" background_color="249,246,8"
+                hover_background_color="249,246,158" clickable="true">
+                    <container id="num_container" width="1" height=".8"
+                    widget_size_width="parent" widget_size_height="parent" 
+                    ver_align="center" hor_align="center">
+                        <text font_size="50" color="63,62,57">4</text>
+                    </container>
+                    <container id="bottom_border"
+                        background_color="107,128,69"
+                        border_radius_mode="4-corners"
+                        br_border_radius="15" bl_border_radius="15"
+                        width="1" height=".2" widget_size_width="parent" widget_size_height="parent" />
+                </container>
+                <container id="5_container" 
+                width="0.15" widget_size_width="parent" 
+                height="0.3" widget_size_height="parent" 
+                hor_align="center" ver_align="space_between"
+                border_radius="15" background_color="249,246,8"
+                hover_background_color="249,246,158" clickable="true">
+                    <container id="num_container" width="1" height=".8"
+                    widget_size_width="parent" widget_size_height="parent" 
+                    ver_align="center" hor_align="center">
+                        <text font_size="50" color="63,62,57">5</text>
+                    </container>
+                    <container id="bottom_border"
+                        background_color="107,128,69"
+                        border_radius_mode="4-corners"
+                        br_border_radius="15" bl_border_radius="15"
+                        width="1" height=".2" widget_size_width="parent" widget_size_height="parent" />
+                </container>
+            </container>
+        </container>
+
+        <container id="bottom_border"
+            background_color="255,255,255"
+            border_radius_mode="4-corners"
+            bl_border_radius="20" br_border_radius="20"
+            width="1" height=".02" widget_size_width="parent" widget_size_height="parent">
+        </container>
+    </container> 
+</panel>
