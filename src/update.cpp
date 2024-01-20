@@ -29,6 +29,8 @@ void update() {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
         }
+    } else if (globals.scene_manager.cur_level == LEVELS_DISPLAY) {
+        
     } else {
         update_camera();
         update_rigidbodies();

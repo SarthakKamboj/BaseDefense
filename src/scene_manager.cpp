@@ -33,6 +33,8 @@ void scene_manager_update(scene_manager_t& sm) {
             add_active_ui_file("main_menu.xml");
         } else if (sm.cur_level == GAME_OVER_SCREEN_LEVEL) {
             add_active_ui_file("game_over.xml");
+        } else if (sm.cur_level == LEVELS_DISPLAY) {
+            add_active_ui_file("levels_display.xml");
         } else {
             init_preview();
             create_enemy_spawner(glm::vec3(50, 50, 0));
