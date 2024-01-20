@@ -304,10 +304,13 @@ struct parsed_ui_attributes_t {
 parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes);
 
 struct ui_file_layout_t {
+    int handle = -1;
     xml_document* document = NULL;
     time_t last_modified_time = 0;
     char path[256]{};
 };
+void add_active_ui_file(const char* file_name);
+void clear_active_ui_files();
 
 bool is_some_element_clicked_on();
 

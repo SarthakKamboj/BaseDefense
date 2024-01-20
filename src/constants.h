@@ -24,7 +24,11 @@
 
 #define UI_TESTING
 
-#define TEST_UI_LEVEL 0
+#define MAX(a,b) ((a) > (b)) ? a : b
+
+#define TEST_UI_LEVEL -1
+#define MAIN_MENU_LEVEL 0
+#define LEVEL_1 1
 #define GAME_OVER_SCREEN_LEVEL 1024
 #define SETTINGS_LEVEL 1025
 #define QUIT_LEVEL 1026

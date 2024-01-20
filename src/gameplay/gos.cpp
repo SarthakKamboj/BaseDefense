@@ -7,6 +7,7 @@
 #include "utils/time.h"
 #include "globals.h"
 #include "store.h"
+#include "ui/ui.h"
 
 #include <vector>
 
@@ -16,6 +17,7 @@ static glm::vec3 valid_placement_color = create_color(45,45,45);
 extern inventory_t inventory;
 
 static int num_enemies_killed = 0;
+static score_t score;
 
 extern float panel_left;
 static bool ui_open = false;
@@ -512,6 +514,7 @@ void update_enemy(enemy_t& enemy) {
 			if (enemy.health <= 0) {
 				add_store_credit(1);
 				delete_enemy(enemy.handle);
+				num_enemies_killed++;
 			}
 		}
 	}
@@ -548,6 +551,14 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 	spawner.last_spawn_time = game::time_t::cur_time;
 }
 
+void update_score() {
+	score.enemies_left_to_kill = MAX(0, 10-num_enemies_killed);
+    set_ui_value(std::string("remaining_time"), std::to_string(score.enemies_left_to_kill));
+	if (score.enemies_left_to_kill == 0) {
+		globals.scene_manager.queue_level_load = true;
+		globals.scene_manager.level_to_load = GAME_OVER_SCREEN_LEVEL;
+	}
+}
 
 void gos_update() {
 	ui_open = panel_left == 0 || globals.ui_clicked_on;
@@ -590,4 +601,5 @@ void gos_update() {
 	}
 
 	update_hierarchy_based_on_globals();
+	update_score();
 }

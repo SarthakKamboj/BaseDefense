@@ -165,6 +165,11 @@ struct enemy_spawner_t {
 void create_enemy_spawner(glm::vec3 pos);
 void update_enemy_spawner(enemy_spawner_t& spawner);
 
+struct score_t {
+	int enemies_left_to_kill = 10;
+};
+void update_score();
+
 /**
  * @brief Update all gameobjects
 */

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
+#include <filesystem>
 
 #include "constants.h"
 #include "utils/io.h"
@@ -17,6 +18,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H  
 
+namespace fs = std::filesystem;
+
 static bool panel_left_used = false;
 
 static std::vector<bck_color_override_t> bck_color_overrides;
@@ -27,6 +30,7 @@ extern globals_t globals;
 
 // static ui_file_layout_t ui_file;
 static std::vector<ui_file_layout_t> ui_files;
+static std::vector<int> active_ui_file_handles;
 
 static int cur_focused_internal_handle = -1;
 static int cur_final_focused_handle = -1;
@@ -1572,10 +1576,14 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
 }
 
 void draw_from_ui_file_layouts() {
-    for (ui_file_layout_t& ui_layout : ui_files) {
-        // ui_file_layout_t& file_layout = ui_file;
-        xml_node* root = ui_layout.document->root;
-        draw_from_ui_file_layout_helper(root);
+    // for (ui_file_layout_t& ui_layout : ui_files) {
+    for (int ui_layout_handle : active_ui_file_handles) {
+        for (ui_file_layout_t& layout : ui_files) {
+            if (layout.handle == ui_layout_handle) {
+                xml_node* root = layout.document->root;
+                draw_from_ui_file_layout_helper(root);
+            }
+        }
     }
 }
 
@@ -1673,10 +1681,6 @@ void load_font(int font_size) {
 }
 
 void init_ui() {
-    // int font_sizes
-    // for (font_mode_t& font_mode : font_modes) {
-        
-    // }
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	
 	render_object_data& data = font_char_t::ui_opengl_data;
@@ -1710,18 +1714,17 @@ void init_ui() {
 		std::cout << "successfully init ui data" << std::endl;
     }
 
-    const char* files[2]{"store.xml", "play.xml"};
+    char xml_folder[256]{};
+    char buffer[256]{};
+    get_resources_folder_path(buffer);
+    sprintf(xml_folder, "%s\\%s", buffer, UI_FOLDER);
 
-    for (int i = 0; i < 2; i++) {
-        char xml_path[256]{};
-        char buffer[256]{};
-        get_resources_folder_path(buffer);
-#ifdef UI_TESTING
-        sprintf(xml_path, "%s\\%s\\%s", buffer, UI_FOLDER, files[i]);
-#else
-        sprintf(xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
-#endif
-        // sprintf(xml_path, "%s\\%s\\main_menu.xml", buffer, UI_FOLDER);
+    for (const auto& entry : fs::directory_iterator(xml_folder)) {
+        auto& xml = entry.path();
+        std::string xml_string = entry.path().string();
+        const char* xml_path = xml_string.c_str();
+        if (strcmp(get_file_extension(xml_path), "xml") != 0) continue;
+        static int cnt = 0;
         FILE* ui_file_c = fopen(xml_path, "r");
         game_assert_msg(ui_file_c, "play file not found");
         ui_file_layout_t ui_file;
@@ -1732,8 +1735,33 @@ void init_ui() {
         ui_file.last_modified_time = ui_file_stat.st_mtime;
         memcpy(ui_file.path, xml_path, strlen(xml_path));
 
+        ui_file.handle = cnt++;
+
         ui_files.push_back(ui_file);
-    }
+    } 
+
+//     for (int i = 0; i < 2; i++) {
+//         char xml_path[256]{};
+//         char buffer[256]{};
+//         get_resources_folder_path(buffer);
+// #ifdef UI_TESTING
+//         sprintf(xml_path, "%s\\%s\\%s", buffer, UI_FOLDER, files[i]);
+// #else
+//         sprintf(xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
+// #endif
+//         // sprintf(xml_path, "%s\\%s\\main_menu.xml", buffer, UI_FOLDER);
+//         FILE* ui_file_c = fopen(xml_path, "r");
+//         game_assert_msg(ui_file_c, "play file not found");
+//         ui_file_layout_t ui_file;
+//         ui_file.document = xml_open_document(ui_file_c);
+
+//         struct stat ui_file_stat;
+//         if (stat(xml_path, &ui_file_stat) < 0) return;
+//         ui_file.last_modified_time = ui_file_stat.st_mtime;
+//         memcpy(ui_file.path, xml_path, strlen(xml_path));
+
+//         ui_files.push_back(ui_file);
+//     }
 }
 
 text_dim_t get_text_dimensions(const char* text, int font_size) {
@@ -1910,6 +1938,19 @@ bool is_some_element_clicked_on() {
         }
     }
     return false;
+}
+
+void clear_active_ui_files() {
+    active_ui_file_handles.clear();
+}
+
+void add_active_ui_file(const char* file_name) {
+    for (ui_file_layout_t& file_layout : ui_files) {
+        if (strstr(file_layout.path, file_name) != NULL) {
+            active_ui_file_handles.push_back(file_layout.handle);
+            return;
+        }
+    }
 }
 
 void set_background_color_override(const char* widget_key, glm::vec3 color) {
