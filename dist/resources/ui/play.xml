@@ -9,7 +9,7 @@
             {{{preview_mode}}}
         </text>
         <text>
-            Time Left: {{{remaining_time}}}
+            Enemies Left To Kill: {{{num_enemies_left_to_kill}}}
         </text>
     </container>
     <container id="inventory_summary_container" width="1.0" height="0.9" 
