@@ -348,8 +348,10 @@ void process_input() {
                 break;
             }
             case SDL_KEYUP: {
-                user_input.released[event.key.keysym.sym - 'a'] = true;
-                user_input.down[event.key.keysym.sym - 'a'] = false;
+                if (event.key.keysym.sym >= 'a' && event.key.keysym.sym <= 'z') {
+                    user_input.released[event.key.keysym.sym - 'a'] = true;
+                    user_input.down[event.key.keysym.sym - 'a'] = false;
+                }
                 // switch (event.key.keysym.sym) {	
                 //     case SDLK_w: {
                 //         user_input.w_down = false;
@@ -389,8 +391,10 @@ void process_input() {
             break;
             case SDL_KEYDOWN: {
                 user_input.some_key_pressed = true;
-                user_input.down[event.key.keysym.sym - 'a'] = true;
-                user_input.released[event.key.keysym.sym - 'a'] = false;
+                if (event.key.keysym.sym >= 'a' && event.key.keysym.sym <= 'z') {
+                    user_input.down[event.key.keysym.sym - 'a'] = true;
+                    user_input.released[event.key.keysym.sym - 'a'] = false;
+                }
                 // switch (event.key.keysym.sym) {
                     // case SDLK_ESCAPE: {
                     //     user_input.quit = true;
