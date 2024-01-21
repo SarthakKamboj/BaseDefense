@@ -27,9 +27,13 @@
 #define MAX(a,b) ((a) > (b)) ? a : b
 
 #define TEST_UI_LEVEL -1
-#define MAIN_MENU_LEVEL 0
-#define LEVELS_DISPLAY 1023
 #define LEVEL_1 1
+#define LEVEL_2 2 
+#define LEVEL_3 3 
+#define LEVEL_4 4
+#define LEVEL_5 5
+#define MAIN_MENU_LEVEL 1022
+#define LEVELS_DISPLAY 1023
 #define GAME_OVER_SCREEN_LEVEL 1024
 #define SETTINGS_LEVEL 1025
 #define QUIT_LEVEL 1026

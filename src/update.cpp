@@ -36,7 +36,7 @@ void update() {
             sprintf(container_name, "%i_container", i);
             if (get_if_key_clicked_on(container_name)) {
                 globals.scene_manager.queue_level_load = true;
-                globals.scene_manager.level_to_load = LEVEL_1;
+                globals.scene_manager.level_to_load = LEVEL_1 + (i-1);
             }
         }
     } else {

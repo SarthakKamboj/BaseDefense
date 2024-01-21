@@ -40,7 +40,7 @@ void scene_manager_update(scene_manager_t& sm) {
             create_enemy_spawner(glm::vec3(50, 50, 0));
             add_active_ui_file("play.xml");
             add_active_ui_file("store.xml");
-            score.enemies_left_to_kill = 10;
+            score.enemies_left_to_kill = 10 * sm.cur_level;
             inventory = inventory_t();
             store = store_t();
         }

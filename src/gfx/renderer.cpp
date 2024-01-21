@@ -19,7 +19,7 @@ extern PREVIEW_MODE preview_mode;
 void render() {
 	clear_window();
 
-	if (globals.scene_manager.cur_level != LEVEL_1) {
+	if (globals.scene_manager.cur_level > LEVEL_5) {
 		draw_from_ui_file_layouts();
 		// autolayout_hierarchy();
 		// end_imgui();
