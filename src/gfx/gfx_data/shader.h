@@ -8,7 +8,7 @@
 /// OpenGL Shader
 /// </summary>
 struct shader_t {
-    bool valid = true;
+    bool valid = false;
 	GLuint id = 0;
 };
 

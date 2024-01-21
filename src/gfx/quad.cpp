@@ -49,13 +49,14 @@ void init_quad_data() {
 
     // create vao and link the vbo/ebo to that vao
 	data.vao = create_vao();
-	bind_vao(data.vao);
+	// bind_vao(data.vao);
 	vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
 	vao_enable_attribute(data.vao, data.vbo, 1, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
 	vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
-	bind_ebo(data.ebo);
-	unbind_vao();
-	unbind_ebo();
+    vao_bind_ebo(data.vao, data.ebo);
+	// bind_ebo(data.ebo);
+	// unbind_vao();
+	// unbind_ebo();
 
     // load in shader for these rectangle quads because the game is 2D, so everything is basically a solid color or a texture
 	data.shader = create_shader("rectangle.vert", "rectangle.frag");

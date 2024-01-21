@@ -16,6 +16,7 @@ static glm::vec3 invalid_placement_color = create_color(144,66,71);
 static glm::vec3 valid_placement_color = create_color(45,45,45);
 
 extern inventory_t inventory;
+extern preview_state_t preview_state;
 
 score_t score;
 
@@ -36,7 +37,7 @@ static std::vector<enemy_t> enemies;
 static gun_t preview_gun;
 static base_extension_t preview_base_ext;
 static base_t preview_base;
-PREVIEW_MODE preview_mode = PREVIEW_MODE::PREVIEW_BASE;
+// PREVIEW_MODE preview_mode = PREVIEW_MODE::PREVIEW_BASE;
 
 void init_preview_items() {
 	init_preview_mode();
@@ -60,7 +61,7 @@ void update_preview_base() {
 	quad_render_t* quad_render = get_quad_render(preview_base.quad_render_handle);
 	game_assert_msg(quad_render, "quad render for base not found");	
 
-	if (preview_mode != PREVIEW_MODE::PREVIEW_BASE || ui_open) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE || ui_open) {
 		quad_render->render = false;
 		return;
 	}
@@ -165,20 +166,20 @@ void update_attachment(attachment_t& attachment) {
 	transform_t* transform = get_transform(attachment.transform_handle);
 	game_assert_msg(transform, "could not find transform of attachment pt");
 
-	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN && (attachment.attachment_types & ATTACHMENT_TYPE::ATTMNT_GUN) == 0) return;
-	if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT && (attachment.attachment_types & ATTACHMENT_TYPE::ATTMNT_BASE_EXT) == 0) return;
+	if (preview_state.cur_mode == PREVIEW_MODE::PREVIEW_GUN && (attachment.attachment_types & ATTACHMENT_TYPE::ATTMNT_GUN) == 0) return;
+	if (preview_state.cur_mode == PREVIEW_MODE::PREVIEW_BASE_EXT && (attachment.attachment_types & ATTACHMENT_TYPE::ATTMNT_BASE_EXT) == 0) return;
 
 	glm::vec2 mouse = mouse_to_world_pos();
 	glm::vec3 mouse3 = glm::vec3(mouse.x, mouse.y, 0);
 	if (glm::distance(mouse3, transform->global_position) > 20) return;
-	transform_t* preview_transform = preview_mode == PREVIEW_MODE::PREVIEW_GUN ? get_transform(preview_gun.transform_handle) : get_transform(preview_base_ext.transform_handle);
-	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
+	transform_t* preview_transform = preview_state.cur_mode == PREVIEW_MODE::PREVIEW_GUN ? get_transform(preview_gun.transform_handle) : get_transform(preview_base_ext.transform_handle);
+	if (preview_state.cur_mode == PREVIEW_MODE::PREVIEW_GUN) {
 		transform_t* gun_transform = get_transform(preview_gun.transform_handle);
 		game_assert_msg(gun_transform, "transform of preview gun not found");
 		preview_gun.free = false;
 		preview_gun.attachment_handle = attachment.handle;
 		gun_transform->global_position = transform->global_position;
-	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
+	} else if (preview_state.cur_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
 		transform_t* preview_transform = get_transform(preview_base_ext.transform_handle);
 		game_assert_msg(preview_transform, "transform of preview attachment not found");
 		preview_base_ext.attachment_handle = attachment.handle;
@@ -274,7 +275,7 @@ void update_preview_base_ext() {
 	quad_render_t* preview_quad = get_quad_render(preview_base_ext.quad_render_handle);
 	game_assert_msg(preview_quad, "quad render for preview attachment not found");
 
-	if (preview_mode != PREVIEW_MODE::PREVIEW_BASE_EXT || ui_open) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE_EXT || ui_open) {
 		preview_quad->render = false;
 		return;
 	}
@@ -366,7 +367,7 @@ void update_preview_gun() {
 	quad_render_t* preview_quad = get_quad_render(preview_gun.quad_render_handle);
 	game_assert_msg(preview_quad, "quad render for preview gun not found");
 
-	if (preview_mode != PREVIEW_MODE::PREVIEW_GUN || ui_open) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_GUN || ui_open) {
 		preview_quad->render = false;
 		return;
 	}

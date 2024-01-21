@@ -28,7 +28,7 @@ ebo_t create_ebo(const unsigned int* indicies, const int size_of_buffer);
 /// <param name="usage_pattern">The usage pattern of the EBO. Particularly useful to declare when a EBO
 /// will be written to often.</param>
 /// <returns>Created EBO</returns>
-ebo_t create_ebo(const unsigned int* indicies, const int size_of_buffer, GLenum usage_pattern);
+// ebo_t create_ebo(const unsigned int* indicies, const int size_of_buffer, GLenum usage_pattern);
 
 /// <summary>
 /// Draw a particular EBO. Note, the EBO must be binded at this point for this function to have effect.
@@ -131,6 +131,7 @@ void unbind_vao();
 /// <param name="stride">Number of bytes between consecutive vertex attributes</param>
 /// <param name="offset">Offset in bytes of the first component of the first vertex attribute within the VBO buffer</param>
 void vao_enable_attribute(vao_t& vao, const vbo_t& vbo, const int attrId, const int numValues, const int dType, const int stride, const int offset);
+void vao_bind_ebo(vao_t& vao, ebo_t& ebo);
 
 /// <summary>
 /// Deletes a VAO

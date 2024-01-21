@@ -14,7 +14,7 @@
 
 extern globals_t globals;
 
-static preview_state_t preview_state;
+preview_state_t preview_state;
 render_object_data preview_state_t::preview_render_data{};
 
 void init_preview_mode() {
@@ -31,50 +31,53 @@ void init_preview_mode() {
     game_assert_msg(q, "quad render not properly initizlied for preview");
     q->render = false;
  
-    render_object_data& data = preview_state.preview_render_data;
+    render_object_data& data = preview_state_t::preview_render_data;
 
-    // create the vertices of the rectangle
-	vertex_t vertices[4];
-	vertices[0] = create_vertex(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(0,1,1), glm::vec2(1,1)); // top right
-	vertices[1] = create_vertex(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,1), glm::vec2(1,0)); // bottom right
-	vertices[2] = create_vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0,1,0), glm::vec2(0,0)); // bottom left
-	vertices[3] = create_vertex(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1,0,0), glm::vec2(0,1)); // top left
+    if (!data.shader.valid) {
+        // create the vertices of the rectangle
+        vertex_t vertices[4];
+        vertices[0] = create_vertex(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(0,1,1), glm::vec2(1,1)); // top right
+        vertices[1] = create_vertex(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,1), glm::vec2(1,0)); // bottom right
+        vertices[2] = create_vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0,1,0), glm::vec2(0,0)); // bottom left
+        vertices[3] = create_vertex(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1,0,0), glm::vec2(0,1)); // top left
 
-    // setting the vertices in the vbo
-	data.vbo = create_vbo((float*)vertices, sizeof(vertices));
+        // setting the vertices in the vbo
+        data.vbo = create_vbo((float*)vertices, sizeof(vertices));
 
-    // creating the indicies for the rectangle
-	unsigned int indices[] = {
-		0, 1, 3,
-		1, 2, 3
-	};
+        // creating the indicies for the rectangle
+        unsigned int indices[] = {
+            0, 1, 3,
+            1, 2, 3
+        };
 
-    // set up ebo with indicies
-	data.ebo = create_ebo(indices, sizeof(indices));
+        // set up ebo with indicies
+        data.ebo = create_ebo(indices, sizeof(indices));
 
-    // create vao and link the vbo/ebo to that vao
-	data.vao = create_vao();
-	bind_vao(data.vao);
-	vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
-	vao_enable_attribute(data.vao, data.vbo, 1, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
-	vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
-	bind_ebo(data.ebo);
-	unbind_vao();
-	unbind_ebo();
+        // create vao and link the vbo/ebo to that vao
+        data.vao = create_vao();
+        // bind_vao(data.vao);
+        vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
+        vao_enable_attribute(data.vao, data.vbo, 1, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
+        vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
+        vao_bind_ebo(data.vao, data.ebo);
+        // bind_ebo(data.ebo);
+        // unbind_vao();
+        // unbind_ebo();
 
-    // load in shader for these rectangle quads because the game is 2D, so everything is basically a solid color or a texture
-	data.shader = create_shader("selector.vert", "selector.frag");
-    // set projection matrix in the shader
-	glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
-	shader_set_mat4(data.shader, "projection", projection);
-	shader_set_mat4(data.shader, "view", glm::mat4(1.0f));
-	shader_set_int(data.shader, "selector_image_tex", 0);
+        // load in shader for these rectangle quads because the game is 2D, so everything is basically a solid color or a texture
+        data.shader = create_shader("selector.vert", "selector.frag");
+        // set projection matrix in the shader
+        glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+        shader_set_mat4(data.shader, "projection", projection);
+        shader_set_mat4(data.shader, "view", glm::mat4(1.0f));
+        shader_set_int(data.shader, "selector_image_tex", 0);
 
-	if (detect_gfx_error()) {
-		game_error_log("error loading the selector shader data");
-	} else {
-		game_info_log("successfully init selector shader data");
-	}
+        if (detect_gfx_error()) {
+            game_error_log("error loading the selector shader data");
+        } else {
+            game_info_log("successfully init selector shader data");
+        }
+    }
 }
 
 void update_preview_mode() {
@@ -124,7 +127,7 @@ void update_preview_mode() {
 void render_preview_mode() {
     if (!preview_state.preview_selector_open) return;
 
-    shader_t& shader = preview_state.preview_render_data.shader;
+    shader_t& shader = preview_state_t::preview_render_data.shader;
 
     glm::mat4 view_mat = get_cam_view_matrix();
 	shader_set_mat4(shader, "view", view_mat);

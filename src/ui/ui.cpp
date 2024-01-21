@@ -80,6 +80,8 @@ static std::vector<font_mode_t> font_modes;
 //     }
 // };
 
+render_object_data font_char_t::ui_opengl_data{};
+
 bool is_same_hash(hash_t& hash1, hash_t& hash2) {
     for (int i = 0; i < 8; i++) {
         if (hash1.unsigned_ints[i] != hash2.unsigned_ints[i]) {
@@ -1198,10 +1200,8 @@ helper_info_t resolve_dimensions(int cur_widget_handle, int parent_width_handle,
 
 void autolayout_hierarchy() {
 
-    game_assert(curframe_widget_stack->size() == 0);
-    game_assert(styles_stack.size() == 1);
-
-    end_imgui();
+    game_assert_msg(curframe_widget_stack->size() == 0, "widgets stack for the current frame is not empty when laying out elements");
+    game_assert_msg(styles_stack.size() == 1, "styles stack has more than 1 style");
 
     auto& cur_arr = *curframe_widget_arr;
     for (int i = 0; i < cur_arr.size(); i++) {
@@ -1588,6 +1588,10 @@ void draw_from_ui_file_layouts() {
 }
 
 void render_ui() {  
+
+    end_imgui();
+	autolayout_hierarchy();
+
     if (ui_will_update) {
         cur_focused_internal_handle = -1;
         cur_final_focused_handle = -1;
@@ -1614,8 +1618,6 @@ void render_ui() {
         }
     }
 }
-
-render_object_data font_char_t::ui_opengl_data{};
 
 void load_font(int font_size) {
 
@@ -1694,13 +1696,14 @@ void init_ui() {
     // set up ebo with indicies
 	data.ebo = create_ebo(indices, sizeof(indices));
 
-	bind_vao(data.vao);
+	// bind_vao(data.vao);
 	vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
 	vao_enable_attribute(data.vao, data.vbo, 1, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
 	vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
-	bind_ebo(data.ebo);
-	unbind_vao();
-	unbind_ebo();
+    vao_bind_ebo(data.vao, data.ebo);
+	// bind_ebo(data.ebo);
+	// unbind_vao();
+	// unbind_ebo();
 
 	data.shader = create_shader("text.vert", "text.frag");
 	glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
@@ -1804,8 +1807,8 @@ void draw_background(widget_t& widget) {
     float width = widget.render_width;
     float height = widget.render_height;
 
-	vertex_t updated_vertices[4];
 #if 0
+	vertex_t updated_vertices[4];
 	glm::vec2 origin = glm::vec2(x + (width / 2), y - (height / 2));
     updated_vertices[0] = create_vertex(glm::vec3(x + (width / 2), y + (height / 2), 0.0f), glm::vec3(0,1,1), glm::vec2(0,0)); // top right
     updated_vertices[1] = create_vertex(glm::vec3(x + (width / 2), y - (height / 2), 0.0f), glm::vec3(0,0,1), glm::vec2(0,0)); // bottom right
@@ -1832,10 +1835,24 @@ void draw_background(widget_t& widget) {
     }
 
 	glm::vec3 origin = glm::vec3(x, y, 0);
+    // updated_vertices[0] = create_vertex(origin + glm::vec3(width, 0, 0.0f), top_right_color, glm::vec2(0,0)); // top right
+    // updated_vertices[1] = create_vertex(origin + glm::vec3(width, -height, 0.0f), bottom_right_color, glm::vec2(0,0)); // bottom right
+    // updated_vertices[2] = create_vertex(origin + glm::vec3(0, -height, 0.0f), bottom_left_color, glm::vec2(0,0)); // bottom left
+    // updated_vertices[3] = create_vertex(origin, top_left_color, glm::vec2(0,0)); // top left
+
+	vertex_t updated_vertices[4];
+#if 1
     updated_vertices[0] = create_vertex(origin + glm::vec3(width, 0, 0.0f), top_right_color, glm::vec2(0,0)); // top right
     updated_vertices[1] = create_vertex(origin + glm::vec3(width, -height, 0.0f), bottom_right_color, glm::vec2(0,0)); // bottom right
     updated_vertices[2] = create_vertex(origin + glm::vec3(0, -height, 0.0f), bottom_left_color, glm::vec2(0,0)); // bottom left
     updated_vertices[3] = create_vertex(origin, top_left_color, glm::vec2(0,0)); // top left
+#else
+    updated_vertices[0] = create_vertex(origin + glm::vec3(width, 0, 0.0f), top_right_color, glm::vec2(0,0)); // top right
+    updated_vertices[1] = create_vertex(origin + glm::vec3(width, -height, 0.0f), bottom_right_color, glm::vec2(0,0)); // bottom right
+    updated_vertices[2] = create_vertex(origin + glm::vec3(0, -height, 0.0f), bottom_left_color, glm::vec2(0,0)); // bottom left
+    updated_vertices[3] = create_vertex(origin, top_left_color, glm::vec2(0,0)); // top left
+#endif
+
 #endif
     update_vbo_data(font_char_t::ui_opengl_data.vbo, (float*)updated_vertices, sizeof(updated_vertices));
 

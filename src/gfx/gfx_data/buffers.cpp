@@ -46,15 +46,15 @@ ebo_t create_ebo(const unsigned int* indicies, const int size_of_buffer) {
 	return ebo;
 }
 
-ebo_t create_ebo(const unsigned int* indicies, const int size_of_buffer, GLenum usage_pattern) {
-	ebo_t ebo;
-	ebo.num_indicies = size_of_buffer / sizeof(indicies[0]);
-	glGenBuffers(1, &ebo.id);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size_of_buffer, indicies, usage_pattern);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	return ebo;
-}
+// ebo_t create_ebo(const unsigned int* indicies, const int size_of_buffer, GLenum usage_pattern) {
+// 	ebo_t ebo;
+// 	ebo.num_indicies = size_of_buffer / sizeof(indicies[0]);
+// 	glGenBuffers(1, &ebo.id);
+// 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.id);
+// 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size_of_buffer, indicies, usage_pattern);
+// 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+// 	return ebo;
+// }
 
 void draw_ebo(const ebo_t& ebo) {
 	glDrawElements(GL_TRIANGLES, ebo.num_indicies, GL_UNSIGNED_INT, 0);
@@ -92,6 +92,15 @@ void vao_enable_attribute(vao_t& vao, const vbo_t& vbo, const int attrId, const 
 	bind_vbo(vbo);
 	glVertexAttribPointer(attrId, numValues, dType, GL_FALSE, stride, reinterpret_cast<void*>(offset));
 	glEnableVertexAttribArray(attrId);
+	unbind_vbo();
+	unbind_vao();
+}
+
+void vao_bind_ebo(vao_t& vao, ebo_t& ebo) {
+	bind_vao(vao);
+	bind_ebo(ebo);
+	unbind_vao();
+	unbind_ebo();
 }
 
 void delete_vao(const vao_t& vao) {

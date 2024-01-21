@@ -10,6 +10,7 @@
 // SHADER
 shader_t create_shader(const char* vert_file, const char* frag_file) {
 	shader_t shader;
+	shader.valid = true;
 
 	GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
 	GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);

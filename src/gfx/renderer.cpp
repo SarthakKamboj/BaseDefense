@@ -21,8 +21,8 @@ void render() {
 
 	if (globals.scene_manager.cur_level != LEVEL_1) {
 		draw_from_ui_file_layouts();
-		autolayout_hierarchy();
-		end_imgui();
+		// autolayout_hierarchy();
+		// end_imgui();
 		render_ui();
 		render_window();
 		return;
@@ -34,7 +34,7 @@ void render() {
 
 	// ui_start_of_frame();		
 
-	draw_from_ui_file_layouts();
+	// draw_from_ui_file_layouts();
 
 	// style_t panel_style;
 	// panel_style.vertical_align_val = ALIGN::START;
@@ -56,11 +56,11 @@ void render() {
 	// end_panel();
 
 
-	autolayout_hierarchy();
-	end_imgui();
+	// autolayout_hierarchy();
+	// end_imgui();
 
+	draw_from_ui_file_layouts();
 	render_ui();
-
 	render_window();
 }
 

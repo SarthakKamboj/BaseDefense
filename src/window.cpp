@@ -463,9 +463,11 @@ bool detect_window_error() {
 }
 
 bool get_down(char key) {
+    game_assert_msg(key >= 'a' && key <= 'z', "key can only be from a to z");
     return globals.window.user_input.down[key - 'a'];
 }
 
 bool get_released(char key) {
+    game_assert_msg(key >= 'a' && key <= 'z', "key can only be from a to z");
     return globals.window.user_input.released[key - 'a'];
 }
