@@ -1,9 +1,8 @@
-<panel id="levels_display_panel" hor_align="center" ver_align="center" background_color="23,34,56">
+<panel id="levels_display_panel" hor_align="center" ver_align="center" background_color="24,21,59">
     <container id="header_info" 
     ver_align="start" hor_align="center"
     bck_mode="gradient-tl-br"
-    tl_bck="45,50,150"
-    br_bck="10,103,59"
+    tl_bck="24,21,59" br_bck="83,22,51" tr_bck="35,25,62" bl_bck="32,6,43"
     display_dir="vertical"
     border_radius="20"
     width="0.7" height="0.7"
