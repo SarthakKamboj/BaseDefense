@@ -21,7 +21,7 @@ void update() {
     } else if (globals.scene_manager.cur_level == MAIN_MENU_LEVEL) {
         if (get_if_key_clicked_on("Play Game")) {
             globals.scene_manager.queue_level_load = true;
-            globals.scene_manager.level_to_load = LEVEL_1;
+            globals.scene_manager.level_to_load = LEVELS_DISPLAY;
         } else if (get_if_key_clicked_on("Quit")) {
             globals.running = false;
         }
@@ -31,7 +31,14 @@ void update() {
             globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
         }
     } else if (globals.scene_manager.cur_level == LEVELS_DISPLAY) {
-        
+        for (int i = 1; i <= 5; i++) {
+            char container_name[16]{};
+            sprintf(container_name, "%i_container", i);
+            if (get_if_key_clicked_on(container_name)) {
+                globals.scene_manager.queue_level_load = true;
+                globals.scene_manager.level_to_load = LEVEL_1;
+            }
+        }
     } else {
         update_camera();
         update_rigidbodies();
