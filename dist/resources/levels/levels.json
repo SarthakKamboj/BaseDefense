@@ -1,0 +1,24 @@
+{
+    "levels": [
+        {
+            "enemies": 7,
+            "level_name": "level1"
+        }, 
+        {
+            "enemies": 9,
+            "level_name": "level2"
+        },
+        {
+            "enemies": 13,
+            "level_name": "level3"
+        },
+        {
+            "enemies": 18,
+            "level_name": "level4"
+        },
+        {
+            "enemies": 25,
+            "level_name": "level5"
+        }
+    ]
+}
