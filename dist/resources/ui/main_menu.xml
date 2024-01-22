@@ -12,21 +12,21 @@
         widget_size_width="parent" widget_size_height="parent" 
         ver_align="start" hor_align="center" 
         content_spacing="30">
-        <button padding="30,20"
+        <button id="play_game_btn" padding="30,20"
             font_size="40"
             border_radius="20"
             hover_background_color="250,32,43"
             background_color="250,72,83">
             Play Game
         </button>
-        <button padding="30,20"
+        <button id="settings_btn" padding="30,20"
             border_radius="20"
             font_size="40"
             hover_background_color="250,32,43"
             background_color="250,72,83">
             Settings
         </button>
-        <button padding="30,20"
+        <button id="quit_btn" padding="30,20"
             border_radius="20"
             font_size="40"
             hover_background_color="250,32,43"
