@@ -540,4 +540,5 @@ void init() {
 	}
 
 	init_camera();	
+	scene_manager_init();
 }

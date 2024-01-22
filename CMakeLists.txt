@@ -20,6 +20,8 @@ function(configure_game)
         src/utils/time.cpp
         src/utils/io.cpp
         src/utils/general.cpp
+        src/utils/json.cpp
+        src/utils/xml.c
 
         src/gfx/gfx_data/buffers.cpp
         src/gfx/gfx_data/object_data.cpp
@@ -38,7 +40,6 @@ function(configure_game)
         src/animation/animation.cpp
 
         src/ui/ui.cpp
-        src/ui/xml.c
 
         src/audio/audio.cpp
 

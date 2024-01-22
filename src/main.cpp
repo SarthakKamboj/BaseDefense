@@ -9,8 +9,8 @@
 #include "gfx/quad.h"
 #include "globals.h"
 
-#include "ui/xml.h"
 #include "ui/ui.h"
+#include "utils/json.h"
 
 #define WANT_EXTRA_INFO 1
 
@@ -20,6 +20,7 @@ bool level_finished = false;
 
 int main(int argc, char *argv[])
 {	 
+
 	bool running_in_vs = false;
 	if (argc > 1) {
 		for (int i = 1; i < argc; i++) {

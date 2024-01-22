@@ -11,7 +11,7 @@
 #define GAME_GRID_SIZE 40
 
 #define AUDIO_FOLDER "audio"
-#define LEVELS_FOLDER "levels\\platformer_game\\simplified"
+#define LEVELS_FOLDER "levels"
 #define ART_FOLDER "art"
 #define FONTS_FOLDER "fonts"
 #define SHADERS_FOLDER "shaders"
