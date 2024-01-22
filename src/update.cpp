@@ -19,10 +19,10 @@ void update() {
     if (globals.scene_manager.cur_level < 0) {
 
     } else if (globals.scene_manager.cur_level == MAIN_MENU_LEVEL) {
-        if (get_if_key_clicked_on("Play Game")) {
+        if (get_if_key_clicked_on("play_game_btn")) {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = LEVELS_DISPLAY;
-        } else if (get_if_key_clicked_on("Quit")) {
+        } else if (get_if_key_clicked_on("quit_btn")) {
             globals.running = false;
         }
     } else if (globals.scene_manager.cur_level == GAME_OVER_SCREEN_LEVEL) {

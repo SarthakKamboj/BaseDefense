@@ -1,0 +1,12 @@
+{
+    "play_game_btn:hover": {
+        "background_color": "150,32,43",
+        "anim_time": 0.15
+    },
+    "settings_btn:hover": {
+        "background_color":"150,32,43"
+    },
+    "quit_btn:hover": {
+        "background_color":"150,32,43"
+    }
+}

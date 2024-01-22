@@ -62,12 +62,16 @@ void scene_manager_update(scene_manager_t& sm) {
         unload_level();
     
         clear_active_ui_files();
+        clear_active_ui_anim_files();
+
         if (sm.cur_level == MAIN_MENU_LEVEL) {
             add_active_ui_file("main_menu.xml");
+            add_active_ui_anim_file("main_menu_anims.json");
         } else if (sm.cur_level == GAME_OVER_SCREEN_LEVEL) {
             add_active_ui_file("game_over.xml");
         } else if (sm.cur_level == LEVELS_DISPLAY) {
             add_active_ui_file("levels_display.xml");
+            add_active_ui_anim_file("levels_display_anims.json");
         } else {
             init_preview_items();
             create_enemy_spawner(glm::vec3(50, 50, 0));

@@ -14,6 +14,7 @@
 #include "globals.h"
 #include "utils/general.h"
 #include "utils/time.h"
+#include "utils/json.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H  
@@ -31,6 +32,11 @@ extern globals_t globals;
 // static ui_file_layout_t ui_file;
 static std::vector<ui_file_layout_t> ui_files;
 static std::vector<int> active_ui_file_handles;
+
+static std::vector<ui_anim_file_t> ui_anim_files;
+static std::vector<int> active_ui_anim_file_handles;
+
+static std::vector<ui_anim_player_t> ui_anim_players;
 
 static int cur_focused_internal_handle = -1;
 static int cur_final_focused_handle = -1;
@@ -69,227 +75,9 @@ static std::unordered_map<int, hash_t> handle_hashes;
 static std::unordered_map<std::string, std::string> ui_text_values;
 
 static std::vector<font_mode_t> font_modes;
-// static font_mode_t font_modes[2] = {
-//     font_mode_t {
-//         // TEXT_SIZE::TITLE,
-//         65
-//     },
-//     font_mode_t {
-//         // TEXT_SIZE::REGULAR,
-//         25
-//     }
-// };
-
 render_object_data font_char_t::ui_opengl_data{};
 
-bool is_same_hash(hash_t& hash1, hash_t& hash2) {
-    for (int i = 0; i < 8; i++) {
-        if (hash1.unsigned_ints[i] != hash2.unsigned_ints[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-void print_byte(uint8_t in) {
-    for (int i = 7; i >= 0; i--) {
-        uint8_t bit = (in >> i) & (0x01);
-        if (bit) {
-            printf("1");
-        } else {
-            printf("0");
-        }
-    }
-}
-
-void print_512(uint512_t& in) {
-    for (int i = 0; i < 64; i++) {
-        uint8_t v = in.unsigned_bytes[i];
-        // printf(" %b ", v);
-        print_byte(v);
-        printf(" ");
-    }
-    printf("\n");
-}
-
-void print_sha(hash_t& sha) {
-	printf("%0llx %0llx %0llx %0llx", sha.unsigned_double[0], sha.unsigned_double[1], sha.unsigned_double[2], sha.unsigned_double[3]);
-}
-
-uint32_t wrap(uint32_t in, int num) {
-    uint32_t res = 0;
-    res = in >> num;
-    uint32_t top = in << (32 - num);
-    res = res | num;
-    return res;
-}
-
-uint32_t bitwise_add_mod2(uint32_t a, uint32_t b, uint32_t c) {
-    // return (~a & ~b & c) | (~a & b & ~c) | (a & b & c) | (a & ~b & ~c);
-    return a ^ b ^ c;
-}
-
-uint32_t epsilon0(uint32_t in) {
-    uint32_t wrap7 = wrap(in, 7);
-    uint32_t wrap18 = wrap(in, 18);
-    uint32_t shift3 = in >> 3; 
-    return bitwise_add_mod2(wrap7, wrap18, shift3);
-}
-
-uint32_t epsilon1(uint32_t in) {
-    uint32_t wrap17 = wrap(in, 17);
-    uint32_t wrap19 = wrap(in, 19);
-    uint32_t shift10 = in >> 10; 
-    return bitwise_add_mod2(wrap17, wrap19, shift10);
-}
-
-uint32_t sigma0(uint32_t in) {
-    uint32_t wrap2 = wrap(in, 2);
-    uint32_t wrap13 = wrap(in, 13);
-    uint32_t wrap22 = wrap(in, 22);
-    return bitwise_add_mod2(wrap2, wrap13, wrap22);
-}
-
-uint32_t sigma1(uint32_t in) {
-    uint32_t wrap6 = wrap(in, 6);
-    uint32_t wrap11 = wrap(in, 11);
-    uint32_t wrap25 = wrap(in, 25);
-    return bitwise_add_mod2(wrap6, wrap11, wrap25);
-}
-
-uint32_t maj(uint32_t a, uint32_t b, uint32_t c) {
-    return (a & b) ^ (a & c) ^ (b & c);
-}
-
-uint32_t ch(uint32_t a, uint32_t b, uint32_t c) {
-    return (a & b) ^ (~a & c);
-}
-
-uint32_t calc_t1(working_variables_t& cur_vars, uint32_t* w, int t) {
-
-    static uint32_t k[64] = {
-        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-    };
-
-    uint64_t interm = cur_vars.h + sigma1(cur_vars.e) + ch(cur_vars.e, cur_vars.f, cur_vars.g) + k[t] + w[t];
-    uint32_t t1 = mod_2_pow_32(interm);
-    return t1;
-}
-
-uint32_t calc_t2(working_variables_t& cur_vars) {
-    uint64_t s0 = sigma0(cur_vars.a);
-    uint64_t interm = s0 + maj(cur_vars.a, cur_vars.b, cur_vars.c);
-    return mod_2_pow_32(interm);
-}
-
-uint32_t mod_2_pow_32(uint64_t in) {
-    uint64_t div = 1;
-    div = div << 32;
-    uint64_t interm = in % div;
-    uint64_t mask = 0x0000ffff;
-    uint32_t res = interm & mask;
-    return res;
-}
-
-// not exactly sha 256 hash but does similar hash
-// TODO: for exact sha 256 hashing, need to look more closely at bit layouts
-// since things in mem r little endian but working with unions means
-// insert values cause diff little endian behavior
-
-// ex) settings the size in the last unsigned double looks fine for the double,
-// but when interpreted as unsigned ints, it is in M[14] rather than M[15] which
-// is need for sha256 exactly
-
-// all in all, sha256 switches between different representations of the same 512 bits,
-// but in acc memory this is weird cause diff representation is formatted diff in mem
-
-// but for rn...this is good enough...so for rn...its like sha-256 but not sha-256
-hash_t hash(const char* key) {
-    uint512_t input{};
-    int key_len = strlen(key);
-    uint64_t size = 8 * key_len;
-    game_assert_msg(size < 512, "key size must be less than 512 bits");
-    
-    memcpy(&input, key, key_len);
-
-    /*  PADDING */
-    // last 8 bytes reserved for the padding size
-    input.unsigned_bytes[key_len] = 0x80;
-    input.unsigned_double[7] = size;
-
-    // print_sha()
-    // print_512(input);
-
-    uint32_t h[8] = {
-        0x6a09e667,
-        0xbb67ae85,
-        0x3c6ef372,
-        0xa54ff53a,
-        0x510e527f,
-        0x9b05688c,
-        0x1f83d9ab,
-        0x5be0cd19
-    };
-
-    uint32_t w[64]{};
-    for (int t = 0; t < 16; t++) {
-        w[t] = input.unsigned_ints[t];
-    }
-
-    for (int t = 16; t < 63; t++) {
-        int64_t ep1 = epsilon1(w[t-2]);
-        int64_t ep0 = epsilon0(w[t-15]);
-        uint64_t intermediate = ep1 + w[t-7] + ep0 + w[t-16];
-        w[t] = mod_2_pow_32(intermediate);
-    }
-
-    working_variables_t working_variables{};
-    memcpy(&working_variables, h, sizeof(working_variables_t));
-
-    for (int t = 0; t < 63; t++) {
-        working_variables_t cur_vars = working_variables;
-
-        uint64_t t1 = calc_t1(cur_vars, w, t);
-        uint64_t t2 = calc_t2(cur_vars);
-
-        uint64_t a_interm = t1 + t2;
-        working_variables.a = mod_2_pow_32(a_interm);
-
-        working_variables.b = cur_vars.a;
-        working_variables.c = cur_vars.b;
-        working_variables.d = cur_vars.c;
-
-        uint64_t e_interm = cur_vars.d + t1;
-        working_variables.e = mod_2_pow_32(e_interm);
-
-        working_variables.f = cur_vars.e;
-        working_variables.g = cur_vars.f;
-        working_variables.h = cur_vars.g;
-
-        cur_vars = working_variables;
-    }
-
-    for (int i = 0; i < 8; i++) {
-        uint64_t v1 = working_variables.vals[i];
-        uint64_t v2 = h[i];
-        uint64_t v = v1 + v2;
-        h[i] = mod_2_pow_32(v);
-    }
-
-    hash_t sha;
-    for (int i = 0; i < 8; i++) {
-        sha.unsigned_ints[i] = h[i];
-    }
-
-    return sha;
-}
+// static std::vector<ui_anim_t> ui_anims;
 
 void update_ui_files() {
     // char buffer[256]{};
@@ -403,7 +191,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     auto& arr = *curframe_widget_arr;
     auto& stack = *curframe_widget_stack;
 
-    auto& prev_arr = *prevframe_widget_arr;
+    auto& prev_arr = *prevframe_widget_arr; 
 
     if (prev_arr.size() <= widget.handle) {
         ui_will_update = true;
@@ -419,6 +207,48 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
         arr[widget.parent_widget_handle].children_widget_handles.push_back(widget.handle);
     }
     widget.style = styles_stack[styles_stack.size() - 1];
+
+    // could lead to problem if there is a entire ui switch/scene change but coincidentally,
+    // there is the same key in the previous ui and the new ui although the anim player
+    // from the previous ui has been cleared
+
+    // this should be fixed because previous array widget's attached_hover_anim_player_handle will
+    // be set to -1 when anim players are cleared out, so even if there is a match, the new widget
+    // still just holds a -1 in attached_hover_anim_player_handle
+    for (int i = 0; i < prev_arr.size(); i++) {
+        if (is_same_hash(prev_arr[i].hash, new_hash)) {
+            widget.attached_hover_anim_player_handle = prev_arr[i].attached_hover_anim_player_handle;
+        }
+    }
+
+    if (widget.attached_hover_anim_player_handle == -1) {
+        for (int i = 0; i < active_ui_anim_file_handles.size(); i++) {
+            int active_ui_anim_file_handle = active_ui_anim_file_handles[i];
+            for (int j = 0; j < ui_anim_files.size(); j++) {
+                if (ui_anim_files[j].handle == active_ui_anim_file_handle) {
+                    std::vector<ui_anim_t>& ui_anims = ui_anim_files[j].ui_anims;
+                    for (int k = 0; k < ui_anims.size(); k++) {
+                        char hover_anim_name[128]{};
+                        sprintf(hover_anim_name, "%s:hover", widget.key);
+                        if (strcmp(ui_anims[k].anim_name, hover_anim_name) == 0) {
+                            widget.attached_hover_anim_player_handle = create_ui_anim_player(ui_anim_files[j].handle, ui_anims[k]); 
+                        }
+                    }
+                }
+            }
+        }
+    } 
+
+    ui_anim_player_t* hover_anim_player = NULL;
+    for (int k = 0; k < ui_anim_players.size(); k++) {
+        if (ui_anim_players[k].handle == widget.attached_hover_anim_player_handle) {
+            hover_anim_player = &ui_anim_players[k];
+        }
+    }
+
+    if (hover_anim_player) {
+        widget.style = get_intermediate_style(widget.style, *hover_anim_player);
+    }
 
     arr.push_back(widget);
     if (push_onto_stack) {
@@ -1293,46 +1123,105 @@ void resolve_constraints() {
     } while (something_changed);
 }
 
-void render_ui_helper(widget_t& widget) {
+void move_ui_anim_player_forward(ui_anim_player_t& player) {
+    player.duration_cursor = fmin(player.anim_duration, player.duration_cursor + game::time_t::delta_time);
+}
 
-    if (widget.handle == cur_final_focused_handle) {
-        if (widget.style.hover_background_color != TRANSPARENT_COLOR) {
-            widget.style.bck_mode = BCK_SOLID;
-            widget.style.background_color = widget.style.hover_background_color;
-        }
-        if (widget.style.hover_color != TRANSPARENT_COLOR) {
-            widget.style.color = widget.style.hover_color;
-        }
-        for (int i = 0; i < bck_color_overrides.size(); i++) {
-            bck_color_override_t& ovrride = bck_color_overrides[i];
-            if (strcmp(ovrride.widget_key, widget.key) == 0) {
-                widget.style.bck_mode = ovrride.bck_mode;
-                widget.style.background_color = ovrride.background_color;
-                widget.style.top_left_bck_color = ovrride.top_left_bck_color;
-                widget.style.top_right_bck_color = ovrride.top_right_bck_color;
-                widget.style.bottom_left_bck_color = ovrride.bottom_left_bck_color;
-                widget.style.bottom_right_bck_color = ovrride.bottom_right_bck_color;
+void move_ui_anim_player_backward(ui_anim_player_t& player) {
+    player.duration_cursor = fmax(0, player.duration_cursor - game::time_t::delta_time);
+}
+
+style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player) {
+    style_t new_style = original_style;
+    for (int i = 0; i < ui_anim_files.size(); i++) {
+        ui_anim_file_t& anim_file = ui_anim_files[i];
+        if (player.ui_anim_file_handle == anim_file.handle) {
+            std::vector<ui_anim_t>& ui_anims = anim_file.ui_anims;
+            for (int j = 0; j < ui_anims.size(); j++) {
+                ui_anim_t& anim = ui_anims[j];
+                if (anim.handle == player.ui_anim_handle) {
+                    float anim_weight = player.duration_cursor / player.anim_duration;
+                    if (anim.style_params_overriden.background_color) {
+                        new_style.background_color = (anim_weight * anim.style.background_color) + (1 - anim_weight) * original_style.background_color;
+                    }
+                    if (anim.style_params_overriden.color) {
+                        new_style.color = (anim_weight * anim.style.color) + (1 - anim_weight) * original_style.color;
+                    }
+                }
             }
-        }
-        draw_background(widget);
-    } else { 
-        for (int i = 0; i < bck_color_overrides.size(); i++) {
-            bck_color_override_t& ovrride = bck_color_overrides[i];
-            if (strcmp(ovrride.widget_key, widget.key) == 0) {
-                widget.style.bck_mode = ovrride.bck_mode;
-                widget.style.background_color = ovrride.background_color;
-                widget.style.top_left_bck_color = ovrride.top_left_bck_color;
-                widget.style.top_right_bck_color = ovrride.top_right_bck_color;
-                widget.style.bottom_left_bck_color = ovrride.bottom_left_bck_color;
-                widget.style.bottom_right_bck_color = ovrride.bottom_right_bck_color;
-            }
-        }
-        if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
-            widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT ||
-            widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
-            draw_background(widget);
         }
     }
+
+    return new_style;
+}
+
+void render_ui_helper(widget_t& widget) {
+
+    // ui_anim_player_t* hover_anim_player = NULL;
+    for (int i = 0; i < ui_anim_players.size(); i++) {
+        if (widget.attached_hover_anim_player_handle == ui_anim_players[i].handle) {
+            // hover_anim_player = &ui_anim_players[i];
+            if (widget.handle == cur_final_focused_handle) {
+                move_ui_anim_player_forward(ui_anim_players[i]);
+            } else {
+                move_ui_anim_player_backward(ui_anim_players[i]);
+            }
+        }
+    }
+
+    if (widget.handle == cur_final_focused_handle) {
+        
+        // if (widget.style.hover_background_color != TRANSPARENT_COLOR) {
+        //     widget.style.bck_mode = BCK_SOLID;
+        //     widget.style.background_color = widget.style.hover_background_color;
+        // }
+        // if (widget.style.hover_color != TRANSPARENT_COLOR) {
+        //     widget.style.color = widget.style.hover_color;
+        // }
+        // for (int i = 0; i < bck_color_overrides.size(); i++) {
+        //     bck_color_override_t& ovrride = bck_color_overrides[i];
+        //     if (strcmp(ovrride.widget_key, widget.key) == 0) {
+        //         widget.style.bck_mode = ovrride.bck_mode;
+        //         widget.style.background_color = ovrride.background_color;
+        //         widget.style.top_left_bck_color = ovrride.top_left_bck_color;
+        //         widget.style.top_right_bck_color = ovrride.top_right_bck_color;
+        //         widget.style.bottom_left_bck_color = ovrride.bottom_left_bck_color;
+        //         widget.style.bottom_right_bck_color = ovrride.bottom_right_bck_color;
+        //     }
+        // }
+        // draw_background(widget);
+    } else { 
+        // for (int i = 0; i < bck_color_overrides.size(); i++) {
+        //     bck_color_override_t& ovrride = bck_color_overrides[i];
+        //     if (strcmp(ovrride.widget_key, widget.key) == 0) {
+        //         widget.style.bck_mode = ovrride.bck_mode;
+        //         widget.style.background_color = ovrride.background_color;
+        //         widget.style.top_left_bck_color = ovrride.top_left_bck_color;
+        //         widget.style.top_right_bck_color = ovrride.top_right_bck_color;
+        //         widget.style.bottom_left_bck_color = ovrride.bottom_left_bck_color;
+        //         widget.style.bottom_right_bck_color = ovrride.bottom_right_bck_color;
+        //     }
+        // }
+        // if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
+        //     widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT ||
+        //     widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
+        //     draw_background(widget);
+        // }
+    } 
+
+    if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
+        widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT ||
+        widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
+        draw_background(widget);
+    }
+
+    // for (int i = 0; i < bck_color_overrides.size(); i++) {
+    //     if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
+    //         widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT ||
+    //         widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
+    //         draw_background(widget);
+    //     }
+    // }
 
     if (widget.image_based) {
         draw_image_container(widget);
@@ -1346,6 +1235,139 @@ void render_ui_helper(widget_t& widget) {
     }
 }
 
+bool set_parameter_in_style(style_t& style, const char* name, const char* content) {
+    if (strcmp(name, "display_dir") == 0) {
+        DISPLAY_DIR dir = DISPLAY_DIR::HORIZONTAL;
+        if (strcmp(content, "vertical") == 0) {
+            dir = DISPLAY_DIR::VERTICAL;
+        } else if (strcmp(content, "horizontal") == 0) {
+            dir = DISPLAY_DIR::HORIZONTAL;
+        }
+        style.display_dir = dir;
+        return true;
+    } else if (strcmp(name, "hor_align") == 0) {
+        ALIGN hor_align = ALIGN::START;
+        if (strcmp(content, "start") == 0) {
+            hor_align = ALIGN::START;
+        } else if (strcmp(content, "center") == 0) {
+            hor_align = ALIGN::CENTER;
+        } else if (strcmp(content, "end") == 0) {
+            hor_align = ALIGN::END;
+        } else if (strcmp(content, "space_around") == 0) {
+            hor_align = ALIGN::SPACE_AROUND;
+        } else if (strcmp(content, "space_between") == 0) {
+            hor_align = ALIGN::SPACE_BETWEEN;
+        }
+        style.horizontal_align_val = hor_align;
+        return true;
+    } else if (strcmp(name, "ver_align") == 0) {
+        ALIGN ver_align = ALIGN::START;
+        if (strcmp(content, "start") == 0) {
+            ver_align = ALIGN::START;
+        } else if (strcmp(content, "center") == 0) {
+            ver_align = ALIGN::CENTER;
+        } else if (strcmp(content, "end") == 0) {
+            ver_align = ALIGN::END;
+        } else if (strcmp(content, "space_around") == 0) {
+            ver_align = ALIGN::SPACE_AROUND;
+        } else if (strcmp(content, "space_between") == 0) {
+            ver_align = ALIGN::SPACE_BETWEEN;
+        }
+        style.vertical_align_val = ver_align;
+        return true;
+    } else if (strcmp(name, "padding") == 0) {
+        glm::vec2 padding(0);
+        sscanf(content, "%f,%f", &padding.x, &padding.y);
+        style.padding = padding;
+        return true;
+    } else if (strcmp(name, "margin") == 0) {
+        glm::vec2 margin(0);
+        sscanf(content, "%f,%f", &margin.x, &margin.y);
+        style.margin = margin;
+        return true;
+    } else if (strcmp(name, "content_spacing") == 0) {
+        style.content_spacing = atof(content);
+        return true;
+    } else if (strcmp(name, "background_color") == 0) {
+        glm::vec3 color(0);
+        sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+        style.background_color = create_color(color.r, color.g, color.b);
+        return true;
+    }  else if (strcmp(name, "color") == 0) {
+        glm::vec3 color(0);
+        sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+        style.color = create_color(color.r, color.g, color.b);
+        return true;
+    } else if (strcmp(name, "border_radius") == 0) {
+        style.border_radius = atof(content);
+        return true;
+    } else if (strcmp(name, "tl_border_radius") == 0) {
+        style.tl_border_radius = atof(content);
+        return true;
+    } else if (strcmp(name, "tr_border_radius") == 0) {
+        style.tr_border_radius = atof(content);
+        return true;
+    } else if (strcmp(name, "bl_border_radius") == 0) {
+        style.bl_border_radius = atof(content);
+        return true;
+    } else if (strcmp(name, "br_border_radius") == 0) {
+        style.br_border_radius = atof(content);
+        return true;
+    } else if (strcmp(name, "border_radius_mode") == 0) {
+        BORDER_RADIUS_MODE mode = BR_SINGLE_VALUE;
+        if (strcmp(content, "single") == 0) {
+            mode = BR_SINGLE_VALUE;
+        } else if (strcmp(content, "4-corners") == 0) {
+            mode = BR_4_CORNERS;
+        }
+        style.border_radius_mode = mode;
+        return true;
+    } else if (strcmp(name, "hover_background_color") == 0) {
+        glm::vec3 color(0);
+        sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+        style.hover_background_color = create_color(color.r, color.g, color.b);
+        return true;
+    } else if (strcmp(name, "hover_color") == 0) {
+        glm::vec3 color(0);
+        sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+        style.hover_color = create_color(color.r, color.g, color.b);
+        return true;
+    } else if (strcmp(name, "bck_mode") == 0) {
+        BCK_MODE bck_mode = BCK_SOLID;
+        if (strcmp(content, "solid") == 0) {
+            bck_mode = BCK_SOLID;
+        } else if (strcmp(content, "gradient-tl-br") == 0) {
+            bck_mode = BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT;
+        } else if (strcmp(content, "gradient") == 0) {
+            bck_mode = BCK_GRADIENT_4_CORNERS;
+        }
+        style.bck_mode = bck_mode;
+        return true;
+    } else if (strcmp(name, "tl_bck") == 0) {
+        glm::vec3 color(0);
+        sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+        style.top_left_bck_color = create_color(color.r, color.g, color.b);
+        return true;
+    } else if (strcmp(name, "br_bck") == 0) {
+        glm::vec3 color(0);
+        sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+        style.bottom_right_bck_color = create_color(color.r, color.g, color.b);
+        return true;
+    } else if (strcmp(name, "bl_bck") == 0) {
+        glm::vec3 color(0);
+        sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+        style.bottom_left_bck_color = create_color(color.r, color.g, color.b);
+        return true;
+    } else if (strcmp(name, "tr_bck") == 0) {
+        glm::vec3 color(0);
+        sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
+        style.top_right_bck_color = create_color(color.r, color.g, color.b);
+        return true;
+    }
+
+    return false;
+}
+
 parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
     parsed_ui_attributes_t ui_attrs;
     style_t& style = ui_attrs.style;
@@ -1354,92 +1376,14 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
         xml_attribute* attr = attributes[i];
         char* name = xml_get_zero_terminated_buffer(attr->name);
         char* content = xml_get_zero_terminated_buffer(attr->content);
-        if (strcmp(name, "id") == 0) {
+        if (set_parameter_in_style(style, name, content)) {
+
+        } else if (strcmp(name, "id") == 0) {
             memcpy(ui_attrs.id, content, fmin(strlen(content), 64));
         } else if (strcmp(name, "image_src") == 0) {
             char buffer[256]{};
             get_resources_folder_path(buffer);
             sprintf(ui_attrs.image_path, "%s\\%s\\%s", buffer, UI_FOLDER, content);
-        } else if (strcmp(name, "display_dir") == 0) {
-            DISPLAY_DIR dir = DISPLAY_DIR::HORIZONTAL;
-            if (strcmp(content, "vertical") == 0) {
-                dir = DISPLAY_DIR::VERTICAL;
-            } else if (strcmp(content, "horizontal") == 0) {
-                dir = DISPLAY_DIR::HORIZONTAL;
-            }
-            style.display_dir = dir;
-        } else if (strcmp(name, "hor_align") == 0) {
-            ALIGN hor_align = ALIGN::START;
-            if (strcmp(content, "start") == 0) {
-                hor_align = ALIGN::START;
-            } else if (strcmp(content, "center") == 0) {
-                hor_align = ALIGN::CENTER;
-            } else if (strcmp(content, "end") == 0) {
-                hor_align = ALIGN::END;
-            } else if (strcmp(content, "space_around") == 0) {
-                hor_align = ALIGN::SPACE_AROUND;
-            } else if (strcmp(content, "space_between") == 0) {
-                hor_align = ALIGN::SPACE_BETWEEN;
-            }
-            style.horizontal_align_val = hor_align;
-        } else if (strcmp(name, "ver_align") == 0) {
-            ALIGN ver_align = ALIGN::START;
-            if (strcmp(content, "start") == 0) {
-                ver_align = ALIGN::START;
-            } else if (strcmp(content, "center") == 0) {
-                ver_align = ALIGN::CENTER;
-            } else if (strcmp(content, "end") == 0) {
-                ver_align = ALIGN::END;
-            } else if (strcmp(content, "space_around") == 0) {
-                ver_align = ALIGN::SPACE_AROUND;
-            } else if (strcmp(content, "space_between") == 0) {
-                ver_align = ALIGN::SPACE_BETWEEN;
-            }
-            style.vertical_align_val = ver_align;
-        } else if (strcmp(name, "padding") == 0) {
-            glm::vec2 padding(0);
-            sscanf(content, "%f,%f", &padding.x, &padding.y);
-            style.padding = padding;
-        } else if (strcmp(name, "margin") == 0) {
-            glm::vec2 margin(0);
-            sscanf(content, "%f,%f", &margin.x, &margin.y);
-            style.margin = margin;
-        } else if (strcmp(name, "content_spacing") == 0) {
-            style.content_spacing = atof(content);
-        } else if (strcmp(name, "background_color") == 0) {
-            glm::vec3 color(0);
-            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-            style.background_color = create_color(color.r, color.g, color.b);
-        }  else if (strcmp(name, "color") == 0) {
-            glm::vec3 color(0);
-            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-            style.color = create_color(color.r, color.g, color.b);
-        } else if (strcmp(name, "border_radius") == 0) {
-            style.border_radius = atof(content);
-        } else if (strcmp(name, "tl_border_radius") == 0) {
-            style.tl_border_radius = atof(content);
-        } else if (strcmp(name, "tr_border_radius") == 0) {
-            style.tr_border_radius = atof(content);
-        } else if (strcmp(name, "bl_border_radius") == 0) {
-            style.bl_border_radius = atof(content);
-        } else if (strcmp(name, "br_border_radius") == 0) {
-            style.br_border_radius = atof(content);
-        } else if (strcmp(name, "border_radius_mode") == 0) {
-            BORDER_RADIUS_MODE mode = BR_SINGLE_VALUE;
-            if (strcmp(content, "single") == 0) {
-                mode = BR_SINGLE_VALUE;
-            } else if (strcmp(content, "4-corners") == 0) {
-                mode = BR_4_CORNERS;
-            }
-            style.border_radius_mode = mode;
-        } else if (strcmp(name, "hover_background_color") == 0) {
-            glm::vec3 color(0);
-            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-            style.hover_background_color = create_color(color.r, color.g, color.b);
-        } else if (strcmp(name, "hover_color") == 0) {
-            glm::vec3 color(0);
-            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-            style.hover_color = create_color(color.r, color.g, color.b);
         } else if (strcmp(name, "width") == 0) {
             ui_attrs.width = atof(content);
         } else if (strcmp(name, "height") == 0) {
@@ -1467,32 +1411,6 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
         } else if (strcmp(name, "font_size") == 0) {
             int font_size = 0;
             sscanf(content, "%i", &ui_attrs.font_size);
-        } else if (strcmp(name, "bck_mode") == 0) {
-            BCK_MODE bck_mode = BCK_SOLID;
-            if (strcmp(content, "solid") == 0) {
-                bck_mode = BCK_SOLID;
-            } else if (strcmp(content, "gradient-tl-br") == 0) {
-                bck_mode = BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT;
-            } else if (strcmp(content, "gradient") == 0) {
-                bck_mode = BCK_GRADIENT_4_CORNERS;
-            }
-            ui_attrs.style.bck_mode = bck_mode;
-        } else if (strcmp(name, "tl_bck") == 0) {
-            glm::vec3 color(0);
-            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-            style.top_left_bck_color = create_color(color.r, color.g, color.b);
-        } else if (strcmp(name, "br_bck") == 0) {
-            glm::vec3 color(0);
-            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-            style.bottom_right_bck_color = create_color(color.r, color.g, color.b);
-        } else if (strcmp(name, "bl_bck") == 0) {
-            glm::vec3 color(0);
-            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-            style.bottom_left_bck_color = create_color(color.r, color.g, color.b);
-        } else if (strcmp(name, "tr_bck") == 0) {
-            glm::vec3 color(0);
-            sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-            style.top_right_bck_color = create_color(color.r, color.g, color.b);
         } else if (strcmp(name, "clickable") == 0) {
             ui_attrs.ui_properties = ui_attrs.ui_properties | UI_PROP_CLICKABLE;
         }
@@ -1534,10 +1452,14 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
             *ending_curly_braces = 0;
             char* remaining_str = ending_curly_braces + 3;
             
-            char* final_str = (char*)calloc(64, sizeof(char));
+            char* final_str = (char*)calloc(128, sizeof(char));
             std::string key_string = key;
             std::string val = ui_text_values[key_string];
-            sprintf(final_str, "%s%s%s", zero_terminated_content, val.c_str(), remaining_str);
+            if (attrs.id[0] != '\0') {
+                sprintf(final_str, "%s%s%s###%s", zero_terminated_content, val.c_str(), remaining_str, attrs.id);
+            } else {
+                sprintf(final_str, "%s%s%s", zero_terminated_content, val.c_str(), remaining_str);
+            }
             
             if (is_text_element) {
                 create_text(final_str, attrs.font_size, false);
@@ -1547,10 +1469,17 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
 
             free(final_str);
         } else {
+            const char* text_input = zero_terminated_content;
+            char buffer[256]{};
+            if (attrs.id[0] != '\0') {
+                sprintf(buffer, "%s###%s", zero_terminated_content, attrs.id);
+                text_input = buffer;
+            }
+
             if (is_text_element) {
-                create_text(zero_terminated_content, attrs.font_size, false);
+                create_text(text_input, attrs.font_size, false);
             } else {
-                create_button(zero_terminated_content, attrs.font_size, -1);
+                create_button(text_input, attrs.font_size, -1);
             }
         }
         free(zero_terminated_content);
@@ -1717,54 +1646,56 @@ void init_ui() {
 		std::cout << "successfully init ui data" << std::endl;
     }
 
-    char xml_folder[256]{};
+    char ui_folder[256]{};
     char buffer[256]{};
     get_resources_folder_path(buffer);
-    sprintf(xml_folder, "%s\\%s", buffer, UI_FOLDER);
+    sprintf(ui_folder, "%s\\%s", buffer, UI_FOLDER);
 
-    for (const auto& entry : fs::directory_iterator(xml_folder)) {
-        auto& xml = entry.path();
-        std::string xml_string = entry.path().string();
-        const char* xml_path = xml_string.c_str();
-        if (strcmp(get_file_extension(xml_path), "xml") != 0) continue;
-        static int cnt = 0;
-        FILE* ui_file_c = fopen(xml_path, "r");
-        game_assert_msg(ui_file_c, "play file not found");
-        ui_file_layout_t ui_file;
-        ui_file.document = xml_open_document(ui_file_c);
+    for (const auto& entry : fs::directory_iterator(ui_folder)) {
+        auto& path = entry.path();
+        std::string path_string = entry.path().string();
+        const char* path_char = path_string.c_str();
+        if (strcmp(get_file_extension(path_char), "xml") == 0) {
+            static int cnt = 0;
+            FILE* ui_file_c = fopen(path_char, "r");
+            game_assert_msg(ui_file_c, "play file not found");
+            ui_file_layout_t ui_file;
+            ui_file.document = xml_open_document(ui_file_c);
 
-        struct stat ui_file_stat;
-        if (stat(xml_path, &ui_file_stat) < 0) return;
-        ui_file.last_modified_time = ui_file_stat.st_mtime;
-        memcpy(ui_file.path, xml_path, strlen(xml_path));
+            struct stat ui_file_stat;
+            if (stat(path_char, &ui_file_stat) < 0) return;
+            ui_file.last_modified_time = ui_file_stat.st_mtime;
+            memcpy(ui_file.path, path_char, strlen(path_char));
 
-        ui_file.handle = cnt++;
+            ui_file.handle = cnt++;
 
-        ui_files.push_back(ui_file);
+            ui_files.push_back(ui_file);
+        } else if (strcmp(get_file_extension(path_char), "json") == 0) {
+            parse_ui_anims(path_char);
+        }
     } 
 
-//     for (int i = 0; i < 2; i++) {
-//         char xml_path[256]{};
-//         char buffer[256]{};
-//         get_resources_folder_path(buffer);
-// #ifdef UI_TESTING
-//         sprintf(xml_path, "%s\\%s\\%s", buffer, UI_FOLDER, files[i]);
-// #else
-//         sprintf(xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
-// #endif
-//         // sprintf(xml_path, "%s\\%s\\main_menu.xml", buffer, UI_FOLDER);
-//         FILE* ui_file_c = fopen(xml_path, "r");
-//         game_assert_msg(ui_file_c, "play file not found");
-//         ui_file_layout_t ui_file;
-//         ui_file.document = xml_open_document(ui_file_c);
+    // for (const auto& entry : fs::directory_iterator(ui_folder)) {
+    //     auto& xml = entry.path();
+    //     std::string xml_string = entry.path().string();
+    //     const char* xml_path = xml_string.c_str();
+    //     if (strcmp(get_file_extension(xml_path), "xml") != 0) continue;
+    //     static int cnt = 0;
+    //     FILE* ui_file_c = fopen(xml_path, "r");
+    //     game_assert_msg(ui_file_c, "play file not found");
+    //     ui_file_layout_t ui_file;
+    //     ui_file.document = xml_open_document(ui_file_c);
 
-//         struct stat ui_file_stat;
-//         if (stat(xml_path, &ui_file_stat) < 0) return;
-//         ui_file.last_modified_time = ui_file_stat.st_mtime;
-//         memcpy(ui_file.path, xml_path, strlen(xml_path));
+    //     struct stat ui_file_stat;
+    //     if (stat(xml_path, &ui_file_stat) < 0) return;
+    //     ui_file.last_modified_time = ui_file_stat.st_mtime;
+    //     memcpy(ui_file.path, xml_path, strlen(xml_path));
 
-//         ui_files.push_back(ui_file);
-//     }
+    //     ui_file.handle = cnt++;
+
+    //     ui_files.push_back(ui_file);
+    // }
+
 }
 
 text_dim_t get_text_dimensions(const char* text, int font_size) {
@@ -1971,6 +1902,24 @@ void add_active_ui_file(const char* file_name) {
     }
 }
 
+void add_active_ui_anim_file(const char* file_name) {
+    for (ui_anim_file_t& file : ui_anim_files) {
+        const char* ui_file_name = strrchr(file.path, '\\') + 1;
+        if (strcmp(ui_file_name, file_name) == 0) {
+            active_ui_anim_file_handles.push_back(file.handle);
+            return;
+        }
+    }
+}
+
+void clear_active_ui_anim_files() {
+    active_ui_anim_file_handles.clear();
+    ui_anim_players.clear();
+    for (int i = 0; i < prevframe_widget_arr->size(); i++) {
+        (*prevframe_widget_arr)[i].attached_hover_anim_player_handle = -1;
+    }
+}
+
 void set_background_color_override(const char* widget_key, glm::vec3 color) {
     bck_color_override_t ovrride;
     memcpy(ovrride.widget_key, widget_key, strlen(widget_key));
@@ -1984,4 +1933,95 @@ void set_background_color_gradient_4_corners_override(const char* widget_key, gl
     memcpy(ovrride.widget_key, widget_key, strlen(widget_key));
     ovrride.top_left_bck_color = top_left_color;
     ovrride.bottom_right_bck_color = bottom_right_color;
+}
+
+void parse_ui_anims(const char* path) {
+    static int cnt = 0;
+
+    ui_anim_file_t anim_file;
+    anim_file.handle = cnt++;
+    memcpy(anim_file.path, path, strlen(path));
+
+    json_document_t* anims_json = json_read_document(path);
+    int num_anims = anims_json->root_node->num_children;
+    json_node_t** anims = anims_json->root_node->children;
+    for (int i = 0; i < num_anims; i++) {
+        static int ui_anim_cnt = 0;
+        ui_anim_t ui_anim;
+        ui_anim.handle = ui_anim_cnt++;
+
+        json_node_t* anim_node = anims[i];
+        memcpy(ui_anim.anim_name, anim_node->key->buffer, anim_node->key->length);
+
+        style_override_t& ov = ui_anim.style_params_overriden;
+
+        int num_anim_props = anim_node->num_children;
+        json_node_t** anim_props = anim_node->children;
+        for (int j = 0; j < num_anim_props; j++) {
+            json_node_t* anim_prop = anim_props[j];
+            const char* name = anim_prop->key->buffer;
+            const char* content = anim_prop->value->buffer;
+            if (!set_parameter_in_style(ui_anim.style, name, content)) {
+                if (strcmp(name, "anim_time") == 0) {
+                    ui_anim.anim_duration = atof(content);
+                }
+            }
+            if (strcmp(name, "display_dir") == 0) {
+                ov.display_dir = true;
+            } else if (strcmp(name, "hor_align") == 0) {
+                ov.horizontal_align_val = true;
+            } else if (strcmp(name, "ver_align") == 0) {
+                ov.vertical_align_val = true;
+            } else if (strcmp(name, "padding") == 0) {
+                ov.padding = true;
+            } else if (strcmp(name, "margin") == 0) {
+                ov.margin = true;
+            } else if (strcmp(name, "content_spacing") == 0) {
+                ov.content_spacing = true;
+            } else if (strcmp(name, "background_color") == 0) {
+                ov.background_color = true;
+            }  else if (strcmp(name, "color") == 0) {
+                ov.color = true;
+            } else if (strcmp(name, "border_radius") == 0) {
+                ov.border_radius = true;
+            } else if (strcmp(name, "tl_border_radius") == 0) {
+                ov.tl_border_radius = true;
+            } else if (strcmp(name, "tr_border_radius") == 0) {
+                ov.tr_border_radius = true;
+            } else if (strcmp(name, "bl_border_radius") == 0) {
+                ov.bl_border_radius = true;
+            } else if (strcmp(name, "br_border_radius") == 0) {
+                ov.br_border_radius = true;
+            } else if (strcmp(name, "border_radius_mode") == 0) {
+                ov.border_radius_mode = true;
+            } else if (strcmp(name, "bck_mode") == 0) {
+                ov.bck_mode = true;
+            } else if (strcmp(name, "tl_bck") == 0) {
+                ov.top_left_bck_color = true;
+            } else if (strcmp(name, "br_bck") == 0) {
+                ov.bottom_right_bck_color = true;
+            } else if (strcmp(name, "bl_bck") == 0) {
+                ov.bottom_left_bck_color = true;
+            } else if (strcmp(name, "tr_bck") == 0) {
+                ov.top_right_bck_color = true;
+            }
+        }
+
+        anim_file.ui_anims.push_back(ui_anim);
+    }
+    json_free_document(anims_json);
+
+    ui_anim_files.push_back(anim_file);
+}
+
+int create_ui_anim_player(int ui_anim_file_handle, ui_anim_t& ui_anim) {
+    ui_anim_player_t anim_player;
+    static int cnt = 0;
+    anim_player.handle = cnt++;
+    anim_player.anim_duration = ui_anim.anim_duration;
+    anim_player.ui_anim_handle = ui_anim.handle;
+    anim_player.ui_anim_file_handle = ui_anim_file_handle;
+    anim_player.duration_cursor = 0;
+    ui_anim_players.push_back(anim_player);
+    return anim_player.handle;
 }

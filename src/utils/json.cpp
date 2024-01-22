@@ -32,13 +32,15 @@ char json_peek(FILE* json_file) {
 
 json_string_t* json_read_value(FILE* json_file) {
     char buffer[256]{};
+    bool has_quotes = false;
     if (json_peek(json_file) == '\"') {
+        has_quotes = true;
         getc(json_file);
     }
     int value_len = 0;
     while (true) {
         char c = json_peek(json_file);
-        bool ended = isspace(c) || c == ',' || c == '\"';
+        bool ended = (has_quotes && c == '\"') || (!has_quotes && (isspace(c) || c == ',')) ;
         if (ended) break;
         *(buffer + value_len) = c;
         value_len++;
@@ -61,19 +63,21 @@ json_string_t* json_read_key(FILE* json_file) {
     int key_len = 0;
 
     // key could have quotation marks
+    bool has_quotes = false;
     if (json_peek(json_file) == '\"') {
         getc(json_file);
+        has_quotes = true;
     }
 
     while (true) {
         char c = json_peek(json_file);
-        if (!isspace(c) && c != ':' && c != '\"') {
-            *(key_name + key_len) = c;
-            key_len++;
-            getc(json_file);
-            continue;
+        bool key_ended = (has_quotes && c == '\"') || (!has_quotes && (isspace(c) || c == ':'));
+        if (key_ended) {
+            break;
         }
-        break;
+		*(key_name + key_len) = c;
+		key_len++;
+		getc(json_file);
     }
     json_eat_empty_spaces(json_file);
 

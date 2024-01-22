@@ -6,9 +6,11 @@
 
 #include "constants.h"
 #include "gfx/gfx_data/object_data.h"
+#include "ui_hash.h"
+#include "utils/time.h"
+#include "utils/xml.h"
 
 #include "glm/glm.hpp"
-#include "utils/xml.h"
 
 #define UI_RELOADING 1
 
@@ -21,8 +23,6 @@
 #define LIGHT_GREY glm::vec3(0.8774f,0.8774f,0.8774f)
 #define WHITE glm::vec3(1, 1, 1)
 
-// ui will be rendered immediate mode
-
 struct font_char_t {
 	glm::vec2 bearing = glm::vec2(0);
 	float width = 0;
@@ -33,10 +33,6 @@ struct font_char_t {
 
 	static render_object_data ui_opengl_data;
 };
-
-// enum class TEXT_SIZE {
-//     TITLE, REGULAR
-// };
 
 enum UI_PROPERTIES : int {
     UI_PROP_NONE = 0,
@@ -55,7 +51,6 @@ enum class WIDGET_SIZE {
 };
 
 struct font_mode_t {
-    // TEXT_SIZE text_size;
     int font_size = 0;
     std::unordered_map<unsigned char, font_char_t> chars;
     bool used_last_frame = true;
@@ -68,39 +63,9 @@ struct text_dim_t {
     float max_height_above_baseline = 0;
 	float max_height_below_baseline = 0;
 };
-// text_dim_t get_text_dimensions(const char* text, TEXT_SIZE text_size);
 text_dim_t get_text_dimensions(const char* text, int font_size);
 
-union hash_t {
-    uint64_t unsigned_double[4];
-    uint32_t unsigned_ints[8];
-};
-
-bool is_same_hash(hash_t& hash1, hash_t& hash2);
-
-uint32_t mod_2_pow_32(uint64_t in);
-void print_sha(hash_t& sha);
-
-union working_variables_t {
-    struct {
-        uint32_t a, b, c, d, e, f, g, h; 
-    };
-    uint32_t vals[8];
-};
-
-union uint512_t {
-    uint64_t unsigned_double[8];
-    uint32_t unsigned_ints[16];
-    uint16_t unsigned_shorts[32];
-    uint8_t unsigned_bytes[64];
-};
-
-void print_512(uint512_t& i);
-
-hash_t hash(const char* key);
-
 void init_ui();
-
 
 enum class DISPLAY_DIR {
     VERTICAL, HORIZONTAL
@@ -131,6 +96,8 @@ struct style_t {
     glm::vec2 margin = glm::vec2(0);
     float content_spacing = 0;
 
+    glm::vec2 translate = glm::vec2(0);
+
     BCK_MODE bck_mode = BCK_SOLID;
     glm::vec3 background_color = TRANSPARENT_COLOR;
     glm::vec3 top_left_bck_color = TRANSPARENT_COLOR;
@@ -152,14 +119,38 @@ struct style_t {
     glm::vec3 hover_color = TRANSPARENT_COLOR;
 };
 
+struct style_override_t {
+    bool display_dir = false;
+    bool horizontal_align_val = false;
+    bool vertical_align_val = false;
+    bool padding = false;
+    bool margin = false;
+    bool content_spacing = false;
+
+    bool translate = false;
+
+    bool bck_mode = false;
+    bool background_color = false;
+    bool top_left_bck_color = false;
+    bool top_right_bck_color = false;
+    bool bottom_right_bck_color = false;
+    bool bottom_left_bck_color = false;
+
+    bool border_radius_mode = false;
+    bool border_radius = false;
+    bool tl_border_radius = false;
+    bool tr_border_radius = false;
+    bool bl_border_radius = false;
+    bool br_border_radius = false;
+
+    bool color = false;
+};
+
 struct text_t {
     char text[256]{};
     // TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
     int font_size = 25;
 };
-// void create_text(const char* text, TEXT_SIZE text_size = TEXT_SIZE::REGULAR, bool focusable = false);
-// bool create_button(const char* text, TEXT_SIZE text_size = TEXT_SIZE::REGULAR, int user_handle = -1);
-
 void create_text(const char* text, int font_size = 0, bool focusable = false);
 bool create_button(const char* text, int font_size = 0, int user_handle = -1);
 
@@ -192,6 +183,8 @@ struct widget_t {
     UI_PROPERTIES properties = UI_PROPERTIES::UI_PROP_NONE;
     style_t style;
 
+    int attached_hover_anim_player_handle = -1;
+
     // width of widget without padding or margins
     WIDGET_SIZE widget_size_width = WIDGET_SIZE::PIXEL_BASED;
     WIDGET_SIZE widget_size_height = WIDGET_SIZE::PIXEL_BASED;
@@ -219,8 +212,6 @@ struct widget_t {
 
 void ui_start_of_frame();
 void end_imgui();
-
-void update_ui_files();
 
 void traverse_to_right_focusable();
 void traverse_to_left_focusable();
@@ -272,6 +263,42 @@ void make_constraint_value_constant(int constraint_handle, float value);
 void create_constraint(int constraint_var_handle, std::vector<constraint_term_t>& right_side_terms, float constant);
 void resolve_constraints();
 
+void draw_background(widget_t& widget);
+void draw_image_container(widget_t& widget);
+void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec3& color);
+
+struct parsed_ui_attributes_t {
+    style_t style;
+    char id[64]{};
+    float width = 0;
+    float height = 0;
+    WIDGET_SIZE widget_size_width = WIDGET_SIZE::NONE;
+    WIDGET_SIZE widget_size_height = WIDGET_SIZE::NONE;
+    int font_size = 25;
+    UI_PROPERTIES ui_properties = UI_PROP_NONE;
+    char image_path[256]{};
+};
+bool set_parameter_in_style(style_t& style, const char* key, const char* value);
+parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes);
+
+struct ui_file_layout_t {
+    int handle = -1;
+    xml_document* document = NULL;
+    time_t last_modified_time = 0;
+    char path[256]{};
+};
+void add_active_ui_file(const char* file_name);
+void clear_active_ui_files();
+void update_ui_files();
+
+bool is_some_element_clicked_on();
+
+void set_ui_value(std::string& key, std::string& val);
+bool get_if_key_clicked_on(const char* key);
+
+void draw_from_ui_file_layouts();
+void render_ui();
+
 struct bck_color_override_t {
     char widget_key[256]{};
     BCK_MODE bck_mode = BCK_SOLID;
@@ -284,38 +311,32 @@ struct bck_color_override_t {
 void set_background_color_override(const char* widget_key, glm::vec3 color);
 void set_background_color_gradient_4_corners_override(const char* widget_key, glm::vec3 top_left_color, glm::vec3 bottom_right_color);
 
-void draw_background(widget_t& widget);
-void draw_image_container(widget_t& widget);
-// void draw_text(const char* text, glm::vec2 starting_pos, TEXT_SIZE text_size, glm::vec3& color);
-void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec3& color);
-
-struct parsed_ui_attributes_t {
-    style_t style;
-    char id[64]{};
-    float width = 0;
-    float height = 0;
-    WIDGET_SIZE widget_size_width = WIDGET_SIZE::NONE;
-    WIDGET_SIZE widget_size_height = WIDGET_SIZE::NONE;
-    // TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
-    int font_size = 25;
-    UI_PROPERTIES ui_properties = UI_PROP_NONE;
-    char image_path[256]{};
-};
-parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes);
-
-struct ui_file_layout_t {
+struct ui_anim_t {
     int handle = -1;
-    xml_document* document = NULL;
-    time_t last_modified_time = 0;
-    char path[256]{};
+    char anim_name[128]{};
+    style_t style;
+    style_override_t style_params_overriden;
+    time_count_t anim_duration = .25;
 };
-void add_active_ui_file(const char* file_name);
-void clear_active_ui_files();
 
-bool is_some_element_clicked_on();
+struct ui_anim_file_t {
+    int handle = -1;
+    char path[256]{};
+    std::vector<ui_anim_t> ui_anims;
+};
 
-void set_ui_value(std::string& key, std::string& val);
-bool get_if_key_clicked_on(const char* key);
+struct ui_anim_player_t {
+    int ui_anim_handle = -1;
+    int ui_anim_file_handle = -1;
+    int handle = -1;
+    time_count_t anim_duration = 0;
+    time_count_t duration_cursor = 0;
+};
+style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player);
+int create_ui_anim_player(int ui_anim_file_handle, ui_anim_t& ui_anim);
+void move_ui_anim_player_forward(ui_anim_player_t& player);
+void move_ui_anim_player_backward(ui_anim_player_t& player);
 
-void draw_from_ui_file_layouts();
-void render_ui();
+void parse_ui_anims(const char* path);
+void add_active_ui_anim_file(const char* file_name);
+void clear_active_ui_anim_files();

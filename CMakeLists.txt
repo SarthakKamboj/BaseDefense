@@ -40,6 +40,7 @@ function(configure_game)
         src/animation/animation.cpp
 
         src/ui/ui.cpp
+        src/ui/ui_hash.cpp
 
         src/audio/audio.cpp
 
