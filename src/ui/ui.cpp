@@ -375,8 +375,6 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     return info;
 }
 
-float panel_left = 0;
-
 void create_panel(const char* panel_name) {
     widget_t panel = create_widget();
     memcpy(panel.key, panel_name, strlen(panel_name)); 

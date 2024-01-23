@@ -70,6 +70,7 @@ void scene_manager_update(scene_manager_t& sm) {
             add_active_ui_anim_file("main_menu_anims.json");
         } else if (sm.cur_level == GAME_OVER_SCREEN_LEVEL) {
             add_active_ui_file("game_over.xml");
+            add_active_ui_anim_file("game_over_anims.json");
         } else if (sm.cur_level == LEVELS_DISPLAY) {
             add_active_ui_file("levels_display.xml");
             add_active_ui_anim_file("levels_display_anims.json");

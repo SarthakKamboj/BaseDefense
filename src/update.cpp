@@ -26,7 +26,7 @@ void update() {
             globals.running = false;
         }
     } else if (globals.scene_manager.cur_level == GAME_OVER_SCREEN_LEVEL) {
-        if (get_if_key_clicked_on("Continue")) {
+        if (get_if_key_clicked_on("continue_btn")) {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
         }

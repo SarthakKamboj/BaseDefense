@@ -16,12 +16,12 @@ static glm::vec3 invalid_placement_color = create_color(144,66,71);
 static glm::vec3 valid_placement_color = create_color(45,45,45);
 
 extern inventory_t inventory;
+extern store_t store;
 extern preview_state_t preview_state;
 
 score_t score;
 
 extern float panel_left;
-static bool ui_open = false;
 
 extern globals_t globals;
 
@@ -61,7 +61,7 @@ void update_preview_base() {
 	quad_render_t* quad_render = get_quad_render(preview_base.quad_render_handle);
 	game_assert_msg(quad_render, "quad render for base not found");	
 
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE || ui_open) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE || store.open) {
 		quad_render->render = false;
 		return;
 	}
@@ -275,7 +275,7 @@ void update_preview_base_ext() {
 	quad_render_t* preview_quad = get_quad_render(preview_base_ext.quad_render_handle);
 	game_assert_msg(preview_quad, "quad render for preview attachment not found");
 
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE_EXT || ui_open) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE_EXT || store.open) {
 		preview_quad->render = false;
 		return;
 	}
@@ -367,7 +367,7 @@ void update_preview_gun() {
 	quad_render_t* preview_quad = get_quad_render(preview_gun.quad_render_handle);
 	game_assert_msg(preview_quad, "quad render for preview gun not found");
 
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_GUN || ui_open) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_GUN || store.open) {
 		preview_quad->render = false;
 		return;
 	}
@@ -563,17 +563,6 @@ void update_score() {
 }
 
 void gos_update() {
-	ui_open = panel_left == 0 || globals.ui_clicked_on;
-	// if (globals.window.user_input.down['s']) {
-	// 	if (preview_mode == PREVIEW_MODE::PREVIEW_GUN) {
-	// 		preview_mode = PREVIEW_MODE::PREVIEW_BASE_EXT;
-	// 	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
-	// 		preview_mode = PREVIEW_MODE::PREVIEW_BASE;
-	// 	} else if (preview_mode == PREVIEW_MODE::PREVIEW_BASE) {
-	// 		preview_mode = PREVIEW_MODE::PREVIEW_GUN;
-	// 	}
-	// }	
-
 	update_preview_base();
 
 	preview_base_ext.free = true;
