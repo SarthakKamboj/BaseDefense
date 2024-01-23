@@ -1,6 +1,6 @@
 #include "vertex.h"
 
-vertex_t create_vertex(glm::vec3 position, glm::vec3 color, glm::vec2 tex_coord) {
+vertex_t create_vertex(glm::vec3 position, glm::vec4 color, glm::vec2 tex_coord) {
 	vertex_t vertex;
 	vertex.position = position;
 	vertex.color = color;

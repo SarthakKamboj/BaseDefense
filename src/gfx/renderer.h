@@ -7,3 +7,5 @@
 void render();
 
 bool detect_gfx_error();
+void set_fill_mode();
+void set_wireframe_mode();

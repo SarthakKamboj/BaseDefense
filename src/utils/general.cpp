@@ -4,6 +4,10 @@ glm::vec3 create_color(float r, float g, float b) {
     return glm::vec3(r, g, b) / 255.f;
 }
 
+glm::vec4 create_color(float r, float g, float b, float a) {
+    return glm::vec4(r / 255.f, g / 255.f, b / 255.f, a);
+}
+
 void int_to_string(int val, char* buffer) {
     sprintf(buffer, "%i", val);
 }

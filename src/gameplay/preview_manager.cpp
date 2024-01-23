@@ -36,10 +36,10 @@ void init_preview_mode() {
     if (!data.shader.valid) {
         // create the vertices of the rectangle
         vertex_t vertices[4];
-        vertices[0] = create_vertex(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(0,1,1), glm::vec2(1,1)); // top right
-        vertices[1] = create_vertex(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,1), glm::vec2(1,0)); // bottom right
-        vertices[2] = create_vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0,1,0), glm::vec2(0,0)); // bottom left
-        vertices[3] = create_vertex(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1,0,0), glm::vec2(0,1)); // top left
+        vertices[0] = create_vertex(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(0,1,1,1), glm::vec2(1,1)); // top right
+        vertices[1] = create_vertex(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(0,0,1,1), glm::vec2(1,0)); // bottom right
+        vertices[2] = create_vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(0,1,0,1), glm::vec2(0,0)); // bottom left
+        vertices[3] = create_vertex(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1,0,0,1), glm::vec2(0,1)); // top left
 
         // setting the vertices in the vbo
         data.vbo = create_vbo((float*)vertices, sizeof(vertices));
@@ -57,7 +57,7 @@ void init_preview_mode() {
         data.vao = create_vao();
         // bind_vao(data.vao);
         vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
-        vao_enable_attribute(data.vao, data.vbo, 1, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
+        vao_enable_attribute(data.vao, data.vbo, 1, 4, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
         vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
         vao_bind_ebo(data.vao, data.ebo);
         // bind_ebo(data.ebo);
@@ -147,7 +147,8 @@ void render_preview_mode() {
 	shader_set_mat4(shader, "model", model_matrix);
 	shader_set_vec3(shader, "color", quad->color);
     bind_texture(quad->tex_handle);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    set_fill_mode();
 
     glm::vec2 selection_pt(0);
     glm::vec2 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y);

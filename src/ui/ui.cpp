@@ -16,6 +16,8 @@
 #include "utils/time.h"
 #include "utils/json.h"
 
+#include <glm/gtx/string_cast.hpp>
+
 #include <ft2build.h>
 #include FT_FREETYPE_H  
 
@@ -23,7 +25,7 @@ namespace fs = std::filesystem;
 
 static bool panel_left_used = false;
 
-static std::vector<bck_color_override_t> bck_color_overrides;
+// static std::vector<bck_color_override_t> bck_color_overrides;
 
 extern globals_t globals;
 
@@ -132,7 +134,7 @@ void ui_start_of_frame() {
         font_modes[i].used_last_frame = false;
     }
 
-    bck_color_overrides.clear();
+    // bck_color_overrides.clear();
     ui_text_values.clear();
     styles_stack.clear();
     style_t default_style;
@@ -245,31 +247,16 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     }
 
     if (widget.attached_hover_anim_player_handle == -1) {
-        // for (int i = 0; i < active_ui_anim_file_handles.size(); i++) {
-        //     int active_ui_anim_file_handle = active_ui_anim_file_handles[i];
-        //     for (int j = 0; j < ui_anim_files.size(); j++) {
-        //         if (ui_anim_files[j].handle == active_ui_anim_file_handle) {
-                    // std::vector<ui_anim_t>& ui_anims = ui_anim_files[j].ui_anims;
-                    for (int k = 0; k < ui_anims.size(); k++) {
-                        char hover_anim_name[128]{};
-                        sprintf(hover_anim_name, "%s:hover", widget.key);
-                        if (strcmp(ui_anims[k].anim_name, hover_anim_name) == 0) {
-                            widget.attached_hover_anim_player_handle = create_ui_anim_player(widget.key, ui_anims[k].ui_file_handle, ui_anims[k], true); 
-                        }
-                    }
-        //         }
-        //     }
-        // }
+        for (int k = 0; k < ui_anims.size(); k++) {
+            char hover_anim_name[128]{};
+            sprintf(hover_anim_name, "%s:hover", widget.key);
+            if (strcmp(ui_anims[k].anim_name, hover_anim_name) == 0) {
+                widget.attached_hover_anim_player_handle = create_ui_anim_player(widget.key, ui_anims[k].ui_file_handle, ui_anims[k], true); 
+            }
+        }
     } 
 
-    // ui_anim_player_t* hover_anim_player = NULL;
-    // for (int k = 0; k < ui_anim_players.size(); k++) {
-    //     if (ui_anim_players[k].handle == widget.attached_hover_anim_player_handle) {
-    //         hover_anim_player = &ui_anim_players[k];
-    //     }
-    // }
     ui_anim_player_t* hover_anim_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
-
     for (int i = 0; i < anims_to_add_this_frame.size(); i++) {
         if (strcmp(widget.key, anims_to_add_this_frame[i].widget_key) == 0) {
             for (int k = 0; k < ui_anims.size(); k++) {
@@ -328,14 +315,9 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     }
 
     for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
-        // for (int k = 0; k < ui_anim_players.size(); k++) {
         ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
         game_assert_msg(attached_player, "could not find animation player");
         widget.style = get_intermediate_style(original_style, *attached_player);
-            // if (strcmp(widget.key, "1_bottom_border") == 0) {
-                // // printf("%f\n", widget.style.height);
-            // }
-        // }
     }
 
     arr.push_back(widget);
@@ -1235,26 +1217,30 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
     float anim_weight = player.duration_cursor / player.anim_duration;
 
     style_t new_style = original_style;
-    for (int j = 0; j < ui_anims.size(); j++) {
-        ui_anim_t& anim = ui_anims[j];
-        if (anim.handle == player.ui_anim_handle) {
-            if (anim.style_params_overriden.background_color) {
-                if (original_style.background_color == TRANSPARENT_COLOR) {
-                    new_style.background_color = anim_weight * anim.style.background_color;
-                } else {
-                    new_style.background_color = (anim_weight * anim.style.background_color) + (1 - anim_weight) * original_style.background_color;
-                }
-            }
-            if (anim.style_params_overriden.color) {
-                new_style.color = (anim_weight * anim.style.color) + (1 - anim_weight) * original_style.color;
-            }
-            if (anim.style_params_overriden.width) {
-                new_style.width = (anim_weight * anim.style.width) + (1 - anim_weight) * original_style.width;
-            }
-            if (anim.style_params_overriden.height) {
-                new_style.height = (anim_weight * anim.style.height) + (1 - anim_weight) * original_style.height;
-            }
+    ui_anim_t* anim = get_ui_anim(player.ui_anim_handle);
+    game_assert_msg(anim, "anim not found");
+    if (anim->style_params_overriden.background_color) {
+#if 0
+        // new_style.background_color = (anim_weight * anim.style.background_color) + (1 - anim_weight) * original_style.background_color;
+        if (anim_weight > 0) {
+            new_style.background_color = glm::vec4(0,1,0,0.3f);
         }
+#else
+        if (original_style.background_color == TRANSPARENT_COLOR) {
+            new_style.background_color = glm::vec4(anim->style.background_color.r, anim->style.background_color.g, anim->style.background_color.b, anim_weight * anim->style.background_color.a);
+        } else {
+            new_style.background_color = (anim_weight * anim->style.background_color) + (1 - anim_weight) * original_style.background_color;
+        }
+#endif
+    }
+    if (anim->style_params_overriden.color) {
+        new_style.color = (anim_weight * anim->style.color) + (1 - anim_weight) * original_style.color;
+    }
+    if (anim->style_params_overriden.width) {
+        new_style.width = (anim_weight * anim->style.width) + (1 - anim_weight) * original_style.width;
+    }
+    if (anim->style_params_overriden.height) {
+        new_style.height = (anim_weight * anim->style.height) + (1 - anim_weight) * original_style.height;
     }
 
     return new_style;
@@ -1262,86 +1248,31 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
 
 void render_ui_helper(widget_t& widget) {
 
-    // ui_anim_player_t* hover_anim_player = NULL;
     if (widget.attached_hover_anim_player_handle != -1) {
-        for (int i = 0; i < ui_anim_players.size(); i++) {
-            if (widget.attached_hover_anim_player_handle == ui_anim_players[i].handle) {
-                // hover_anim_player = &ui_anim_players[i];
-                if (widget.handle == cur_final_focused_handle) {
-                    move_ui_anim_player_forward(ui_anim_players[i]);
-                } else {
-                    move_ui_anim_player_backward(ui_anim_players[i]);
-                }
-            }
+        ui_anim_player_t* hover_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
+        game_assert_msg(hover_player, "hover player not found");
+        if (widget.handle == cur_final_focused_handle) {
+            move_ui_anim_player_forward(*hover_player);
+        } else {
+            move_ui_anim_player_backward(*hover_player);
         }
     }
 
     for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
-        for (int k = 0; k < ui_anim_players.size(); k++) {
-            ui_anim_player_t& player = ui_anim_players[k];
-            if (widget.attached_anim_player_handles[i] == player.handle) {
-                if (player.playing) {
-                    move_ui_anim_player_forward(player);
-                } else {
-                    move_ui_anim_player_backward(player);
-                }
-            }
+        ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
+        game_assert_msg(attached_player, "attached player not found");
+        if (attached_player->playing) {
+            move_ui_anim_player_forward(*attached_player);
+        } else {
+            move_ui_anim_player_backward(*attached_player);
         }
     }
-
-    if (widget.handle == cur_final_focused_handle) {
-        
-        // if (widget.style.hover_background_color != TRANSPARENT_COLOR) {
-        //     widget.style.bck_mode = BCK_SOLID;
-        //     widget.style.background_color = widget.style.hover_background_color;
-        // }
-        // if (widget.style.hover_color != TRANSPARENT_COLOR) {
-        //     widget.style.color = widget.style.hover_color;
-        // }
-        // for (int i = 0; i < bck_color_overrides.size(); i++) {
-        //     bck_color_override_t& ovrride = bck_color_overrides[i];
-        //     if (strcmp(ovrride.widget_key, widget.key) == 0) {
-        //         widget.style.bck_mode = ovrride.bck_mode;
-        //         widget.style.background_color = ovrride.background_color;
-        //         widget.style.top_left_bck_color = ovrride.top_left_bck_color;
-        //         widget.style.top_right_bck_color = ovrride.top_right_bck_color;
-        //         widget.style.bottom_left_bck_color = ovrride.bottom_left_bck_color;
-        //         widget.style.bottom_right_bck_color = ovrride.bottom_right_bck_color;
-        //     }
-        // }
-        // draw_background(widget);
-    } else { 
-        // for (int i = 0; i < bck_color_overrides.size(); i++) {
-        //     bck_color_override_t& ovrride = bck_color_overrides[i];
-        //     if (strcmp(ovrride.widget_key, widget.key) == 0) {
-        //         widget.style.bck_mode = ovrride.bck_mode;
-        //         widget.style.background_color = ovrride.background_color;
-        //         widget.style.top_left_bck_color = ovrride.top_left_bck_color;
-        //         widget.style.top_right_bck_color = ovrride.top_right_bck_color;
-        //         widget.style.bottom_left_bck_color = ovrride.bottom_left_bck_color;
-        //         widget.style.bottom_right_bck_color = ovrride.bottom_right_bck_color;
-        //     }
-        // }
-        // if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
-        //     widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT ||
-        //     widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
-        //     draw_background(widget);
-        // }
-    } 
 
     if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
         widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT ||
         widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
         draw_background(widget);
     }
-
-    // for (int i = 0; i < bck_color_overrides.size(); i++) {
-    //     if ((widget.style.bck_mode == BCK_SOLID && widget.style.background_color != TRANSPARENT_COLOR) || 
-    //         widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT ||
-    //         widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
-    //         draw_background(widget);
-    //     }
-    // }
 
     if (widget.image_based) {
         draw_image_container(widget);
@@ -1411,7 +1342,7 @@ bool set_parameter_in_style(style_t& style, const char* name, const char* conten
     } else if (strcmp(name, "background_color") == 0) {
         glm::vec3 color(0);
         sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-        style.background_color = create_color(color.r, color.g, color.b);
+        style.background_color = create_color(color.r, color.g, color.b, 1);
         return true;
     }  else if (strcmp(name, "color") == 0) {
         glm::vec3 color(0);
@@ -1466,22 +1397,22 @@ bool set_parameter_in_style(style_t& style, const char* name, const char* conten
     } else if (strcmp(name, "tl_bck") == 0) {
         glm::vec3 color(0);
         sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-        style.top_left_bck_color = create_color(color.r, color.g, color.b);
+        style.top_left_bck_color = create_color(color.r, color.g, color.b, 1);
         return true;
     } else if (strcmp(name, "br_bck") == 0) {
         glm::vec3 color(0);
         sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-        style.bottom_right_bck_color = create_color(color.r, color.g, color.b);
+        style.bottom_right_bck_color = create_color(color.r, color.g, color.b, 1);
         return true;
     } else if (strcmp(name, "bl_bck") == 0) {
         glm::vec3 color(0);
         sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-        style.bottom_left_bck_color = create_color(color.r, color.g, color.b);
+        style.bottom_left_bck_color = create_color(color.r, color.g, color.b, 1);
         return true;
     } else if (strcmp(name, "tr_bck") == 0) {
         glm::vec3 color(0);
         sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
-        style.top_right_bck_color = create_color(color.r, color.g, color.b);
+        style.top_right_bck_color = create_color(color.r, color.g, color.b, 1);
         return true;
     } else if (strcmp(name, "width") == 0) {
             style.width = atof(content);
@@ -1748,7 +1679,7 @@ void init_ui() {
 
 	// bind_vao(data.vao);
 	vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
-	vao_enable_attribute(data.vao, data.vbo, 1, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
+	vao_enable_attribute(data.vao, data.vbo, 1, 4, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
 	vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
     vao_bind_ebo(data.vao, data.ebo);
 	// bind_ebo(data.ebo);
@@ -1838,7 +1769,6 @@ text_dim_t get_text_dimensions(const char* text, int font_size) {
 }
 
 void draw_background(widget_t& widget) {
-	// shader_set_vec3(font_char_t::ui_opengl_data.shader, "color", widget.style.background_color);
 	shader_set_float(font_char_t::ui_opengl_data.shader, "tex_influence", 0.f);
 	shader_set_int(font_char_t::ui_opengl_data.shader, "round_vertices", 1);
 
@@ -1859,26 +1789,20 @@ void draw_background(widget_t& widget) {
     float width = widget.render_width;
     float height = widget.render_height;
 
-#if 0
-	vertex_t updated_vertices[4];
-	glm::vec2 origin = glm::vec2(x + (width / 2), y - (height / 2));
-    updated_vertices[0] = create_vertex(glm::vec3(x + (width / 2), y + (height / 2), 0.0f), glm::vec3(0,1,1), glm::vec2(0,0)); // top right
-    updated_vertices[1] = create_vertex(glm::vec3(x + (width / 2), y - (height / 2), 0.0f), glm::vec3(0,0,1), glm::vec2(0,0)); // bottom right
-    updated_vertices[2] = create_vertex(glm::vec3(x - (width / 2), y - (height / 2), 0.0f), glm::vec3(0,1,0), glm::vec2(0,0)); // bottom left
-    updated_vertices[3] = create_vertex(glm::vec3(x - (width / 2), y + (height / 2), 0.0f), glm::vec3(1,0,0), glm::vec2(0,0)); // top left
-#else
-
-    glm::vec3 top_left_color(0), top_right_color(0), bottom_left_color(0), bottom_right_color(0);
+    glm::vec4 top_left_color(0), top_right_color(0), bottom_left_color(0), bottom_right_color(0);
     if (widget.style.bck_mode == BCK_SOLID) {
         top_left_color = widget.style.background_color;
         top_right_color = widget.style.background_color;
         bottom_left_color = widget.style.background_color;
         bottom_right_color = widget.style.background_color;
+        if (top_left_color.a == 0.3f) {
+            glm::to_string(top_left_color);
+        }
     } else if (widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT) {
         top_left_color = widget.style.top_left_bck_color;
         bottom_right_color = widget.style.bottom_right_bck_color;
-        bottom_left_color = (top_left_color + bottom_right_color) / glm::vec3(2.f);
-        top_right_color = (top_left_color + bottom_right_color) / glm::vec3(2.f);
+        bottom_left_color = (top_left_color + bottom_right_color) / glm::vec4(2.f);
+        top_right_color = (top_left_color + bottom_right_color) / glm::vec4(2.f);
     } else if (widget.style.bck_mode == BCK_GRADIENT_4_CORNERS) {
         top_left_color = widget.style.top_left_bck_color;
         top_right_color = widget.style.top_right_bck_color;
@@ -1887,25 +1811,13 @@ void draw_background(widget_t& widget) {
     }
 
 	glm::vec3 origin = glm::vec3(x, y, 0);
-    // updated_vertices[0] = create_vertex(origin + glm::vec3(width, 0, 0.0f), top_right_color, glm::vec2(0,0)); // top right
-    // updated_vertices[1] = create_vertex(origin + glm::vec3(width, -height, 0.0f), bottom_right_color, glm::vec2(0,0)); // bottom right
-    // updated_vertices[2] = create_vertex(origin + glm::vec3(0, -height, 0.0f), bottom_left_color, glm::vec2(0,0)); // bottom left
-    // updated_vertices[3] = create_vertex(origin, top_left_color, glm::vec2(0,0)); // top left
 
 	vertex_t updated_vertices[4];
-#if 1
     updated_vertices[0] = create_vertex(origin + glm::vec3(width, 0, 0.0f), top_right_color, glm::vec2(0,0)); // top right
     updated_vertices[1] = create_vertex(origin + glm::vec3(width, -height, 0.0f), bottom_right_color, glm::vec2(0,0)); // bottom right
     updated_vertices[2] = create_vertex(origin + glm::vec3(0, -height, 0.0f), bottom_left_color, glm::vec2(0,0)); // bottom left
     updated_vertices[3] = create_vertex(origin, top_left_color, glm::vec2(0,0)); // top left
-#else
-    updated_vertices[0] = create_vertex(origin + glm::vec3(width, 0, 0.0f), top_right_color, glm::vec2(0,0)); // top right
-    updated_vertices[1] = create_vertex(origin + glm::vec3(width, -height, 0.0f), bottom_right_color, glm::vec2(0,0)); // bottom right
-    updated_vertices[2] = create_vertex(origin + glm::vec3(0, -height, 0.0f), bottom_left_color, glm::vec2(0,0)); // bottom left
-    updated_vertices[3] = create_vertex(origin, top_left_color, glm::vec2(0,0)); // top left
-#endif
 
-#endif
     update_vbo_data(font_char_t::ui_opengl_data.vbo, (float*)updated_vertices, sizeof(updated_vertices));
 
     shader_set_vec3(font_char_t::ui_opengl_data.shader, "top_left", updated_vertices[3].position);
@@ -1913,7 +1825,7 @@ void draw_background(widget_t& widget) {
     shader_set_vec3(font_char_t::ui_opengl_data.shader, "bottom_left", updated_vertices[2].position);
     shader_set_vec3(font_char_t::ui_opengl_data.shader, "bottom_right", updated_vertices[1].position);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    set_fill_mode();
     // draw the rectangle render after setting all shader parameters
     draw_obj(font_char_t::ui_opengl_data);
 }
@@ -1929,6 +1841,7 @@ void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec
 
     load_font(font_size);
 
+    glm::vec4 color_vec4 = glm::vec4(color.r, color.g, color.b, 1);
     for (font_mode_t& font_mode : font_modes) {
         if (font_mode.font_size == font_size) {
             font_mode.used_last_frame = true;
@@ -1942,13 +1855,14 @@ void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec
                     running_pos.x = origin.x + fc.bearing.x + (fc.width / 2);
                     running_pos.y = origin.y + fc.bearing.y - (fc.height / 2);
 
-                    updated_vertices[0] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), color, glm::vec2(1,0)); // top right
-                    updated_vertices[1] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), color, glm::vec2(1,1)); // bottom right
-                    updated_vertices[2] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), color, glm::vec2(0,1)); // bottom left
-                    updated_vertices[3] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), color, glm::vec2(0,0)); // top left
+                    updated_vertices[0] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), color_vec4, glm::vec2(1,0)); // top right
+                    updated_vertices[1] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), color_vec4, glm::vec2(1,1)); // bottom right
+                    updated_vertices[2] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), color_vec4, glm::vec2(0,1)); // bottom left
+                    updated_vertices[3] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), color_vec4, glm::vec2(0,0)); // top left
                     update_vbo_data(font_char_t::ui_opengl_data.vbo, (float*)updated_vertices, sizeof(updated_vertices));
 
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                    set_fill_mode();
                     // draw the rectangle render after setting all shader parameters
                     draw_obj(font_char_t::ui_opengl_data);
                 }
@@ -1968,13 +1882,14 @@ void draw_image_container(widget_t& widget) {
 
     glm::vec2 top_left(widget.x, widget.y);
 
-    updated_vertices[0] = create_vertex(glm::vec3(top_left.x + widget.render_width, top_left.y, 0.0f), glm::vec3(0,1,1), glm::vec2(1,1)); // top right
-    updated_vertices[1] = create_vertex(glm::vec3(top_left.x + widget.render_width, top_left.y - widget.render_height, 0.f), glm::vec3(0,0,1), glm::vec2(1,0)); // bottom right
-    updated_vertices[2] = create_vertex(glm::vec3(top_left.x, top_left.y - widget.render_height, 0.0f), glm::vec3(0,1,0), glm::vec2(0,0)); // bottom left
-    updated_vertices[3] = create_vertex(glm::vec3(top_left.x, top_left.y, 0.0f), glm::vec3(1,0,0), glm::vec2(0,1)); // top left
+    updated_vertices[0] = create_vertex(glm::vec3(top_left.x + widget.render_width, top_left.y, 0.0f), glm::vec4(0,1,1,1), glm::vec2(1,1)); // top right
+    updated_vertices[1] = create_vertex(glm::vec3(top_left.x + widget.render_width, top_left.y - widget.render_height, 0.f), glm::vec4(0,0,1,1), glm::vec2(1,0)); // bottom right
+    updated_vertices[2] = create_vertex(glm::vec3(top_left.x, top_left.y - widget.render_height, 0.0f), glm::vec4(0,1,0,1), glm::vec2(0,0)); // bottom left
+    updated_vertices[3] = create_vertex(glm::vec3(top_left.x, top_left.y, 0.0f), glm::vec4(1,0,0,1), glm::vec2(0,1)); // top left
     update_vbo_data(font_char_t::ui_opengl_data.vbo, (float*)updated_vertices, sizeof(updated_vertices));
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    set_fill_mode();
     // draw the rectangle render after setting all shader parameters
     draw_obj(font_char_t::ui_opengl_data);
 }
@@ -2045,20 +1960,20 @@ void clear_active_ui_anim_files() {
     }
 }
 
-void set_background_color_override(const char* widget_key, glm::vec3 color) {
-    bck_color_override_t ovrride;
-    memcpy(ovrride.widget_key, widget_key, strlen(widget_key));
-    ovrride.background_color = color;
-    ovrride.bck_mode = BCK_SOLID;
-    bck_color_overrides.push_back(ovrride);
-}
+// void set_background_color_override(const char* widget_key, glm::vec3 color) {
+//     bck_color_override_t ovrride;
+//     memcpy(ovrride.widget_key, widget_key, strlen(widget_key));
+//     ovrride.background_color = color;
+//     ovrride.bck_mode = BCK_SOLID;
+//     bck_color_overrides.push_back(ovrride);
+// }
 
-void set_background_color_gradient_4_corners_override(const char* widget_key, glm::vec3 top_left_color, glm::vec3 bottom_right_color) {
-    bck_color_override_t ovrride;
-    memcpy(ovrride.widget_key, widget_key, strlen(widget_key));
-    ovrride.top_left_bck_color = top_left_color;
-    ovrride.bottom_right_bck_color = bottom_right_color;
-}
+// void set_background_color_gradient_4_corners_override(const char* widget_key, glm::vec3 top_left_color, glm::vec3 bottom_right_color) {
+//     bck_color_override_t ovrride;
+//     memcpy(ovrride.widget_key, widget_key, strlen(widget_key));
+//     ovrride.top_left_bck_color = top_left_color;
+//     ovrride.bottom_right_bck_color = bottom_right_color;
+// }
 
 void parse_ui_anims(const char* path) {
     static int cnt = 0;

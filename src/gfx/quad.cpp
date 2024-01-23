@@ -30,10 +30,10 @@ void init_quad_data() {
 
     // create the vertices of the rectangle
 	vertex_t vertices[4];
-	vertices[0] = create_vertex(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(0,1,1), glm::vec2(1,1)); // top right
-	vertices[1] = create_vertex(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0,0,1), glm::vec2(1,0)); // bottom right
-	vertices[2] = create_vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0,1,0), glm::vec2(0,0)); // bottom left
-	vertices[3] = create_vertex(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(1,0,0), glm::vec2(0,1)); // top left
+	vertices[0] = create_vertex(glm::vec3(0.5f, 0.5f, 0.0f), glm::vec4(0,1,1,1), glm::vec2(1,1)); // top right
+	vertices[1] = create_vertex(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec4(0,0,1,1), glm::vec2(1,0)); // bottom right
+	vertices[2] = create_vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(0,1,0,1), glm::vec2(0,0)); // bottom left
+	vertices[3] = create_vertex(glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec4(1,0,0,1), glm::vec2(0,1)); // top left
 
     // setting the vertices in the vbo
 	data.vbo = create_vbo((float*)vertices, sizeof(vertices));
@@ -51,7 +51,7 @@ void init_quad_data() {
 	data.vao = create_vao();
 	// bind_vao(data.vao);
 	vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
-	vao_enable_attribute(data.vao, data.vbo, 1, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
+	vao_enable_attribute(data.vao, data.vbo, 1, 4, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
 	vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
     vao_bind_ebo(data.vao, data.ebo);
 	// bind_ebo(data.ebo);
@@ -182,7 +182,8 @@ void draw_debug_pt(glm::vec3 pos) {
 	shader_set_mat4(quad_render_t::obj_data.shader, "model", model_matrix);
 	shader_set_vec3(quad_render_t::obj_data.shader, "color", glm::vec3(1,0,0));
 	shader_set_float(quad_render_t::obj_data.shader, "tex_influence", 0);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    set_fill_mode();
     // draw the rectangle render after setting all shader parameters
 	draw_obj(quad_render_t::obj_data);	
 }
@@ -214,10 +215,11 @@ void draw_quad_render(const quad_render_t& quad) {
     bind_texture(quad.tex_handle);
 #endif
 	if (quad.wireframe_mode) {
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		set_wireframe_mode();
 	}
 	else {
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    	set_fill_mode();
 	}
     // draw the rectangle render after setting all shader parameters
 	draw_obj(quad_render_t::obj_data);

@@ -69,3 +69,11 @@ bool detect_gfx_error() {
 	if (error == GL_NO_ERROR) return false;
 	return true;
 }
+
+void set_fill_mode() {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+void set_wireframe_mode() {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+}
