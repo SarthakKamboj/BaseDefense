@@ -1,0 +1,24 @@
+{
+    "open_close_section:hover": {
+        "background_color": "180,115,0"
+    },
+    "buy_btn:hover": {
+        "background_color": "180,115,0"
+    },
+    "selected": {
+        "background_color": "220,115,0",
+        "anim_time": 0.001
+    },
+    "base_container:hover": {
+        "background_color": "180,115,0",
+        "anim_time": 0.1
+    },
+    "gun_container:hover": {
+        "background_color": "180,115,0",
+        "anim_time": 0.1
+    },
+    "base_ext_container:hover": {
+        "background_color": "180,115,0",
+        "anim_time": 0.1
+    }
+}

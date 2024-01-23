@@ -47,7 +47,7 @@
             <container id="selectable_ui"
             width="1" height="0.2" widget_size_width="parent" widget_size_height="parent"
             display_dir="vertical" ver_align="center" hor_align="center" content_spacing="10">
-                <button background_color="220,75,0" hover_background_color="180,115,0"
+                <button id="buy_btn" background_color="220,75,0" hover_background_color="180,115,0"
                 padding="30,20" border_radius="10">Buy</button>
                 <text>Store Credit: {{{store_credit}}}</text>
             </container> 
