@@ -114,6 +114,12 @@ struct style_t {
 
     glm::vec3 color = glm::vec3(1,1,1);
 
+    // width of widget without padding or margins
+    WIDGET_SIZE widget_size_width = WIDGET_SIZE::PIXEL_BASED;
+    WIDGET_SIZE widget_size_height = WIDGET_SIZE::PIXEL_BASED;
+    float width = -1.f;
+    float height = -1.f; 
+
     // hover
     glm::vec3 hover_background_color = TRANSPARENT_COLOR;
     glm::vec3 hover_color = TRANSPARENT_COLOR;
@@ -143,6 +149,9 @@ struct style_override_t {
     bool bl_border_radius = false;
     bool br_border_radius = false;
 
+    bool width = false;
+    bool height = false;
+
     bool color = false;
 };
 
@@ -152,7 +161,7 @@ struct text_t {
     int font_size = 25;
 };
 void create_text(const char* text, int font_size = 0, bool focusable = false);
-bool create_button(const char* text, int font_size = 0, int user_handle = -1);
+bool create_button(const char* text, int font_size = 0, int user_handle = -1, bool* hovering_over = NULL);
 
 struct image_container_t {
     int texture_handle = -1;
@@ -165,6 +174,7 @@ bool create_selector(int selected_option, const char** options, int num_options,
 
 typedef int(*stacked_nav_handler_func_t)(bool right, bool left, bool up, bool down);
 
+struct ui_anim_player_t;
 struct widget_t {
     int handle = -1;
 
@@ -184,12 +194,7 @@ struct widget_t {
     style_t style;
 
     int attached_hover_anim_player_handle = -1;
-
-    // width of widget without padding or margins
-    WIDGET_SIZE widget_size_width = WIDGET_SIZE::PIXEL_BASED;
-    WIDGET_SIZE widget_size_height = WIDGET_SIZE::PIXEL_BASED;
-    float width = -1.f;
-    float height = -1.f; 
+    std::vector<int> attached_anim_player_handles;
 
     // all specified in pixels with (x, y) using top left as the pt
     float x = -1.f;
@@ -230,8 +235,10 @@ void end_container();
 struct widget_registration_info_t {
     int widget_handle = -1;
     bool clicked_on = false;
+    bool hovering_over = false;
 };
 
+widget_t create_widget();
 widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack = false);
 
 void autolayout_hierarchy();
@@ -270,10 +277,6 @@ void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec
 struct parsed_ui_attributes_t {
     style_t style;
     char id[64]{};
-    float width = 0;
-    float height = 0;
-    WIDGET_SIZE widget_size_width = WIDGET_SIZE::NONE;
-    WIDGET_SIZE widget_size_height = WIDGET_SIZE::NONE;
     int font_size = 25;
     UI_PROPERTIES ui_properties = UI_PROP_NONE;
     char image_path[256]{};
@@ -295,6 +298,7 @@ bool is_some_element_clicked_on();
 
 void set_ui_value(std::string& key, std::string& val);
 bool get_if_key_clicked_on(const char* key);
+bool get_if_key_hovered_over(const char* key);
 
 void draw_from_ui_file_layouts();
 void render_ui();
@@ -313,6 +317,7 @@ void set_background_color_gradient_4_corners_override(const char* widget_key, gl
 
 struct ui_anim_t {
     int handle = -1;
+    int ui_file_handle = -1;
     char anim_name[128]{};
     style_t style;
     style_override_t style_params_overriden;
@@ -322,20 +327,34 @@ struct ui_anim_t {
 struct ui_anim_file_t {
     int handle = -1;
     char path[256]{};
-    std::vector<ui_anim_t> ui_anims;
+    std::vector<int> ui_anims;
 };
 
 struct ui_anim_player_t {
+    int handle = -1;
     int ui_anim_handle = -1;
     int ui_anim_file_handle = -1;
-    int handle = -1;
+    char widget_key[256]{};
     time_count_t anim_duration = 0;
     time_count_t duration_cursor = 0;
+    bool playing = false;
 };
+
+struct ui_anim_user_info_t {
+    char widget_key[128]{};
+    char ui_anim_name[128]{};
+};
+
 style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player);
-int create_ui_anim_player(int ui_anim_file_handle, ui_anim_t& ui_anim);
+int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_anim_t& ui_anim, bool play_upon_initialize);
 void move_ui_anim_player_forward(ui_anim_player_t& player);
 void move_ui_anim_player_backward(ui_anim_player_t& player);
+ui_anim_player_t* get_ui_anim_player(int handle);
+ui_anim_t* get_ui_anim(int handle);
+
+void add_ui_anim_to_widget(const char* widget_key, const char* ui_anim_name);
+void play_ui_anim_player(const char* widget_key, const char* ui_anim_name);
+void stop_ui_anim_player(const char* widget_key, const char* ui_anim_name);
 
 void parse_ui_anims(const char* path);
 void add_active_ui_anim_file(const char* file_name);

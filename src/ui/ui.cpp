@@ -34,6 +34,7 @@ static std::vector<ui_file_layout_t> ui_files;
 static std::vector<int> active_ui_file_handles;
 
 static std::vector<ui_anim_file_t> ui_anim_files;
+static std::vector<ui_anim_t> ui_anims;
 static std::vector<int> active_ui_anim_file_handles;
 
 static std::vector<ui_anim_player_t> ui_anim_players;
@@ -47,19 +48,23 @@ static int cur_widget_count = 0;
 static std::vector<int> widget_stack1;
 static std::vector<widget_t> widgets_arr1;
 static std::unordered_set<std::string> clicked_on_keys1;
+static std::unordered_set<std::string> hovered_over_keys1;
 
 static std::vector<int> widget_stack2;
 static std::vector<widget_t> widgets_arr2;
 static std::unordered_set<std::string> clicked_on_keys2;
+static std::unordered_set<std::string> hovered_over_keys2;
 
 static std::vector<int>* curframe_widget_stack = &widget_stack2;
 static std::vector<widget_t>* curframe_widget_arr = &widgets_arr2;
 static std::unordered_set<std::string>* curframe_clicked_on_keys;
+static std::unordered_set<std::string>* curframe_hovered_over_keys;
 static bool stacked_nav_widget_in_stack = false;
 
 static std::vector<int>* prevframe_widget_stack = &widget_stack1;
 static std::vector<widget_t>* prevframe_widget_arr = &widgets_arr1;
 static std::unordered_set<std::string>* prevframe_clicked_on_keys;
+static std::unordered_set<std::string>* prevframe_hovered_over_keys;
 
 static std::vector<style_t> styles_stack;
 
@@ -76,6 +81,10 @@ static std::unordered_map<std::string, std::string> ui_text_values;
 
 static std::vector<font_mode_t> font_modes;
 render_object_data font_char_t::ui_opengl_data{};
+
+static std::vector<ui_anim_user_info_t> anims_to_add_this_frame;
+static std::vector<ui_anim_user_info_t> anims_to_start_this_frame;
+static std::vector<ui_anim_user_info_t> anims_to_stop_this_frame;
 
 // static std::vector<ui_anim_t> ui_anims;
 
@@ -133,21 +142,26 @@ void ui_start_of_frame() {
         curframe_widget_arr = &widgets_arr2;
         curframe_widget_stack = &widget_stack2;
         curframe_clicked_on_keys = &clicked_on_keys2;
+        curframe_hovered_over_keys = &hovered_over_keys2;
         prevframe_widget_arr = &widgets_arr1;
         prevframe_widget_stack = &widget_stack1;
         prevframe_clicked_on_keys = &clicked_on_keys1;
+        prevframe_hovered_over_keys = &hovered_over_keys1;
     } else {
         curframe_widget_arr = &widgets_arr1;
         curframe_widget_stack = &widget_stack1;
         curframe_clicked_on_keys = &clicked_on_keys1;
+        curframe_hovered_over_keys = &hovered_over_keys1;
         prevframe_widget_arr = &widgets_arr2;
         prevframe_widget_stack = &widget_stack2;
         prevframe_clicked_on_keys = &clicked_on_keys2;
+        prevframe_hovered_over_keys = &hovered_over_keys2;
     }
 
     curframe_widget_arr->clear();
     curframe_widget_stack->clear();
     curframe_clicked_on_keys->clear();
+    curframe_hovered_over_keys->clear();
 
     cur_widget_count = 0;
 
@@ -180,6 +194,12 @@ void pop_widget() {
     }
 }
 
+widget_t create_widget() {
+    widget_t widget;
+    widget.style = styles_stack[styles_stack.size() - 1];
+    return widget;
+}
+
 widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack) {
 
     widget_registration_info_t info;
@@ -206,7 +226,6 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     if (widget.parent_widget_handle != -1) {
         arr[widget.parent_widget_handle].children_widget_handles.push_back(widget.handle);
     }
-    widget.style = styles_stack[styles_stack.size() - 1];
 
     // could lead to problem if there is a entire ui switch/scene change but coincidentally,
     // there is the same key in the previous ui and the new ui although the anim player
@@ -218,36 +237,105 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     for (int i = 0; i < prev_arr.size(); i++) {
         if (is_same_hash(prev_arr[i].hash, new_hash)) {
             widget.attached_hover_anim_player_handle = prev_arr[i].attached_hover_anim_player_handle;
+            for (int j = 0; j < prev_arr[i].attached_anim_player_handles.size(); j++) {
+                int anim_player_handle = prev_arr[i].attached_anim_player_handles[j];
+                widget.attached_anim_player_handles.push_back(anim_player_handle);
+            }
         }
     }
 
     if (widget.attached_hover_anim_player_handle == -1) {
-        for (int i = 0; i < active_ui_anim_file_handles.size(); i++) {
-            int active_ui_anim_file_handle = active_ui_anim_file_handles[i];
-            for (int j = 0; j < ui_anim_files.size(); j++) {
-                if (ui_anim_files[j].handle == active_ui_anim_file_handle) {
-                    std::vector<ui_anim_t>& ui_anims = ui_anim_files[j].ui_anims;
+        // for (int i = 0; i < active_ui_anim_file_handles.size(); i++) {
+        //     int active_ui_anim_file_handle = active_ui_anim_file_handles[i];
+        //     for (int j = 0; j < ui_anim_files.size(); j++) {
+        //         if (ui_anim_files[j].handle == active_ui_anim_file_handle) {
+                    // std::vector<ui_anim_t>& ui_anims = ui_anim_files[j].ui_anims;
                     for (int k = 0; k < ui_anims.size(); k++) {
                         char hover_anim_name[128]{};
                         sprintf(hover_anim_name, "%s:hover", widget.key);
                         if (strcmp(ui_anims[k].anim_name, hover_anim_name) == 0) {
-                            widget.attached_hover_anim_player_handle = create_ui_anim_player(ui_anim_files[j].handle, ui_anims[k]); 
+                            widget.attached_hover_anim_player_handle = create_ui_anim_player(widget.key, ui_anims[k].ui_file_handle, ui_anims[k], true); 
                         }
                     }
+        //         }
+        //     }
+        // }
+    } 
+
+    // ui_anim_player_t* hover_anim_player = NULL;
+    // for (int k = 0; k < ui_anim_players.size(); k++) {
+    //     if (ui_anim_players[k].handle == widget.attached_hover_anim_player_handle) {
+    //         hover_anim_player = &ui_anim_players[k];
+    //     }
+    // }
+    ui_anim_player_t* hover_anim_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
+
+    for (int i = 0; i < anims_to_add_this_frame.size(); i++) {
+        if (strcmp(widget.key, anims_to_add_this_frame[i].widget_key) == 0) {
+            for (int k = 0; k < ui_anims.size(); k++) {
+                ui_anim_t& anim = ui_anims[k];
+                if (strcmp(anim.anim_name, anims_to_add_this_frame[i].ui_anim_name) == 0) {
+                    int anim_player_handle = create_ui_anim_player(widget.key, anim.ui_file_handle, anim, false);
+                    widget.attached_anim_player_handles.push_back(anim_player_handle);
                 }
             }
         }
-    } 
+    }
 
-    ui_anim_player_t* hover_anim_player = NULL;
-    for (int k = 0; k < ui_anim_players.size(); k++) {
-        if (ui_anim_players[k].handle == widget.attached_hover_anim_player_handle) {
-            hover_anim_player = &ui_anim_players[k];
+    ui_anim_user_info_t* start_anim_user_info = NULL;
+    for (int i = 0; i < anims_to_start_this_frame.size(); i++) {
+        if (strcmp(widget.key, anims_to_start_this_frame[i].widget_key) == 0) {
+            start_anim_user_info = &anims_to_start_this_frame[i];
+            break;
         }
     }
 
+    if (start_anim_user_info) {
+        for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
+            ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
+            game_assert_msg(attached_player, "could not find anim player for the animation trying to be started");
+            ui_anim_t* attached_player_anim = get_ui_anim(attached_player->ui_anim_handle);
+            game_assert_msg(attached_player_anim, "could not find anim for attached player");
+            if (strcmp(attached_player_anim->anim_name, start_anim_user_info->ui_anim_name) == 0) {
+                attached_player->playing = true;
+            }
+        }
+    }
+
+    ui_anim_user_info_t* stop_anim_user_info = NULL;
+    for (int i = 0; i < anims_to_stop_this_frame.size(); i++) {
+        if (strcmp(widget.key, anims_to_stop_this_frame[i].widget_key) == 0) {
+            stop_anim_user_info = &anims_to_stop_this_frame[i];
+            break;
+        }
+    }
+
+    if (stop_anim_user_info) {
+        for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
+            ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
+            game_assert_msg(attached_player, "could not find anim player for the animation trying to be started");
+            ui_anim_t* attached_player_anim = get_ui_anim(attached_player->ui_anim_handle);
+            game_assert_msg(attached_player_anim, "could not find anim for attached player");
+            if (strcmp(attached_player_anim->anim_name, stop_anim_user_info->ui_anim_name) == 0) {
+                attached_player->playing = false;
+            }
+        }
+    }   
+
+    style_t original_style = widget.style;
     if (hover_anim_player) {
-        widget.style = get_intermediate_style(widget.style, *hover_anim_player);
+        widget.style = get_intermediate_style(original_style, *hover_anim_player);
+    }
+
+    for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
+        // for (int k = 0; k < ui_anim_players.size(); k++) {
+        ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
+        game_assert_msg(attached_player, "could not find animation player");
+        widget.style = get_intermediate_style(original_style, *attached_player);
+            // if (strcmp(widget.key, "1_bottom_border") == 0) {
+                // // printf("%f\n", widget.style.height);
+            // }
+        // }
     }
 
     arr.push_back(widget);
@@ -276,6 +364,8 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 
         if (mouse_over_widget && !input_state.game_controller) {
             cur_focused_internal_handle = widget.handle;
+            curframe_hovered_over_keys->insert(std::string(key));
+            info.hovering_over = true;
         }
 
         if (mouse_over_widget && input_state.left_mouse_release) {
@@ -295,13 +385,14 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 float panel_left = 0;
 
 void create_panel(const char* panel_name) {
-    widget_t panel;
+    widget_t panel = create_widget();
     memcpy(panel.key, panel_name, strlen(panel_name)); 
-    panel.height = globals.window.window_height;
-    panel.width = globals.window.window_width;
+
+    panel.style.height = globals.window.window_height;
+    panel.style.width = globals.window.window_width;
     // panel.widget_size = WIDGET_SIZE::PIXEL_BASED;
-    panel.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
-    panel.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
+    panel.style.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
+    panel.style.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
 
     if (strcmp(panel_name, "store_panel") == 0) {
         panel.x = panel_left;
@@ -309,12 +400,12 @@ void create_panel(const char* panel_name) {
     } else {
         panel.x = 0;
     }
-    panel.y = panel.height;
-    panel.render_width = panel.width;
-    panel.render_height = panel.height;
+    panel.y = panel.style.height;
+    panel.render_width = panel.style.width;
+    panel.render_height = panel.style.height;
 
-    panel.content_width = panel.width;
-    panel.content_height = panel.height;
+    panel.content_width = panel.style.width;
+    panel.content_height = panel.style.height;
 
     register_widget(panel, panel_name, true);
 }
@@ -325,12 +416,12 @@ void end_panel() {
 
 // void create_container(float width, float height, WIDGET_SIZE widget_size) {
 void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable, stacked_nav_handler_func_t func, UI_PROPERTIES ui_properties) {
-    widget_t container;
+    widget_t container = create_widget();
     memcpy(container.key, container_name, strlen(container_name));
-    container.height = height;
-    container.width = width;
-    container.widget_size_width = widget_size_width;
-    container.widget_size_height = widget_size_height; 
+    container.style.height = height;
+    container.style.width = width;
+    container.style.widget_size_width = widget_size_width;
+    container.style.widget_size_height = widget_size_height; 
 
     if (focusable) {
         container.properties = container.properties | UI_PROP_FOCUSABLE;
@@ -356,13 +447,13 @@ void create_image_container(int texture_handle, float width, float height, WIDGE
     game_assert(tex);
     game_assert(tex->tex_slot == 1);
 
-    widget_t widget;
+    widget_t widget = create_widget();
     widget.image_based = true;
     widget.texture_handle = texture_handle;
-    widget.widget_size_width = widget_size_width;
-    widget.widget_size_height = widget_size_height;
-    widget.width = width;
-    widget.height = height;
+    widget.style.widget_size_width = widget_size_width;
+    widget.style.widget_size_height = widget_size_height;
+    widget.style.width = width;
+    widget.style.height = height;
 
     register_widget(widget, img_name);
 }
@@ -435,7 +526,7 @@ void create_text(const char* text, int font_size, bool focusable) {
         text_len = triple_hash - text;
     }
 
-    widget_t widget;
+    widget_t widget = create_widget();
     widget.text_based = true;
     memcpy(widget.text_info.text, text, fmin(sizeof(widget.text_info.text), text_len));
     widget.text_info.font_size = font_size;
@@ -446,21 +537,21 @@ void create_text(const char* text, int font_size, bool focusable) {
 
     text_dim_t text_dim = get_text_dimensions(text, font_size);
 
-    widget.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
-    widget.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
+    widget.style.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
+    widget.style.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
     
     style_t& latest_style = styles_stack[styles_stack.size() - 1];
-    widget.width = text_dim.width + (2 * latest_style.padding.x);
+    widget.style.width = text_dim.width + (2 * latest_style.padding.x);
     // widget.height = text_dim.height + (2 * latest_style.padding.y);
-    widget.height = text_dim.max_height_above_baseline + (2 * latest_style.padding.y);
+    widget.style.height = text_dim.max_height_above_baseline + (2 * latest_style.padding.y);
 
-    widget.render_width = widget.width;
-    widget.render_height = widget.height;
+    widget.render_width = widget.style.width;
+    widget.render_height = widget.style.height;
 
     register_widget(widget, key);
 }
 
-bool create_button(const char* text, int font_size, int user_handle) {
+bool create_button(const char* text, int font_size, int user_handle, bool* hovering_over) {
 
     const char* key = text;
     int text_len = strlen(text);
@@ -470,23 +561,23 @@ bool create_button(const char* text, int font_size, int user_handle) {
         text_len = triple_hash - text;
     }
 
-    widget_t widget;
+    widget_t widget = create_widget();
     widget.text_based = true;
     memcpy(widget.text_info.text, text, fmin(sizeof(widget.text_info.text), text_len));
     widget.text_info.font_size = font_size;
 
     text_dim_t text_dim = get_text_dimensions(text, font_size);
 
-    widget.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
-    widget.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
+    widget.style.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
+    widget.style.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
     style_t& latest_style = styles_stack[styles_stack.size() - 1];
-    widget.width = text_dim.width + (2 * latest_style.padding.x);
-    widget.height = text_dim.max_height_above_baseline + (2 * latest_style.padding.y);
+    widget.style.width = text_dim.width + (2 * latest_style.padding.x);
+    widget.style.height = text_dim.max_height_above_baseline + (2 * latest_style.padding.y);
 
-    widget.render_width = widget.width;
-    widget.render_height = widget.height;
+    widget.render_width = widget.style.width;
+    widget.render_height = widget.style.height;
 
-    widget.properties = widget.properties | UI_PROP_CLICKABLE;
+    widget.properties = widget.properties | UI_PROP_CLICKABLE | UI_PROP_HOVERABLE;
     auto& stack = *curframe_widget_stack;
     if (stacked_nav_widget_in_stack) {
         widget.user_handle = user_handle;
@@ -495,6 +586,11 @@ bool create_button(const char* text, int font_size, int user_handle) {
     }
 
     widget_registration_info_t widget_info = register_widget(widget, key);
+
+    if (hovering_over) {
+        *hovering_over = widget_info.hovering_over;
+    }
+
     return widget_info.clicked_on;
 
     // if (!ui_will_update) {
@@ -673,6 +769,10 @@ void end_imgui() {
     } else { 
         cur_final_focused_handle = cur_focused_internal_handle;
     }  
+
+    anims_to_add_this_frame.clear();
+    anims_to_start_this_frame.clear();
+    anims_to_stop_this_frame.clear();
 }
 
 struct helper_info_t {
@@ -907,12 +1007,12 @@ helper_info_t resolve_dimensions(int cur_widget_handle, int parent_width_handle,
     widget_t& widget = cur_arr[cur_widget_handle];
     if (widget.text_based) {
         text_dim_t text_dim = get_text_dimensions(widget.text_info.text, widget.text_info.font_size);
-        widget.width = text_dim.width;
+        widget.style.width = text_dim.width;
         // widget.height = text_dim.height;
-        widget.height = text_dim.max_height_above_baseline;
+        widget.style.height = text_dim.max_height_above_baseline;
 
-        widget.render_width = widget.width + (widget.style.padding.x * 2);
-        widget.render_height = widget.height + (widget.style.padding.y * 2);
+        widget.render_width = widget.style.width + (widget.style.padding.x * 2);
+        widget.render_height = widget.style.height + (widget.style.padding.y * 2);
 
         widget.content_width = widget.render_width + (widget.style.margin.x * 2);
         widget.content_height = widget.render_height + (widget.style.margin.y * 2);
@@ -926,40 +1026,40 @@ helper_info_t resolve_dimensions(int cur_widget_handle, int parent_width_handle,
     int widget_width_handle = create_constraint_var("width", &widget.render_width);
     int widget_height_handle = create_constraint_var("height", &widget.render_height); 
 
-    if (widget.widget_size_width == WIDGET_SIZE::PIXEL_BASED) {
-        game_assert(widget.width >= 0.f);
+    if (widget.style.widget_size_width == WIDGET_SIZE::PIXEL_BASED) {
+        game_assert(widget.style.width >= 0.f);
         float render_width = 0.f;
         if (parent_width_handle == -1 || parent_height_handle == -1) {
-            render_width = widget.width;
+            render_width = widget.style.width;
         } else {
-            render_width = widget.width + (widget.style.padding.x * 2);
+            render_width = widget.style.width + (widget.style.padding.x * 2);
         }
 
         make_constraint_value_constant(widget_width_handle, render_width);
-    } else if (widget.widget_size_width == WIDGET_SIZE::PARENT_PERCENT_BASED) {
-        game_assert(widget.width <= 1.f);
-        game_assert(widget.width >= 0.f);
+    } else if (widget.style.widget_size_width == WIDGET_SIZE::PARENT_PERCENT_BASED) {
+        game_assert(widget.style.width <= 1.f);
+        game_assert(widget.style.width >= 0.f);
 
         std::vector<constraint_term_t> width_terms;
-        width_terms.push_back(create_constraint_term(parent_width_handle, widget.width));
+        width_terms.push_back(create_constraint_term(parent_width_handle, widget.style.width));
         create_constraint(widget_width_handle, width_terms, widget.style.padding.x * 2);
     }
     
-    if (widget.widget_size_height == WIDGET_SIZE::PIXEL_BASED) {
-        game_assert(widget.height >= 0.f);
+    if (widget.style.widget_size_height == WIDGET_SIZE::PIXEL_BASED) {
+        game_assert(widget.style.height >= 0.f);
         float render_height = 0.f;
         if (parent_width_handle == -1 || parent_height_handle == -1) {
-            render_height = widget.height;
+            render_height = widget.style.height;
         } else {
-            render_height = widget.height + (widget.style.padding.y * 2);
+            render_height = widget.style.height + (widget.style.padding.y * 2);
         }
         make_constraint_value_constant(widget_height_handle, render_height);
-    } else if (widget.widget_size_height == WIDGET_SIZE::PARENT_PERCENT_BASED) {
-        game_assert(widget.height <= 1.f);
-        game_assert(widget.height >= 0.f);
+    } else if (widget.style.widget_size_height == WIDGET_SIZE::PARENT_PERCENT_BASED) {
+        game_assert(widget.style.height <= 1.f);
+        game_assert(widget.style.height >= 0.f);
 
         std::vector<constraint_term_t> height_terms;
-        height_terms.push_back(create_constraint_term(parent_height_handle, widget.height));
+        height_terms.push_back(create_constraint_term(parent_height_handle, widget.style.height));
         create_constraint(widget_height_handle, height_terms, widget.style.padding.y * 2);
     }
 
@@ -995,12 +1095,12 @@ helper_info_t resolve_dimensions(int cur_widget_handle, int parent_width_handle,
     game_assert(parent_width_handle != -1);
     game_assert(parent_height_handle != -1);
         
-    if (widget.widget_size_width == WIDGET_SIZE::FIT_CONTENT) {
+    if (widget.style.widget_size_width == WIDGET_SIZE::FIT_CONTENT) {
         float render_width = content_size.x + (widget.style.padding.x * 2.f);
         make_constraint_value_constant(widget_width_handle, render_width);
     }
     
-    if (widget.widget_size_height == WIDGET_SIZE::FIT_CONTENT) {
+    if (widget.style.widget_size_height == WIDGET_SIZE::FIT_CONTENT) {
         float render_height = content_size.y + (widget.style.padding.y * 2);
         make_constraint_value_constant(widget_height_handle, render_height);
     }
@@ -1132,22 +1232,27 @@ void move_ui_anim_player_backward(ui_anim_player_t& player) {
 }
 
 style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player) {
+    float anim_weight = player.duration_cursor / player.anim_duration;
+
     style_t new_style = original_style;
-    for (int i = 0; i < ui_anim_files.size(); i++) {
-        ui_anim_file_t& anim_file = ui_anim_files[i];
-        if (player.ui_anim_file_handle == anim_file.handle) {
-            std::vector<ui_anim_t>& ui_anims = anim_file.ui_anims;
-            for (int j = 0; j < ui_anims.size(); j++) {
-                ui_anim_t& anim = ui_anims[j];
-                if (anim.handle == player.ui_anim_handle) {
-                    float anim_weight = player.duration_cursor / player.anim_duration;
-                    if (anim.style_params_overriden.background_color) {
-                        new_style.background_color = (anim_weight * anim.style.background_color) + (1 - anim_weight) * original_style.background_color;
-                    }
-                    if (anim.style_params_overriden.color) {
-                        new_style.color = (anim_weight * anim.style.color) + (1 - anim_weight) * original_style.color;
-                    }
+    for (int j = 0; j < ui_anims.size(); j++) {
+        ui_anim_t& anim = ui_anims[j];
+        if (anim.handle == player.ui_anim_handle) {
+            if (anim.style_params_overriden.background_color) {
+                if (original_style.background_color == TRANSPARENT_COLOR) {
+                    new_style.background_color = anim_weight * anim.style.background_color;
+                } else {
+                    new_style.background_color = (anim_weight * anim.style.background_color) + (1 - anim_weight) * original_style.background_color;
                 }
+            }
+            if (anim.style_params_overriden.color) {
+                new_style.color = (anim_weight * anim.style.color) + (1 - anim_weight) * original_style.color;
+            }
+            if (anim.style_params_overriden.width) {
+                new_style.width = (anim_weight * anim.style.width) + (1 - anim_weight) * original_style.width;
+            }
+            if (anim.style_params_overriden.height) {
+                new_style.height = (anim_weight * anim.style.height) + (1 - anim_weight) * original_style.height;
             }
         }
     }
@@ -1158,13 +1263,28 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
 void render_ui_helper(widget_t& widget) {
 
     // ui_anim_player_t* hover_anim_player = NULL;
-    for (int i = 0; i < ui_anim_players.size(); i++) {
-        if (widget.attached_hover_anim_player_handle == ui_anim_players[i].handle) {
-            // hover_anim_player = &ui_anim_players[i];
-            if (widget.handle == cur_final_focused_handle) {
-                move_ui_anim_player_forward(ui_anim_players[i]);
-            } else {
-                move_ui_anim_player_backward(ui_anim_players[i]);
+    if (widget.attached_hover_anim_player_handle != -1) {
+        for (int i = 0; i < ui_anim_players.size(); i++) {
+            if (widget.attached_hover_anim_player_handle == ui_anim_players[i].handle) {
+                // hover_anim_player = &ui_anim_players[i];
+                if (widget.handle == cur_final_focused_handle) {
+                    move_ui_anim_player_forward(ui_anim_players[i]);
+                } else {
+                    move_ui_anim_player_backward(ui_anim_players[i]);
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
+        for (int k = 0; k < ui_anim_players.size(); k++) {
+            ui_anim_player_t& player = ui_anim_players[k];
+            if (widget.attached_anim_player_handles[i] == player.handle) {
+                if (player.playing) {
+                    move_ui_anim_player_forward(player);
+                } else {
+                    move_ui_anim_player_backward(player);
+                }
             }
         }
     }
@@ -1363,7 +1483,32 @@ bool set_parameter_in_style(style_t& style, const char* name, const char* conten
         sscanf(content, "%f,%f,%f", &color.r, &color.g, &color.b);
         style.top_right_bck_color = create_color(color.r, color.g, color.b);
         return true;
-    }
+    } else if (strcmp(name, "width") == 0) {
+            style.width = atof(content);
+        } else if (strcmp(name, "height") == 0) {
+            style.height = atof(content);
+        } else if (strcmp(name, "widget_size_width") == 0) {
+            WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
+            if (strcmp(content, "pixel") == 0) {
+                size = WIDGET_SIZE::PIXEL_BASED;
+            } else if (strcmp(content, "parent") == 0) {
+                size = WIDGET_SIZE::PARENT_PERCENT_BASED;
+            } else if (strcmp(content, "fit") == 0) {
+                size = WIDGET_SIZE::FIT_CONTENT;
+            }
+            style.widget_size_width = size;
+        } else if (strcmp(name, "widget_size_height") == 0) {
+            WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
+            if (strcmp(content, "pixel") == 0) {
+                size = WIDGET_SIZE::PIXEL_BASED;
+            } else if (strcmp(content, "parent") == 0) {
+                size = WIDGET_SIZE::PARENT_PERCENT_BASED;
+            } else if (strcmp(content, "fit") == 0) {
+                size = WIDGET_SIZE::FIT_CONTENT;
+            }
+            style.widget_size_height = size;
+        }
+
 
     return false;
 }
@@ -1384,30 +1529,6 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
             char buffer[256]{};
             get_resources_folder_path(buffer);
             sprintf(ui_attrs.image_path, "%s\\%s\\%s", buffer, UI_FOLDER, content);
-        } else if (strcmp(name, "width") == 0) {
-            ui_attrs.width = atof(content);
-        } else if (strcmp(name, "height") == 0) {
-            ui_attrs.height = atof(content);
-        } else if (strcmp(name, "widget_size_width") == 0) {
-            WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
-            if (strcmp(content, "pixel") == 0) {
-                size = WIDGET_SIZE::PIXEL_BASED;
-            } else if (strcmp(content, "parent") == 0) {
-                size = WIDGET_SIZE::PARENT_PERCENT_BASED;
-            } else if (strcmp(content, "fit") == 0) {
-                size = WIDGET_SIZE::FIT_CONTENT;
-            }
-            ui_attrs.widget_size_width = size;
-        } else if (strcmp(name, "widget_size_height") == 0) {
-            WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
-            if (strcmp(content, "pixel") == 0) {
-                size = WIDGET_SIZE::PIXEL_BASED;
-            } else if (strcmp(content, "parent") == 0) {
-                size = WIDGET_SIZE::PARENT_PERCENT_BASED;
-            } else if (strcmp(content, "fit") == 0) {
-                size = WIDGET_SIZE::FIT_CONTENT;
-            }
-            ui_attrs.widget_size_height = size;
         } else if (strcmp(name, "font_size") == 0) {
             int font_size = 0;
             sscanf(content, "%i", &ui_attrs.font_size);
@@ -1439,7 +1560,7 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
             // make memory location of node the id
             sprintf(attrs.id, "%i\n", node);
         }
-        create_container(attrs.width, attrs.height, attrs.widget_size_width, attrs.widget_size_height, attrs.id, false, 0, attrs.ui_properties);
+        create_container(attrs.style.width, attrs.style.height, attrs.style.widget_size_width, attrs.style.widget_size_height, attrs.id, false, 0, attrs.ui_properties);
     }  else if (strcmp(zero_terminated_element_name, "text") == 0 || strcmp(zero_terminated_element_name, "button") == 0) {
         bool is_text_element = strcmp(zero_terminated_element_name, "text") == 0;
         xml_string* content = node->content;
@@ -1485,7 +1606,7 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
         free(zero_terminated_content);
     } else if (strcmp(zero_terminated_element_name, "image") == 0) {
         int texture_handle = create_texture(attrs.image_path, 1);
-        create_image_container(texture_handle, attrs.width, attrs.height, attrs.widget_size_width, attrs.widget_size_height, 1 + strrchr(attrs.image_path, '\\'));
+        create_image_container(texture_handle, attrs.style.width, attrs.style.height, attrs.style.widget_size_width, attrs.style.widget_size_height, 1 + strrchr(attrs.image_path, '\\'));
     }
     pop_style();
 
@@ -1863,6 +1984,10 @@ bool get_if_key_clicked_on(const char* key) {
     return prevframe_clicked_on_keys->find(std::string(key)) != prevframe_clicked_on_keys->end();
 }
 
+bool get_if_key_hovered_over(const char* key) {
+    return prevframe_hovered_over_keys->find(std::string(key)) != prevframe_hovered_over_keys->end();
+}
+
 bool is_some_element_clicked_on() {
     for (int i = 0; i < prevframe_widget_arr->size(); i++) {
         widget_t& widget = (*prevframe_widget_arr)[i];
@@ -1949,6 +2074,7 @@ void parse_ui_anims(const char* path) {
         static int ui_anim_cnt = 0;
         ui_anim_t ui_anim;
         ui_anim.handle = ui_anim_cnt++;
+        ui_anim.ui_file_handle = anim_file.handle;
 
         json_node_t* anim_node = anims[i];
         memcpy(ui_anim.anim_name, anim_node->key->buffer, anim_node->key->length);
@@ -2004,24 +2130,70 @@ void parse_ui_anims(const char* path) {
                 ov.bottom_left_bck_color = true;
             } else if (strcmp(name, "tr_bck") == 0) {
                 ov.top_right_bck_color = true;
+            } else if (strcmp(name, "width") == 0) {
+                ov.width = true;
+            } else if (strcmp(name, "height") == 0) {
+                ov.height = true;
             }
         }
 
-        anim_file.ui_anims.push_back(ui_anim);
+        ui_anims.push_back(ui_anim);
+        anim_file.ui_anims.push_back(ui_anim.handle);
     }
     json_free_document(anims_json);
 
     ui_anim_files.push_back(anim_file);
 }
 
-int create_ui_anim_player(int ui_anim_file_handle, ui_anim_t& ui_anim) {
+int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_anim_t& ui_anim, bool play_upon_initialize) {
     ui_anim_player_t anim_player;
     static int cnt = 0;
     anim_player.handle = cnt++;
+    memcpy(anim_player.widget_key, widget_key, strlen(widget_key));
     anim_player.anim_duration = ui_anim.anim_duration;
     anim_player.ui_anim_handle = ui_anim.handle;
     anim_player.ui_anim_file_handle = ui_anim_file_handle;
     anim_player.duration_cursor = 0;
+    anim_player.playing = play_upon_initialize;
     ui_anim_players.push_back(anim_player);
     return anim_player.handle;
+}
+
+void add_ui_anim_to_widget(const char* widget_key, const char* ui_anim_name) {
+    ui_anim_user_info_t add;
+    memcpy(add.widget_key, widget_key, strlen(widget_key));
+    memcpy(add.ui_anim_name, ui_anim_name, strlen(ui_anim_name));
+    anims_to_add_this_frame.push_back(add);
+}
+
+void play_ui_anim_player(const char* widget_key, const char* ui_anim_name) {
+    ui_anim_user_info_t play;
+    memcpy(play.widget_key, widget_key, strlen(widget_key));
+    memcpy(play.ui_anim_name, ui_anim_name, strlen(ui_anim_name));
+    anims_to_start_this_frame.push_back(play);
+}
+
+void stop_ui_anim_player(const char* widget_key, const char* ui_anim_name) {
+    ui_anim_user_info_t stop;
+    memcpy(stop.widget_key, widget_key, strlen(widget_key));
+    memcpy(stop.ui_anim_name, ui_anim_name, strlen(ui_anim_name));
+    anims_to_stop_this_frame.push_back(stop);
+}
+
+ui_anim_player_t* get_ui_anim_player(int handle) {
+    for (int i = 0; i < ui_anim_players.size(); i++) {
+        if (ui_anim_players[i].handle == handle) {
+            return &ui_anim_players[i];
+        }
+    }
+    return NULL;
+}
+
+ui_anim_t* get_ui_anim(int handle) {
+    for (int i = 0; i < ui_anims.size(); i++) {
+        if (ui_anims[i].handle == handle) {
+            return &ui_anims[i];
+        }
+    }
+    return NULL;
 }

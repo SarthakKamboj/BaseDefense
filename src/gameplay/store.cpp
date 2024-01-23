@@ -34,29 +34,43 @@ void update_store() {
     
     if (get_if_key_clicked_on("base_container")) {
         store.selected_item = ITEM_BASE;
+        add_ui_anim_to_widget("base_container", "selected");
+        play_ui_anim_player("base_container", "selected");
+        stop_ui_anim_player("base_ext_container", "selected");
+        stop_ui_anim_player("gun_container", "selected");
     } else if (get_if_key_clicked_on("base_ext_container")) {
         store.selected_item = ITEM_BASE_EXT;
+        add_ui_anim_to_widget("base_ext_container", "selected");
+        play_ui_anim_player("base_ext_container", "selected");
+        stop_ui_anim_player("base_container", "selected");
+        stop_ui_anim_player("gun_container", "selected");
     } else if (get_if_key_clicked_on("gun_container")) {
         store.selected_item = ITEM_GUN;
+        add_ui_anim_to_widget("gun_container", "selected");
+        play_ui_anim_player("gun_container", "selected");
+        stop_ui_anim_player("base_container", "selected");
+        stop_ui_anim_player("base_ext_container", "selected");
     }
 
-    glm::vec3 selected_color = create_color(220,115,0);
-    switch (store.selected_item) {
-        case ITEM_BASE: {
-            set_background_color_override("base_container", selected_color);
-            break;
-        }
-        case ITEM_BASE_EXT: {
-            set_background_color_override("base_ext_container", selected_color);
-            break;
-        }
-        case ITEM_GUN: {
-            set_background_color_override("gun_container", selected_color);
-            break;
-        }
-    }
+
+
+    // glm::vec3 selected_color = create_color(220,115,0);
+    // switch (store.selected_item) {
+    //     case ITEM_BASE: {
+    //         set_background_color_override("base_container", selected_color);
+    //         break;
+    //     }
+    //     case ITEM_BASE_EXT: {
+    //         set_background_color_override("base_ext_container", selected_color);
+    //         break;
+    //     }
+    //     case ITEM_GUN: {
+    //         set_background_color_override("gun_container", selected_color);
+    //         break;
+    //     }
+    // }
     
-    if (get_if_key_clicked_on("Buy") && store.selected_item != ITEM_NONE && store.store_credit >= store_items[store.selected_item-1].cost) {
+    if (get_if_key_clicked_on("buy_btn") && store.selected_item != ITEM_NONE && store.store_credit >= store_items[store.selected_item-1].cost) {
         store.store_credit -= store_items[store.selected_item-1].cost;
         switch (store.selected_item) {
             case ITEM_BASE: {

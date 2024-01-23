@@ -38,6 +38,14 @@ void update() {
                 globals.scene_manager.queue_level_load = true;
                 globals.scene_manager.level_to_load = LEVEL_1 + (i-1);
             }
+
+            char bottom_border_name[32]{};
+            sprintf(bottom_border_name, "%i_bottom_border", i);
+            if (get_if_key_hovered_over(container_name)) {
+                play_ui_anim_player(bottom_border_name, "move_up");
+            } else {
+                stop_ui_anim_player(bottom_border_name, "move_up");
+            }
         }
     } else {
         update_camera();

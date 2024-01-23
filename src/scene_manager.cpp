@@ -72,11 +72,18 @@ void scene_manager_update(scene_manager_t& sm) {
         } else if (sm.cur_level == LEVELS_DISPLAY) {
             add_active_ui_file("levels_display.xml");
             add_active_ui_anim_file("levels_display_anims.json");
+
+            for (int i = 1; i <= 5; i++) {
+                char bottom_border_name[32]{};
+                sprintf(bottom_border_name, "%i_bottom_border", i);
+                add_ui_anim_to_widget(bottom_border_name, "move_up");
+            }
         } else {
             init_preview_items();
             create_enemy_spawner(glm::vec3(50, 50, 0));
             add_active_ui_file("play.xml");
             add_active_ui_file("store.xml");
+            add_active_ui_anim_file("store_anims.json");
             score.enemies_left_to_kill = scene_manager_t::levels[sm.cur_level-1].num_enemies_to_kill;
             inventory = inventory_t();
             store = store_t();

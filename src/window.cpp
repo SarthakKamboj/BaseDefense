@@ -215,10 +215,8 @@ void process_input() {
                     }
                     // seems like this is called 1x on resizes
                     case SDL_WINDOWEVENT_SIZE_CHANGED: {
-                        printf("prev window size: %f, %f\n", window.window_width, window.window_height);
                         window.window_width = event.window.data1;
                         window.window_height = event.window.data2;
-                        printf("new window size: %f, %f\n", window.window_width, window.window_height);
                         window.resized = true;
                         glViewport(0, 0, window.window_width, window.window_height);
                         break;

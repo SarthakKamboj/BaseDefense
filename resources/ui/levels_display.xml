@@ -38,7 +38,7 @@
                     ver_align="center" hor_align="center">
                         <text font_size="50" color="63,62,57">1</text>
                     </container>
-                    <container id="bottom_border"
+                    <container id="1_bottom_border"
                         background_color="107,128,69"
                         border_radius_mode="4-corners"
                         br_border_radius="15" bl_border_radius="15"
@@ -55,7 +55,7 @@
                     ver_align="center" hor_align="center">
                         <text font_size="50" color="63,62,57">2</text>
                     </container>
-                    <container id="bottom_border"
+                    <container id="2_bottom_border"
                         background_color="107,128,69"
                         border_radius_mode="4-corners"
                         br_border_radius="15" bl_border_radius="15"
@@ -72,7 +72,7 @@
                     ver_align="center" hor_align="center">
                         <text font_size="50" color="63,62,57">3</text>
                     </container>
-                    <container id="bottom_border"
+                    <container id="3_bottom_border"
                         background_color="107,128,69"
                         border_radius_mode="4-corners"
                         br_border_radius="15" bl_border_radius="15"
@@ -89,7 +89,7 @@
                     ver_align="center" hor_align="center">
                         <text font_size="50" color="63,62,57">4</text>
                     </container>
-                    <container id="bottom_border"
+                    <container id="4_bottom_border"
                         background_color="107,128,69"
                         border_radius_mode="4-corners"
                         br_border_radius="15" bl_border_radius="15"
@@ -106,7 +106,7 @@
                     ver_align="center" hor_align="center">
                         <text font_size="50" color="63,62,57">5</text>
                     </container>
-                    <container id="bottom_border"
+                    <container id="5_bottom_border"
                         background_color="107,128,69"
                         border_radius_mode="4-corners"
                         br_border_radius="15" bl_border_radius="15"
