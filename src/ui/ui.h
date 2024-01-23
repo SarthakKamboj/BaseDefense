@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include "sys/stat.h"
 
 #include "constants.h"
@@ -299,21 +300,19 @@ bool is_some_element_clicked_on();
 void set_ui_value(std::string& key, std::string& val);
 bool get_if_key_clicked_on(const char* key);
 bool get_if_key_hovered_over(const char* key);
+bool get_if_key_mouse_enter(const char* key);
+bool get_if_key_mouse_left(const char* key);
 
 void draw_from_ui_file_layouts();
 void render_ui();
 
-// struct bck_color_override_t {
-//     char widget_key[256]{};
-//     BCK_MODE bck_mode = BCK_SOLID;
-//     glm::vec3 background_color = TRANSPARENT_COLOR;
-//     glm::vec3 top_left_bck_color = TRANSPARENT_COLOR;
-//     glm::vec3 top_right_bck_color = TRANSPARENT_COLOR;
-//     glm::vec3 bottom_right_bck_color = TRANSPARENT_COLOR;
-//     glm::vec3 bottom_left_bck_color = TRANSPARENT_COLOR;
-// };
-// void set_background_color_override(const char* widget_key, glm::vec3 color);
-// void set_background_color_gradient_4_corners_override(const char* widget_key, glm::vec3 top_left_color, glm::vec3 bottom_right_color);
+struct ui_element_status_t {
+    std::unordered_set<std::string> clicked_on;
+    std::unordered_set<std::string> hovered_over;
+    std::unordered_set<std::string> mouse_enter;
+    std::unordered_set<std::string> mouse_left;
+};
+void clear_element_status(ui_element_status_t& status);
 
 struct ui_anim_t {
     int handle = -1;

@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <unordered_map>
-#include <unordered_set>
 #include <filesystem>
 
 #include "constants.h"
@@ -49,24 +48,28 @@ static int cur_widget_count = 0;
 
 static std::vector<int> widget_stack1;
 static std::vector<widget_t> widgets_arr1;
-static std::unordered_set<std::string> clicked_on_keys1;
-static std::unordered_set<std::string> hovered_over_keys1;
+static ui_element_status_t ui_element_status1;
+// static std::unordered_set<std::string> clicked_on_keys1;
+// static std::unordered_set<std::string> hovered_over_keys1;
 
 static std::vector<int> widget_stack2;
 static std::vector<widget_t> widgets_arr2;
-static std::unordered_set<std::string> clicked_on_keys2;
-static std::unordered_set<std::string> hovered_over_keys2;
+static ui_element_status_t ui_element_status2;
+// static std::unordered_set<std::string> clicked_on_keys2;
+// static std::unordered_set<std::string> hovered_over_keys2;
 
 static std::vector<int>* curframe_widget_stack = &widget_stack2;
 static std::vector<widget_t>* curframe_widget_arr = &widgets_arr2;
-static std::unordered_set<std::string>* curframe_clicked_on_keys;
-static std::unordered_set<std::string>* curframe_hovered_over_keys;
+static ui_element_status_t* curframe_ui_element_status;
+// static std::unordered_set<std::string>* curframe_clicked_on_keys;
+// static std::unordered_set<std::string>* curframe_hovered_over_keys;
 static bool stacked_nav_widget_in_stack = false;
 
 static std::vector<int>* prevframe_widget_stack = &widget_stack1;
 static std::vector<widget_t>* prevframe_widget_arr = &widgets_arr1;
-static std::unordered_set<std::string>* prevframe_clicked_on_keys;
-static std::unordered_set<std::string>* prevframe_hovered_over_keys;
+static ui_element_status_t* prevframe_ui_element_status;
+// static std::unordered_set<std::string>* prevframe_clicked_on_keys;
+// static std::unordered_set<std::string>* prevframe_hovered_over_keys;
 
 static std::vector<style_t> styles_stack;
 
@@ -143,27 +146,22 @@ void ui_start_of_frame() {
     if (curframe_widget_arr == &widgets_arr1) {
         curframe_widget_arr = &widgets_arr2;
         curframe_widget_stack = &widget_stack2;
-        curframe_clicked_on_keys = &clicked_on_keys2;
-        curframe_hovered_over_keys = &hovered_over_keys2;
+        curframe_ui_element_status = &ui_element_status2;
         prevframe_widget_arr = &widgets_arr1;
         prevframe_widget_stack = &widget_stack1;
-        prevframe_clicked_on_keys = &clicked_on_keys1;
-        prevframe_hovered_over_keys = &hovered_over_keys1;
+        prevframe_ui_element_status = &ui_element_status1;
     } else {
         curframe_widget_arr = &widgets_arr1;
         curframe_widget_stack = &widget_stack1;
-        curframe_clicked_on_keys = &clicked_on_keys1;
-        curframe_hovered_over_keys = &hovered_over_keys1;
+        curframe_ui_element_status = &ui_element_status1;
         prevframe_widget_arr = &widgets_arr2;
         prevframe_widget_stack = &widget_stack2;
-        prevframe_clicked_on_keys = &clicked_on_keys2;
-        prevframe_hovered_over_keys = &hovered_over_keys2;
+        prevframe_ui_element_status = &ui_element_status2;
     }
 
     curframe_widget_arr->clear();
     curframe_widget_stack->clear();
-    curframe_clicked_on_keys->clear();
-    curframe_hovered_over_keys->clear();
+    clear_element_status(*curframe_ui_element_status);
 
     cur_widget_count = 0;
 
@@ -317,7 +315,9 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
         ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
         game_assert_msg(attached_player, "could not find animation player");
-        widget.style = get_intermediate_style(original_style, *attached_player);
+        if (attached_player->duration_cursor / attached_player->anim_duration > 0) {
+            widget.style = get_intermediate_style(original_style, *attached_player);
+        }
     }
 
     arr.push_back(widget);
@@ -344,19 +344,29 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
                 input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
                 input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
 
+        if (!mouse_over_widget && prevframe_ui_element_status->hovered_over.find(std::string(key)) != prevframe_ui_element_status->hovered_over.end()) {
+            curframe_ui_element_status->mouse_left.insert(std::string(key));
+        }
+
         if (mouse_over_widget && !input_state.game_controller) {
             cur_focused_internal_handle = widget.handle;
-            curframe_hovered_over_keys->insert(std::string(key));
+            // curframe_hovered_over_keys->insert(std::string(key));
+            curframe_ui_element_status->hovered_over.insert(std::string(key));
+            if (prevframe_ui_element_status->hovered_over.find(std::string(key)) == prevframe_ui_element_status->hovered_over.end()) {
+                curframe_ui_element_status->mouse_enter.insert(std::string(key));
+            }
             info.hovering_over = true;
         }
 
         if (mouse_over_widget && input_state.left_mouse_release) {
-            curframe_clicked_on_keys->insert(std::string(key));
+            // curframe_clicked_on_keys->insert(std::string(key));
+            curframe_ui_element_status->clicked_on.insert(std::string(key));
             info.clicked_on = true;
         }
 
         if (widget.handle == cur_final_focused_handle && (input_state.enter_pressed || input_state.controller_a_pressed)) {
-            curframe_clicked_on_keys->insert(std::string(key));
+            // curframe_clicked_on_keys->insert(std::string(key));
+            curframe_ui_element_status->clicked_on.insert(std::string(key));
             info.clicked_on = true;
         }
     }
@@ -1895,12 +1905,19 @@ void draw_image_container(widget_t& widget) {
 }
 
 bool get_if_key_clicked_on(const char* key) {
-    // return clicked_on_keys.find(std::string(key)) != clicked_on_keys.end();
-    return prevframe_clicked_on_keys->find(std::string(key)) != prevframe_clicked_on_keys->end();
+    return prevframe_ui_element_status->clicked_on.find(std::string(key)) != prevframe_ui_element_status->clicked_on.end();
 }
 
 bool get_if_key_hovered_over(const char* key) {
-    return prevframe_hovered_over_keys->find(std::string(key)) != prevframe_hovered_over_keys->end();
+    return prevframe_ui_element_status->hovered_over.find(std::string(key)) != prevframe_ui_element_status->hovered_over.end();
+}
+
+bool get_if_key_mouse_enter(const char* key) {
+    return prevframe_ui_element_status->mouse_enter.find(std::string(key)) != prevframe_ui_element_status->mouse_enter.end();
+}
+
+bool get_if_key_mouse_left(const char* key) {
+    return prevframe_ui_element_status->mouse_left.find(std::string(key)) != prevframe_ui_element_status->mouse_left.end();
 }
 
 bool is_some_element_clicked_on() {
@@ -2111,4 +2128,11 @@ ui_anim_t* get_ui_anim(int handle) {
         }
     }
     return NULL;
+}
+
+void clear_element_status(ui_element_status_t& status) {
+    status.clicked_on.clear();
+    status.hovered_over.clear();
+    status.mouse_enter.clear();
+    status.mouse_left.clear();
 }

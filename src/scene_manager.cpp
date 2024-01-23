@@ -84,6 +84,11 @@ void scene_manager_update(scene_manager_t& sm) {
             add_active_ui_file("play.xml");
             add_active_ui_file("store.xml");
             add_active_ui_anim_file("store_anims.json");
+
+            add_ui_anim_to_widget("base_container", "selected");
+            add_ui_anim_to_widget("base_ext_container", "selected");
+            add_ui_anim_to_widget("gun_container", "selected");
+
             score.enemies_left_to_kill = scene_manager_t::levels[sm.cur_level-1].num_enemies_to_kill;
             inventory = inventory_t();
             store = store_t();

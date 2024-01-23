@@ -41,9 +41,9 @@ void update() {
 
             char bottom_border_name[32]{};
             sprintf(bottom_border_name, "%i_bottom_border", i);
-            if (get_if_key_hovered_over(container_name)) {
+            if (get_if_key_mouse_enter(container_name)) {
                 play_ui_anim_player(bottom_border_name, "move_up");
-            } else {
+            } else if (get_if_key_mouse_left(container_name)) {
                 stop_ui_anim_player(bottom_border_name, "move_up");
             }
         }
