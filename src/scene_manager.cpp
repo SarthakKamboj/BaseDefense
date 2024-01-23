@@ -9,11 +9,12 @@
 #include "gameplay/store.h"
 #include "utils/json.h"
 #include "utils/io.h"
+#include "globals.h"
 
 extern score_t score;
 extern inventory_t inventory;
 extern store_t store;
-
+extern globals_t globals;
 
 std::vector<levels_data_t> scene_manager_t::levels;
 
@@ -88,6 +89,10 @@ void scene_manager_update(scene_manager_t& sm) {
             add_ui_anim_to_widget("base_container", "selected");
             add_ui_anim_to_widget("base_ext_container", "selected");
             add_ui_anim_to_widget("gun_container", "selected");
+
+            add_ui_anim_to_widget("store_panel", "store_close", 1, true);
+            play_ui_anim_player("store_panel", "store_close");
+            set_translate_in_ui_anim("store_close", glm::vec2(-globals.window.window_width * 0.829f, 0));
 
             score.enemies_left_to_kill = scene_manager_t::levels[sm.cur_level-1].num_enemies_to_kill;
             inventory = inventory_t();

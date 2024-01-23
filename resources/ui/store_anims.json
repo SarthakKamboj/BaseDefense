@@ -20,5 +20,8 @@
     "base_ext_container:hover": {
         "background_color": "180,115,0",
         "anim_time": 0.1
+    },
+    "store_close": {
+        "translate":"-500,0"
     }
 }

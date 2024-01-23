@@ -162,7 +162,7 @@ struct text_t {
     int font_size = 25;
 };
 void create_text(const char* text, int font_size = 0, bool focusable = false);
-bool create_button(const char* text, int font_size = 0, int user_handle = -1, bool* hovering_over = NULL);
+bool create_button(const char* text, int font_size = 0, int user_handle = -1);
 
 struct image_container_t {
     int texture_handle = -1;
@@ -170,7 +170,6 @@ struct image_container_t {
     float height = 0.f;
 };
 void create_image_container(int texture_handle, float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* img_name);
-
 bool create_selector(int selected_option, const char** options, int num_options, float width, float height, int& updated_selected_option, const char* selector_summary, int left_arrow_user_handle, int right_arrow_user_handle);
 
 typedef int(*stacked_nav_handler_func_t)(bool right, bool left, bool up, bool down);
@@ -298,10 +297,6 @@ void update_ui_files();
 bool is_some_element_clicked_on();
 
 void set_ui_value(std::string& key, std::string& val);
-bool get_if_key_clicked_on(const char* key);
-bool get_if_key_hovered_over(const char* key);
-bool get_if_key_mouse_enter(const char* key);
-bool get_if_key_mouse_left(const char* key);
 
 void draw_from_ui_file_layouts();
 void render_ui();
@@ -313,6 +308,10 @@ struct ui_element_status_t {
     std::unordered_set<std::string> mouse_left;
 };
 void clear_element_status(ui_element_status_t& status);
+bool get_if_key_clicked_on(const char* key);
+bool get_if_key_hovered_over(const char* key);
+bool get_if_key_mouse_enter(const char* key);
+bool get_if_key_mouse_left(const char* key);
 
 struct ui_anim_t {
     int handle = -1;
@@ -342,16 +341,19 @@ struct ui_anim_player_t {
 struct ui_anim_user_info_t {
     char widget_key[128]{};
     char ui_anim_name[128]{};
+    time_count_t start_anim_duration_cursor = 0;
+    bool start_playing = false;
 };
 
 style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player);
-int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_anim_t& ui_anim, bool play_upon_initialize);
+int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_anim_t& ui_anim, bool play_upon_initialize, time_count_t starting_cursor = 0);
 void move_ui_anim_player_forward(ui_anim_player_t& player);
 void move_ui_anim_player_backward(ui_anim_player_t& player);
 ui_anim_player_t* get_ui_anim_player(int handle);
 ui_anim_t* get_ui_anim(int handle);
+void set_translate_in_ui_anim(const char* anim_name, glm::vec2 translate);
 
-void add_ui_anim_to_widget(const char* widget_key, const char* ui_anim_name);
+void add_ui_anim_to_widget(const char* widget_key, const char* ui_anim_name, time_count_t start_anim_duration_cursor = 0, bool start_playing = false);
 void play_ui_anim_player(const char* widget_key, const char* ui_anim_name);
 void stop_ui_anim_player(const char* widget_key, const char* ui_anim_name);
 

@@ -85,10 +85,20 @@ void update_store() {
 	if (get_if_key_clicked_on("open_close_section")) {
         store.open = !store.open;
         store.selected_item = ITEM_NONE;	
+        if (store.open) {
+            stop_ui_anim_player("store_panel", "store_close");
+        } else {
+            play_ui_anim_player("store_panel", "store_close");
+        }
 	}
-    if (store.open) {
-        panel_left = 0;
-    } else {
-        panel_left = -globals.window.window_width * 0.829f;
+
+    if (globals.window.resized) {
+        set_translate_in_ui_anim("store_close", glm::vec2(-globals.window.window_width * 0.829f, 0));
     }
+
+    // if (store.open) {
+    //     panel_left = 0;
+    // } else {
+    //     panel_left = -globals.window.window_width * 0.829f;
+    // }
 }

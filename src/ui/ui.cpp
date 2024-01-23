@@ -256,11 +256,12 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 
     ui_anim_player_t* hover_anim_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
     for (int i = 0; i < anims_to_add_this_frame.size(); i++) {
-        if (strcmp(widget.key, anims_to_add_this_frame[i].widget_key) == 0) {
+        ui_anim_user_info_t& add_info = anims_to_add_this_frame[i];
+        if (strcmp(widget.key, add_info.widget_key) == 0) {
             for (int k = 0; k < ui_anims.size(); k++) {
                 ui_anim_t& anim = ui_anims[k];
-                if (strcmp(anim.anim_name, anims_to_add_this_frame[i].ui_anim_name) == 0) {
-                    int anim_player_handle = create_ui_anim_player(widget.key, anim.ui_file_handle, anim, false);
+                if (strcmp(anim.anim_name, add_info.ui_anim_name) == 0) {
+                    int anim_player_handle = create_ui_anim_player(widget.key, anim.ui_file_handle, anim, add_info.start_playing, add_info.start_anim_duration_cursor);
                     widget.attached_anim_player_handles.push_back(anim_player_handle);
                 }
             }
@@ -382,17 +383,16 @@ void create_panel(const char* panel_name) {
 
     panel.style.height = globals.window.window_height;
     panel.style.width = globals.window.window_width;
-    // panel.widget_size = WIDGET_SIZE::PIXEL_BASED;
     panel.style.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
     panel.style.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
 
-    if (strcmp(panel_name, "store_panel") == 0) {
-        panel.x = panel_left;
-        panel_left_used = true;
-    } else {
-        panel.x = 0;
-    }
-    panel.y = panel.style.height;
+    // if (strcmp(panel_name, "store_panel") == 0) {
+    //     panel.x = panel_left;
+    //     panel_left_used = true;
+    // } else {
+    //     panel.x = 0;
+    // }
+    // panel.y = panel.style.height;
     panel.render_width = panel.style.width;
     panel.render_height = panel.style.height;
 
@@ -406,7 +406,6 @@ void end_panel() {
     pop_widget();
 }
 
-// void create_container(float width, float height, WIDGET_SIZE widget_size) {
 void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable, stacked_nav_handler_func_t func, UI_PROPERTIES ui_properties) {
     widget_t container = create_widget();
     memcpy(container.key, container_name, strlen(container_name));
@@ -534,7 +533,6 @@ void create_text(const char* text, int font_size, bool focusable) {
     
     style_t& latest_style = styles_stack[styles_stack.size() - 1];
     widget.style.width = text_dim.width + (2 * latest_style.padding.x);
-    // widget.height = text_dim.height + (2 * latest_style.padding.y);
     widget.style.height = text_dim.max_height_above_baseline + (2 * latest_style.padding.y);
 
     widget.render_width = widget.style.width;
@@ -543,7 +541,7 @@ void create_text(const char* text, int font_size, bool focusable) {
     register_widget(widget, key);
 }
 
-bool create_button(const char* text, int font_size, int user_handle, bool* hovering_over) {
+bool create_button(const char* text, int font_size, int user_handle) {
 
     const char* key = text;
     int text_len = strlen(text);
@@ -579,44 +577,7 @@ bool create_button(const char* text, int font_size, int user_handle, bool* hover
 
     widget_registration_info_t widget_info = register_widget(widget, key);
 
-    if (hovering_over) {
-        *hovering_over = widget_info.hovering_over;
-    }
-
     return widget_info.clicked_on;
-
-    // if (!ui_will_update) {
-    //     auto& prev_arr = *prevframe_widget_arr;
-    //     widget_t& cached_widget = prev_arr[widget_handle];
-
-    //     user_input_t& input_state = globals.window.user_input;
-    //     bool mouse_over_widget = input_state.mouse_x >= (cached_widget.x + cached_widget.style.margin.x) &&
-    //             input_state.mouse_x <= (cached_widget.x + cached_widget.render_width + cached_widget.style.margin.x) &&
-    //             // render x and render y specified as the top left pivot and y in ui is 0 on the
-    //             // bottom and WINDOW_HEIGHT on the top, so cached_widget.y is the top y of the 
-    //             // widget and cached_widget.y - cached_widget.render_height is the bottom y 
-    //             // of the widget
-    //             input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
-    //             input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
-
-    //     if (mouse_over_widget && !input_state.game_controller) {
-    //         cur_focused_internal_handle = widget_handle;
-    //     }
-
-    //     if (mouse_over_widget && input_state.left_mouse_release) {
-    //         clicked_on_keys.insert(std::string(key));
-    //         return true;
-    //     }
-
-    //     if (widget_handle == cur_final_focused_handle && (input_state.enter_pressed || input_state.controller_a_pressed)) {
-    //         clicked_on_keys.insert(std::string(key));
-    //         return true;
-    //     }
-
-    //     return false;
-    // }
-
-    // return false;
 }
 
 
@@ -783,7 +744,6 @@ helper_info_t resolve_positions(int widget_handle, int x_pos_handle, int y_pos_h
         helper_info.content_height = widget.content_height;
         return helper_info;
     }
-
 
     int widget_width_handle = create_constraint_var_constant(widget.content_width);
     int widget_height_handle = create_constraint_var_constant(widget.content_height);
@@ -1135,6 +1095,8 @@ void autolayout_hierarchy() {
     for (int i = 0; i < cur_arr.size(); i++) {
         widget_t& cur_widget = cur_arr[i];
         if (cur_widget.parent_widget_handle != -1) continue;
+        cur_widget.x = 0 + cur_widget.style.translate.x;
+        cur_widget.y = cur_widget.render_height + cur_widget.style.translate.y;
         int x_var = create_constraint_var_constant(cur_widget.x);
         int y_var = create_constraint_var_constant(cur_widget.y);
         resolve_positions(cur_widget.handle, x_var, y_var);
@@ -1231,7 +1193,6 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
     game_assert_msg(anim, "anim not found");
     if (anim->style_params_overriden.background_color) {
 #if 0
-        // new_style.background_color = (anim_weight * anim.style.background_color) + (1 - anim_weight) * original_style.background_color;
         if (anim_weight > 0) {
             new_style.background_color = glm::vec4(0,1,0,0.3f);
         }
@@ -1251,6 +1212,9 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
     }
     if (anim->style_params_overriden.height) {
         new_style.height = (anim_weight * anim->style.height) + (1 - anim_weight) * original_style.height;
+    }
+    if (anim->style_params_overriden.translate) {
+        new_style.translate = (anim_weight * anim->style.translate) + (1 - anim_weight) * original_style.translate;
     }
 
     return new_style;
@@ -1425,30 +1389,32 @@ bool set_parameter_in_style(style_t& style, const char* name, const char* conten
         style.top_right_bck_color = create_color(color.r, color.g, color.b, 1);
         return true;
     } else if (strcmp(name, "width") == 0) {
-            style.width = atof(content);
-        } else if (strcmp(name, "height") == 0) {
-            style.height = atof(content);
-        } else if (strcmp(name, "widget_size_width") == 0) {
-            WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
-            if (strcmp(content, "pixel") == 0) {
-                size = WIDGET_SIZE::PIXEL_BASED;
-            } else if (strcmp(content, "parent") == 0) {
-                size = WIDGET_SIZE::PARENT_PERCENT_BASED;
-            } else if (strcmp(content, "fit") == 0) {
-                size = WIDGET_SIZE::FIT_CONTENT;
-            }
-            style.widget_size_width = size;
-        } else if (strcmp(name, "widget_size_height") == 0) {
-            WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
-            if (strcmp(content, "pixel") == 0) {
-                size = WIDGET_SIZE::PIXEL_BASED;
-            } else if (strcmp(content, "parent") == 0) {
-                size = WIDGET_SIZE::PARENT_PERCENT_BASED;
-            } else if (strcmp(content, "fit") == 0) {
-                size = WIDGET_SIZE::FIT_CONTENT;
-            }
-            style.widget_size_height = size;
+        style.width = atof(content);
+    } else if (strcmp(name, "height") == 0) {
+        style.height = atof(content);
+    } else if (strcmp(name, "widget_size_width") == 0) {
+        WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
+        if (strcmp(content, "pixel") == 0) {
+            size = WIDGET_SIZE::PIXEL_BASED;
+        } else if (strcmp(content, "parent") == 0) {
+            size = WIDGET_SIZE::PARENT_PERCENT_BASED;
+        } else if (strcmp(content, "fit") == 0) {
+            size = WIDGET_SIZE::FIT_CONTENT;
         }
+        style.widget_size_width = size;
+    } else if (strcmp(name, "widget_size_height") == 0) {
+        WIDGET_SIZE size = WIDGET_SIZE::PIXEL_BASED;
+        if (strcmp(content, "pixel") == 0) {
+            size = WIDGET_SIZE::PIXEL_BASED;
+        } else if (strcmp(content, "parent") == 0) {
+            size = WIDGET_SIZE::PARENT_PERCENT_BASED;
+        } else if (strcmp(content, "fit") == 0) {
+            size = WIDGET_SIZE::FIT_CONTENT;
+        }
+        style.widget_size_height = size;
+    } else if (strcmp(name, "translate") == 0) {
+        sscanf(content, "%f,%f", &style.translate.x, &style.translate.y);
+    }
 
 
     return false;
@@ -2024,6 +1990,7 @@ void parse_ui_anims(const char* path) {
                     ui_anim.anim_duration = atof(content);
                 }
             }
+
             if (strcmp(name, "display_dir") == 0) {
                 ov.display_dir = true;
             } else if (strcmp(name, "hor_align") == 0) {
@@ -2066,6 +2033,8 @@ void parse_ui_anims(const char* path) {
                 ov.width = true;
             } else if (strcmp(name, "height") == 0) {
                 ov.height = true;
+            } else if (strcmp(name, "translate") == 0) {
+                ov.translate = true;
             }
         }
 
@@ -2077,7 +2046,7 @@ void parse_ui_anims(const char* path) {
     ui_anim_files.push_back(anim_file);
 }
 
-int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_anim_t& ui_anim, bool play_upon_initialize) {
+int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_anim_t& ui_anim, bool play_upon_initialize, time_count_t starting_cursor) {
     ui_anim_player_t anim_player;
     static int cnt = 0;
     anim_player.handle = cnt++;
@@ -2085,16 +2054,18 @@ int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_an
     anim_player.anim_duration = ui_anim.anim_duration;
     anim_player.ui_anim_handle = ui_anim.handle;
     anim_player.ui_anim_file_handle = ui_anim_file_handle;
-    anim_player.duration_cursor = 0;
+    anim_player.duration_cursor = starting_cursor;
     anim_player.playing = play_upon_initialize;
     ui_anim_players.push_back(anim_player);
     return anim_player.handle;
 }
 
-void add_ui_anim_to_widget(const char* widget_key, const char* ui_anim_name) {
+void add_ui_anim_to_widget(const char* widget_key, const char* ui_anim_name, time_count_t start_anim_duration_cursor, bool start_playing) {
     ui_anim_user_info_t add;
     memcpy(add.widget_key, widget_key, strlen(widget_key));
     memcpy(add.ui_anim_name, ui_anim_name, strlen(ui_anim_name));
+    add.start_anim_duration_cursor = start_anim_duration_cursor;
+    add.start_playing = start_playing;
     anims_to_add_this_frame.push_back(add);
 }
 
@@ -2128,6 +2099,15 @@ ui_anim_t* get_ui_anim(int handle) {
         }
     }
     return NULL;
+}
+
+void set_translate_in_ui_anim(const char* anim_name, glm::vec2 translate) {
+    for (int i = 0; i < ui_anims.size(); i++) {
+        if (strcmp(ui_anims[i].anim_name, anim_name) == 0) {
+            ui_anims[i].style.translate = translate;
+            ui_anims[i].style_params_overriden.translate = true;
+        }
+    }
 }
 
 void clear_element_status(ui_element_status_t& status) {
