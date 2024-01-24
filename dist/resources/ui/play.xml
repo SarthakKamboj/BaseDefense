@@ -19,8 +19,8 @@
                 Enemies Left To Kill: {{{num_enemies_left_to_kill}}}
             </text>
         </container>
-        <button id="pause_icon_btn" background_color="220,75,0" hover_background_color="180,115,0"
-        padding="30,20" border_radius="10">{{{pause_text}}}</button>
+        <button id="pause_icon_btn" background_color="220,75,0"
+        padding="15,15" border_radius="10" font_size="18">{{{pause_text}}}</button>
     </container>
     <container id="inventory_summary_container" width="1.0" height="0.9" 
     widget_size_height="parent" widget_size_width="parent" hor_align="end">
