@@ -24,9 +24,9 @@ namespace fs = std::filesystem;
 
 static bool panel_left_used = false;
 
-// static std::vector<bck_color_override_t> bck_color_overrides;
-
 extern globals_t globals;
+
+static int latest_z_pos = -200;
 
 // static char xml_path[256];
 
@@ -49,27 +49,19 @@ static int cur_widget_count = 0;
 static std::vector<int> widget_stack1;
 static std::vector<widget_t> widgets_arr1;
 static ui_element_status_t ui_element_status1;
-// static std::unordered_set<std::string> clicked_on_keys1;
-// static std::unordered_set<std::string> hovered_over_keys1;
 
 static std::vector<int> widget_stack2;
 static std::vector<widget_t> widgets_arr2;
 static ui_element_status_t ui_element_status2;
-// static std::unordered_set<std::string> clicked_on_keys2;
-// static std::unordered_set<std::string> hovered_over_keys2;
 
 static std::vector<int>* curframe_widget_stack = &widget_stack2;
 static std::vector<widget_t>* curframe_widget_arr = &widgets_arr2;
 static ui_element_status_t* curframe_ui_element_status;
-// static std::unordered_set<std::string>* curframe_clicked_on_keys;
-// static std::unordered_set<std::string>* curframe_hovered_over_keys;
 static bool stacked_nav_widget_in_stack = false;
 
 static std::vector<int>* prevframe_widget_stack = &widget_stack1;
 static std::vector<widget_t>* prevframe_widget_arr = &widgets_arr1;
 static ui_element_status_t* prevframe_ui_element_status;
-// static std::unordered_set<std::string>* prevframe_clicked_on_keys;
-// static std::unordered_set<std::string>* prevframe_hovered_over_keys;
 
 static std::vector<style_t> styles_stack;
 
@@ -91,25 +83,17 @@ static std::vector<ui_anim_user_info_t> anims_to_add_this_frame;
 static std::vector<ui_anim_user_info_t> anims_to_start_this_frame;
 static std::vector<ui_anim_user_info_t> anims_to_stop_this_frame;
 
-// static std::vector<ui_anim_t> ui_anims;
-
 void update_ui_files() {
-    // char buffer[256]{};
-	// get_resources_folder_path(buffer);
-    // char main_menu_ui_xml_path[256]{};
-	// sprintf(main_menu_ui_xml_path, "%s\\%s\\play.xml", buffer, UI_FOLDER);
- 
     for (int i = 0; i < ui_files.size(); i++) {
         ui_file_layout_t& ui_file = ui_files[i];
         struct stat ui_file_stat {};
-        // if (stat(main_menu_ui_xml_path, &ui_file_stat) < 0) return;
+
         if (stat(ui_file.path, &ui_file_stat) < 0) continue;
 
         if (ui_file.last_modified_time == ui_file_stat.st_mtime) continue;
         _sleep(10);
         xml_document_free(ui_file.document, true);
 
-        // FILE* main_menu_ui = fopen(main_menu_ui_xml_path, "r");
         FILE* file = fopen(ui_file.path, "r");
         game_assert_msg(file, "ui file not found");
         ui_file.document = xml_open_document(file);
@@ -119,6 +103,7 @@ void update_ui_files() {
 
 void ui_start_of_frame() {
     panel_left_used = false;
+    latest_z_pos = -200;
 #if UI_RELOADING
     update_ui_files();
 #endif
@@ -137,7 +122,6 @@ void ui_start_of_frame() {
         font_modes[i].used_last_frame = false;
     }
 
-    // bck_color_overrides.clear();
     ui_text_values.clear();
     styles_stack.clear();
     style_t default_style;
@@ -175,7 +159,6 @@ void push_style(style_t& style) {
 }
 
 void pop_style() {
-    // game_assert(styles_stack.size() > 1);
     if (styles_stack.size() == 0) {
         std::cout << "styles stack is empty" << std::endl;
         return;
@@ -345,29 +328,34 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
                 input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
                 input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
 
-        if (!mouse_over_widget && prevframe_ui_element_status->hovered_over.find(std::string(key)) != prevframe_ui_element_status->hovered_over.end()) {
-            curframe_ui_element_status->mouse_left.insert(std::string(key));
+        if (!mouse_over_widget && strcmp(prevframe_ui_element_status->hovered_over.widget_key.c_str(), key) == 0) {
+            curframe_ui_element_status->mouse_left.widget_key = key;
         }
 
         if (mouse_over_widget && !input_state.game_controller) {
-            cur_focused_internal_handle = widget.handle;
             // curframe_hovered_over_keys->insert(std::string(key));
-            curframe_ui_element_status->hovered_over.insert(std::string(key));
-            if (prevframe_ui_element_status->hovered_over.find(std::string(key)) == prevframe_ui_element_status->hovered_over.end()) {
-                curframe_ui_element_status->mouse_enter.insert(std::string(key));
+            if (latest_z_pos > curframe_ui_element_status->hovered_over.z_pos) {
+                cur_focused_internal_handle = widget.handle;
+
+                curframe_ui_element_status->hovered_over.widget_key = key;
+                curframe_ui_element_status->hovered_over.z_pos = latest_z_pos;
+            
+                if (strcmp(prevframe_ui_element_status->hovered_over.widget_key.c_str(), key) != 0) {
+                    curframe_ui_element_status->mouse_enter.widget_key = key;
+                }
             }
             info.hovering_over = true;
         }
 
         if (mouse_over_widget && input_state.left_mouse_release) {
-            // curframe_clicked_on_keys->insert(std::string(key));
-            curframe_ui_element_status->clicked_on.insert(std::string(key));
+            curframe_ui_element_status->clicked_on.widget_key = key;
+            curframe_ui_element_status->clicked_on.z_pos = latest_z_pos;
             info.clicked_on = true;
         }
 
         if (widget.handle == cur_final_focused_handle && (input_state.enter_pressed || input_state.controller_a_pressed)) {
-            // curframe_clicked_on_keys->insert(std::string(key));
-            curframe_ui_element_status->clicked_on.insert(std::string(key));
+            curframe_ui_element_status->clicked_on.widget_key = key;
+            curframe_ui_element_status->clicked_on.z_pos = latest_z_pos;
             info.clicked_on = true;
         }
     }
@@ -375,22 +363,17 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     return info;
 }
 
-void create_panel(const char* panel_name) {
+void create_panel(const char* panel_name, int z_pos) {
     widget_t panel = create_widget();
     memcpy(panel.key, panel_name, strlen(panel_name)); 
+    panel.z_pos = z_pos;
+    latest_z_pos = z_pos;
 
     panel.style.height = globals.window.window_height;
     panel.style.width = globals.window.window_width;
     panel.style.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
     panel.style.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
 
-    // if (strcmp(panel_name, "store_panel") == 0) {
-    //     panel.x = panel_left;
-    //     panel_left_used = true;
-    // } else {
-    //     panel.x = 0;
-    // }
-    // panel.y = panel.style.height;
     panel.render_width = panel.style.width;
     panel.render_height = panel.style.height;
 
@@ -1439,6 +1422,8 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
             sscanf(content, "%i", &ui_attrs.font_size);
         } else if (strcmp(name, "clickable") == 0) {
             ui_attrs.ui_properties = ui_attrs.ui_properties | UI_PROP_CLICKABLE;
+        } else if (strcmp(name, "z") == 0) {
+            ui_attrs.z = atoi(content);
         }
         free(name);
         free(content);
@@ -1458,7 +1443,7 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
     push_style(attrs.style);
     if (strcmp(zero_terminated_element_name, "panel") == 0) {
         game_assert_msg(attrs.id[0] != '\0', "panel not given a name through id attribute");
-        create_panel(attrs.id);
+        create_panel(attrs.id, attrs.z);
     } else if (strcmp(zero_terminated_element_name, "container") == 0) {
         if (attrs.id[0] == '\0') {
             game_error_log("container not given a name through id attribute");
@@ -1869,19 +1854,19 @@ void draw_image_container(widget_t& widget) {
 }
 
 bool get_if_key_clicked_on(const char* key) {
-    return prevframe_ui_element_status->clicked_on.find(std::string(key)) != prevframe_ui_element_status->clicked_on.end();
+    return strcmp(prevframe_ui_element_status->clicked_on.widget_key.c_str(), key) == 0;
 }
 
 bool get_if_key_hovered_over(const char* key) {
-    return prevframe_ui_element_status->hovered_over.find(std::string(key)) != prevframe_ui_element_status->hovered_over.end();
+    return strcmp(prevframe_ui_element_status->hovered_over.widget_key.c_str(), key) == 0;
 }
 
 bool get_if_key_mouse_enter(const char* key) {
-    return prevframe_ui_element_status->mouse_enter.find(std::string(key)) != prevframe_ui_element_status->mouse_enter.end();
+    return strcmp(prevframe_ui_element_status->mouse_enter.widget_key.c_str(), key) == 0;
 }
 
 bool get_if_key_mouse_left(const char* key) {
-    return prevframe_ui_element_status->mouse_left.find(std::string(key)) != prevframe_ui_element_status->mouse_left.end();
+    return strcmp(prevframe_ui_element_status->mouse_left.widget_key.c_str(), key) == 0;
 }
 
 bool is_some_element_clicked_on() {
@@ -2109,8 +2094,12 @@ void set_translate_in_ui_anim(const char* anim_name, glm::vec2 translate) {
 }
 
 void clear_element_status(ui_element_status_t& status) {
-    status.clicked_on.clear();
-    status.hovered_over.clear();
-    status.mouse_enter.clear();
-    status.mouse_left.clear();
+    status.clicked_on.widget_key = "";
+    status.clicked_on.z_pos = -200;
+    status.hovered_over.widget_key = "";
+    status.hovered_over.z_pos = -200;
+    status.mouse_enter.widget_key = "";
+    status.mouse_enter.z_pos = -200;
+    status.mouse_left.widget_key = "";
+    status.mouse_left.z_pos = -200;
 }

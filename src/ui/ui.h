@@ -178,6 +178,8 @@ struct ui_anim_player_t;
 struct widget_t {
     int handle = -1;
 
+    int z_pos = 0;
+
     bool text_based = false;
     text_t text_info;
 
@@ -226,7 +228,7 @@ void pop_style();
 
 void pop_widget();
 
-void create_panel(const char* panel_name);
+void create_panel(const char* panel_name, int z_pos);
 void end_panel();
 
 void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable = false, stacked_nav_handler_func_t func = NULL, UI_PROPERTIES ui_properties = UI_PROP_NONE);
@@ -280,6 +282,7 @@ struct parsed_ui_attributes_t {
     int font_size = 25;
     UI_PROPERTIES ui_properties = UI_PROP_NONE;
     char image_path[256]{};
+    int z = 0;
 };
 bool set_parameter_in_style(style_t& style, const char* key, const char* value);
 parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes);
@@ -301,11 +304,20 @@ void set_ui_value(std::string& key, std::string& val);
 void draw_from_ui_file_layouts();
 void render_ui();
 
+struct ui_mouse_event_t {
+    std::string widget_key;
+    int z_pos = 0;
+};
+
 struct ui_element_status_t {
-    std::unordered_set<std::string> clicked_on;
-    std::unordered_set<std::string> hovered_over;
-    std::unordered_set<std::string> mouse_enter;
-    std::unordered_set<std::string> mouse_left;
+    // std::unordered_set<std::string> clicked_on;
+    // std::unordered_set<std::string> hovered_over;
+    // std::unordered_set<std::string> mouse_enter;
+    // std::unordered_set<std::string> mouse_left;
+    ui_mouse_event_t clicked_on;
+    ui_mouse_event_t hovered_over;
+    ui_mouse_event_t mouse_enter;
+    ui_mouse_event_t mouse_left;
 };
 void clear_element_status(ui_element_status_t& status);
 bool get_if_key_clicked_on(const char* key);
