@@ -3,6 +3,7 @@
 
 time_count_t game::time_t::delta_time = 0;
 time_count_t game::time_t::cur_time = 0;
+time_count_t game::time_t::game_cur_time = 0;
 
 void start_timer(game_timer_t& timer) {
     timer.running = true;

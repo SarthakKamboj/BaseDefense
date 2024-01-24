@@ -17,6 +17,7 @@ extern globals_t globals;
 bool paused = false;
 void update() {
 
+    time_count_t delta_time = game::time_t::delta_time;
     if (globals.scene_manager.cur_level < 0) {
 
     } else if (globals.scene_manager.cur_level == MAIN_MENU_LEVEL) {
@@ -62,7 +63,7 @@ void update() {
         bool prev_paused = paused;
         update_store();
 
-        set_ui_value(std::string("pause_text"), std::string("|>"));
+        set_ui_value(std::string("pause_text"), std::string("| |"));
         set_ui_value(std::string("space"), std::string(" "));
         if (get_if_key_clicked_on("pause_icon_btn")) {
             paused = true;
@@ -85,6 +86,8 @@ void update() {
             update_image_anim_players();
             gos_update();
             update_preview_mode(); 
+        } else {
+            delta_time = 0;
         }
 
         if (prev_paused != paused) {
@@ -96,5 +99,6 @@ void update() {
         }
     }
 
+    game::time_t::game_cur_time += delta_time;
     scene_manager_update(globals.scene_manager);
 }

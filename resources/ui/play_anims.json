@@ -1,6 +1,5 @@
 {
     "pause_icon_btn:hover": {
-        "background_color": "180,115,0",
-        "anim_time": 0.1
+        "background_color": "180,115,0"
     }
 }

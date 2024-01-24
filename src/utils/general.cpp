@@ -19,3 +19,7 @@ const char* get_file_extension(const char* path) {
 glm::vec2 unit_circle_val(float degrees) {
     return glm::vec2(glm::cos(glm::radians(degrees)), glm::sin(glm::radians(degrees)));
 }
+
+glm::vec2 lerp(glm::vec2 start, glm::vec2 end, float t) {
+    return (1 - t) * start + (end * t);
+}

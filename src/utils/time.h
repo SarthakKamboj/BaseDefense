@@ -42,5 +42,6 @@ namespace game {
 	struct time_t {
 		static time_count_t delta_time;
 		static time_count_t cur_time;
+		static time_count_t game_cur_time;
 	};
 }

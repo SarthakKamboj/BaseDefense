@@ -1,9 +1,12 @@
 #pragma once
 
 #include "utils/time.h"
-#include "glm/glm.hpp"
 #include "constants.h"
 #include "preview_manager.h"
+
+#include "glm/glm.hpp"
+
+#include <vector>
 
 #define NUM_BASE_ATTACH_PTS 3
 #define NUM_BASE_EXT_ATTACH_PTS 2
@@ -77,6 +80,11 @@ int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_typ
 void update_attachment(attachment_t& attachment);
 attachment_t* get_attachment(int handle);
 
+struct closest_enemy_t {
+	int handle = -1;	
+	int transform_handle = -1;
+};
+
 // TODO: review linear algebra transformations since gun will need to rotate around attachment point
 // TODO: may need some sort of gameobject hierarchy
 struct gun_t {
@@ -95,8 +103,17 @@ struct gun_t {
 	float fire_rate = 0;
 	time_count_t time_since_last_fire = 0;
 
+	closest_enemy_t closest_enemy;
+	time_count_t last_retarget_time = 0;
+	glm::vec2 last_target_dir = glm::vec2(0);
+	glm::vec2 prev_enemy_last_target_dir = glm::vec2(0);
+
 	static const int WIDTH;
 	static const int HEIGHT;
+
+	static const float RETARGET_ANIM_TIME;
+
+	static std::vector<int> enemy_died_handles;
 };
 void init_preview_gun();
 void create_attached_gun(int attachment_handle, bool facing_left, float fire_rate);
