@@ -1,5 +1,6 @@
 <panel id="pause_panel" ver_align="space_between"
     bck_mode="gradient" 
+    z="2"
     background_color="0,0,255"
     tl_bck="24,21,59" br_bck="83,22,51" tr_bck="35,25,62" bl_bck="32,6,43">
     <container id="pause_title_container" width="1" height="0.35"

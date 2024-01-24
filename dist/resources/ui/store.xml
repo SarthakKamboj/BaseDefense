@@ -1,4 +1,4 @@
-<panel id="store_panel" hor_align="center" ver_align="center">
+<panel id="store_panel" hor_align="center" ver_align="center" z="1">
     <container id="header_info" width="0.7" height="0.7" 
     ver_align="space_between" hor_align="start"
     background_color="150,75,0"
