@@ -1,16 +1,26 @@
 <panel id="main_panel" hor_align="center" display_dir="vertical" z="0">
     <container id="header_info" width="0.9" height="0.1"
-    ver_align="center" hor_align="center"
+    ver_align="center" hor_align="space_between"
     content_spacing="10"
-    display_dir="vertical"
+    display_dir="horizontal"
     widget_size_height="parent"
     widget_size_width="parent">
-        <text>
-            {{{preview_mode}}}
-        </text>
-        <text>
-            Enemies Left To Kill: {{{num_enemies_left_to_kill}}}
-        </text>
+        <text>{{{space}}}</text>
+        <container id="header_info" width="fit" height="1"
+        ver_align="center" hor_align="center"
+        content_spacing="10"
+        display_dir="vertical"
+        widget_size_height="parent"
+        widget_size_width="parent">    
+            <text>
+                {{{preview_mode}}}
+            </text>
+            <text>
+                Enemies Left To Kill: {{{num_enemies_left_to_kill}}}
+            </text>
+        </container>
+        <button id="pause_icon_btn" background_color="220,75,0" hover_background_color="180,115,0"
+        padding="30,20" border_radius="10">{{{pause_text}}}</button>
     </container>
     <container id="inventory_summary_container" width="1.0" height="0.9" 
     widget_size_height="parent" widget_size_width="parent" hor_align="end">
