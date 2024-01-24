@@ -12,6 +12,8 @@
 
 #include <vector>
 
+extern bool paused;
+
 static glm::vec3 invalid_placement_color = create_color(144,66,71);
 static glm::vec3 valid_placement_color = create_color(45,45,45);
 
@@ -61,7 +63,7 @@ void update_preview_base() {
 	quad_render_t* quad_render = get_quad_render(preview_base.quad_render_handle);
 	game_assert_msg(quad_render, "quad render for base not found");	
 
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE || store.open) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE || store.open || paused) {
 		quad_render->render = false;
 		return;
 	}
@@ -275,7 +277,7 @@ void update_preview_base_ext() {
 	quad_render_t* preview_quad = get_quad_render(preview_base_ext.quad_render_handle);
 	game_assert_msg(preview_quad, "quad render for preview attachment not found");
 
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE_EXT || store.open) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE_EXT || store.open || paused) {
 		preview_quad->render = false;
 		return;
 	}
@@ -367,7 +369,7 @@ void update_preview_gun() {
 	quad_render_t* preview_quad = get_quad_render(preview_gun.quad_render_handle);
 	game_assert_msg(preview_quad, "quad render for preview gun not found");
 
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_GUN || store.open) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_GUN || store.open || paused) {
 		preview_quad->render = false;
 		return;
 	}
@@ -546,11 +548,12 @@ void create_enemy_spawner(glm::vec3 pos) {
 }
 
 void update_enemy_spawner(enemy_spawner_t& spawner) {
-	if (spawner.last_spawn_time + enemy_spawner_t::TIME_BETWEEN_SPAWNS >= game::time_t::cur_time) return;
+	spawner.enemy_relative_time += game::time_t::delta_time;
+	if (spawner.last_spawn_time + enemy_spawner_t::TIME_BETWEEN_SPAWNS >= spawner.enemy_relative_time) return;
 	transform_t* transform = get_transform(spawner.transform_handle);
 	game_assert_msg(transform, "transform for enemy spawner not found");
 	create_enemy(transform->global_position, 1, 40.f);
-	spawner.last_spawn_time = game::time_t::cur_time;
+	spawner.last_spawn_time = spawner.enemy_relative_time;
 }
 
 void update_score() {

@@ -15,8 +15,10 @@ extern score_t score;
 extern inventory_t inventory;
 extern store_t store;
 extern globals_t globals;
+extern bool paused;
 
 std::vector<levels_data_t> scene_manager_t::levels;
+std::vector<bool> scene_manager_t::levels_unlocked;
 
 void scene_manager_init() {
     char buffer[256]{};
@@ -41,10 +43,12 @@ void scene_manager_init() {
             }
         }
         scene_manager_t::levels.push_back(level);
+        scene_manager_t::levels_unlocked.push_back(false);
     }
+    // keep level 1 unlocked
+    scene_manager_t::levels_unlocked[0] = true;
 
     json_free_document(doc);
-    int a = 5;
 }
 
 void unload_level() {
@@ -64,8 +68,11 @@ void scene_manager_update(scene_manager_t& sm) {
     
         clear_active_ui_files();
         clear_active_ui_anim_files();
+        paused = false;
 
-        if (sm.cur_level == MAIN_MENU_LEVEL) {
+        if (sm.cur_level == TEST_UI_LEVEL) {
+            add_active_ui_file("pause_menu.xml");
+        } else if (sm.cur_level == MAIN_MENU_LEVEL) {
             add_active_ui_file("main_menu.xml");
             add_active_ui_anim_file("main_menu_anims.json");
         } else if (sm.cur_level == GAME_OVER_SCREEN_LEVEL) {
@@ -81,19 +88,27 @@ void scene_manager_update(scene_manager_t& sm) {
                 add_ui_anim_to_widget(bottom_border_name, "move_up");
             }
         } else {
+
+            scene_manager_t::levels_unlocked[sm.cur_level-1] = true;
+
             init_preview_items();
             create_enemy_spawner(glm::vec3(50, 50, 0));
             add_active_ui_file("play.xml");
+
             add_active_ui_file("store.xml");
             add_active_ui_anim_file("store_anims.json");
+            set_translate_in_ui_anim("store_close", glm::vec2(-globals.window.window_width * 0.829f, 0));
+            add_ui_anim_to_widget("store_panel", "store_close", 1, true);
+
+            add_active_ui_file("pause_menu.xml");
+            add_active_ui_anim_file("pause_menu_anims.json");
+            set_translate_in_ui_anim("pause_menu_close", glm::vec2(0, globals.window.window_height));
+            add_ui_anim_to_widget("pause_panel", "pause_menu_close", 1, true);
 
             add_ui_anim_to_widget("base_container", "selected");
             add_ui_anim_to_widget("base_ext_container", "selected");
             add_ui_anim_to_widget("gun_container", "selected");
 
-            add_ui_anim_to_widget("store_panel", "store_close", 1, true);
-            play_ui_anim_player("store_panel", "store_close");
-            set_translate_in_ui_anim("store_close", glm::vec2(-globals.window.window_width * 0.829f, 0));
 
             score.enemies_left_to_kill = scene_manager_t::levels[sm.cur_level-1].num_enemies_to_kill;
             inventory = inventory_t();

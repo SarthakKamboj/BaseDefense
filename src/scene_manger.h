@@ -15,6 +15,7 @@ struct scene_manager_t {
 	int cur_level = -1;
 	int level_to_load = MAIN_MENU_LEVEL;
 	static std::vector<levels_data_t> levels;
+	static std::vector<bool> levels_unlocked;
 };
 
 void scene_manager_init();

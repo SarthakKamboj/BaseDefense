@@ -152,6 +152,7 @@ struct enemy_spawner_t {
 
 	static const float TIME_BETWEEN_SPAWNS;
 	time_count_t last_spawn_time = -TIME_BETWEEN_SPAWNS;
+	time_count_t enemy_relative_time = 0;
 };
 
 void create_enemy_spawner(glm::vec3 pos);

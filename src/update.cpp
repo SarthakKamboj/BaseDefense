@@ -14,6 +14,7 @@
 
 extern globals_t globals;
 
+bool paused = false;
 void update() {
 
     if (globals.scene_manager.cur_level < 0) {
@@ -32,28 +33,57 @@ void update() {
         }
     } else if (globals.scene_manager.cur_level == LEVELS_DISPLAY) {
         for (int i = 1; i <= 5; i++) {
-            char container_name[16]{};
-            sprintf(container_name, "%i_container", i);
-            if (get_if_key_clicked_on(container_name)) {
-                globals.scene_manager.queue_level_load = true;
-                globals.scene_manager.level_to_load = LEVEL_1 + (i-1);
+            char text_buffer[32]{};
+            sprintf(text_buffer, "%i_text", i);
+            if (globals.scene_manager.levels_unlocked[i-1]) {
+                set_ui_value(std::string(text_buffer), std::to_string(i));
+            } else {
+                set_ui_value(std::string(text_buffer), std::string("x"));
             }
+            if (globals.scene_manager.levels_unlocked[i-1]) {
+                char container_name[16]{};
+                sprintf(container_name, "%i_container", i);
+                if (get_if_key_clicked_on(container_name)) {
+                    globals.scene_manager.queue_level_load = true;
+                    globals.scene_manager.level_to_load = LEVEL_1 + (i-1);
+                }
 
-            char bottom_border_name[32]{};
-            sprintf(bottom_border_name, "%i_bottom_border", i);
-            if (get_if_key_mouse_enter(container_name)) {
-                play_ui_anim_player(bottom_border_name, "move_up");
-            } else if (get_if_key_mouse_left(container_name)) {
-                stop_ui_anim_player(bottom_border_name, "move_up");
+                char bottom_border_name[32]{};
+                sprintf(bottom_border_name, "%i_bottom_border", i);
+                if (get_if_key_mouse_enter(container_name)) {
+                    play_ui_anim_player(bottom_border_name, "move_up");
+                } else if (get_if_key_mouse_left(container_name)) {
+                    stop_ui_anim_player(bottom_border_name, "move_up");
+                }
             }
         }
     } else {
-        update_camera();
-        update_rigidbodies();
-        update_image_anim_players();
-        gos_update();
-        update_store();
-        update_preview_mode();
+
+        if (get_released('p')) {
+            paused = !paused;    
+            if (paused) {
+                stop_ui_anim_player("pause_panel", "pause_menu_close");
+            } else {
+                play_ui_anim_player("pause_panel", "pause_menu_close");
+            }
+        }
+
+        if (get_if_key_clicked_on("resume_btn")) {
+            paused = false;
+            play_ui_anim_player("pause_panel", "pause_menu_close");
+        } else if (get_if_key_clicked_on("back_to_main_menu_btn")) {
+            globals.scene_manager.queue_level_load = true;
+            globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
+        }
+
+        if (!paused) {
+            update_camera();
+            update_rigidbodies();
+            update_image_anim_players();
+            gos_update();
+            update_store();
+            update_preview_mode(); 
+        }
     }
 
     scene_manager_update(globals.scene_manager);
