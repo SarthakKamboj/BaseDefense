@@ -1,0 +1,11 @@
+{
+    "resume_btn:hover": {
+        "background_color":"150,32,43"
+    },
+    "back_to_main_menu_btn:hover": {
+        "background_color":"150,32,43"
+    },
+    "pause_menu_close": {
+        "translate":"0,500"
+    }
+}
