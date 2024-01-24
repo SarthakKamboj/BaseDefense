@@ -59,18 +59,21 @@ void update() {
         }
     } else {
 
+        bool prev_paused = paused;
+        update_store();
+
+        set_ui_value(std::string("pause_text"), std::string("|>"));
+        set_ui_value(std::string("space"), std::string(" "));
+        if (get_if_key_clicked_on("pause_icon_btn")) {
+            paused = true;
+        }
+
         if (get_released('p')) {
-            paused = !paused;    
-            if (paused) {
-                stop_ui_anim_player("pause_panel", "pause_menu_close");
-            } else {
-                play_ui_anim_player("pause_panel", "pause_menu_close");
-            }
+            paused = !paused;     
         }
 
         if (get_if_key_clicked_on("resume_btn")) {
             paused = false;
-            play_ui_anim_player("pause_panel", "pause_menu_close");
         } else if (get_if_key_clicked_on("back_to_main_menu_btn")) {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
@@ -81,8 +84,15 @@ void update() {
             update_rigidbodies();
             update_image_anim_players();
             gos_update();
-            update_store();
             update_preview_mode(); 
+        }
+
+        if (prev_paused != paused) {
+            if (paused) {
+                stop_ui_anim_player("pause_panel", "pause_menu_close");
+            } else {
+                play_ui_anim_player("pause_panel", "pause_menu_close");
+            }
         }
     }
 
