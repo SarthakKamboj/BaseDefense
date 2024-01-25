@@ -80,7 +80,7 @@ int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_typ
 void update_attachment(attachment_t& attachment);
 attachment_t* get_attachment(int handle);
 
-struct closest_enemy_t {
+struct closest_entity_t {
 	int handle = -1;	
 	int transform_handle = -1;
 };
@@ -103,7 +103,7 @@ struct gun_t {
 	float fire_rate = 0;
 	time_count_t time_since_last_fire = 0;
 
-	closest_enemy_t closest_enemy;
+	closest_entity_t closest_enemy;
 	time_count_t last_retarget_time = 0;
 	glm::vec2 last_target_dir = glm::vec2(0);
 	glm::vec2 prev_enemy_last_target_dir = glm::vec2(0);
@@ -138,8 +138,32 @@ void create_bullet(glm::vec3& start_pos, glm::vec3& move_dir, float speed);
 void update_bullet(bullet_t& bullet);
 void delete_bullet(bullet_t& bullet);
 
+enum ENEMY_STATE {
+	ENEMY_WALKING = 0,
+	ENEMY_SHOOTING
+};
+
+struct enemy_bullet_t {
+	int handle = -1;
+
+	int transform_handle = -1;
+	int quad_render_handle = -1;
+	int rb_handle = -1;
+
+	glm::vec3 dir = glm::vec3(0);
+	float speed = 0;
+	time_count_t creation_time = 0;
+	static const float ALIVE_TIME;
+
+	static const int WIDTH;
+	static const int HEIGHT;
+};
+void create_enemy_bullet(glm::vec3 pos, glm::vec3 dir, float speed);
+void delete_enemy_bullet(enemy_bullet_t& enemy_bullet);
+
 struct enemy_t {
 	int handle = -1;
+	ENEMY_STATE enemy_state = ENEMY_WALKING;
 
 	int transform_handle = -1;
 	int quad_render_handle = -1;
@@ -152,6 +176,10 @@ struct enemy_t {
 	int health = 100;
 
 	float speed = 0;
+	closest_entity_t closest_base;
+	static const float DIST_TO_BASE;
+	static const float TIME_BETWEEN_SHOTS;
+	time_count_t last_shoot_time = -TIME_BETWEEN_SHOTS;
 };
 
 void create_enemy(glm::vec3 pos, int dir, float speed);
