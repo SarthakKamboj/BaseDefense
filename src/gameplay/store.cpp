@@ -96,9 +96,4 @@ void update_store() {
         set_translate_in_ui_anim("store_close", glm::vec2(-globals.window.window_width * 0.829f, 0));
     }
 
-    // if (store.open) {
-    //     panel_left = 0;
-    // } else {
-    //     panel_left = -globals.window.window_width * 0.829f;
-    // }
 }

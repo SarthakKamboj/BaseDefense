@@ -90,6 +90,8 @@ void scene_manager_update(scene_manager_t& sm) {
         } else {
 
             scene_manager_t::levels_unlocked[sm.cur_level-1] = true;
+            enemy_t::deleted_base_handles.clear();
+            gun_t::enemy_died_handles.clear();
 
             init_preview_items();
             create_enemy_spawner(glm::vec3(50, 50, 0));

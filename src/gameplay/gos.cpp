@@ -42,7 +42,6 @@ static std::vector<enemy_t> enemies;
 static gun_t preview_gun;
 static base_extension_t preview_base_ext;
 static base_t preview_base;
-// PREVIEW_MODE preview_mode = PREVIEW_MODE::PREVIEW_BASE;
 
 void init_preview_items() {
 	init_preview_mode();
@@ -105,14 +104,6 @@ void create_base(glm::vec3 pos) {
 
 	gun_base.previewing = false;
 
-	// gun_base.attach_pt_transform_handles[0] = create_transform(pos - glm::vec3(base_t::WIDTH * 0.4f, 0, 0), glm::vec3(1), 0, 0, -1);
-	// gun_base.attach_pt_transform_handles[1] = create_transform(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), glm::vec3(1), 0, 0, -1);
-	// gun_base.attach_pt_transform_handles[2] = create_transform(pos + glm::vec3(0, base_t::HEIGHT * 0.4f, 0), glm::vec3(1), 0, 0, -1);
-
-	// gun_base.attachment_handles[0] = create_attachment(pos - glm::vec3(base_t::WIDTH * 0.4f, 0, 0), true, ATTMNT_GUN | ATTMNT_BASE_EXT);
-	// gun_base.attachment_handles[1] = create_attachment(pos + glm::vec3(base_t::WIDTH * 0.4f, 0, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT);
-	// gun_base.attachment_handles[2] = create_attachment(pos + glm::vec3(0, base_t::HEIGHT * 0.4f, 0), false, ATTMNT_BASE_EXT);
-
 	gun_base.attachment_handles[0] = create_attachment(glm::vec3(-base_t::WIDTH * 0.4f, 0, 0), true, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base, NULL);
 	gun_base.attachment_handles[1] = create_attachment(glm::vec3(base_t::WIDTH * 0.4f, 0, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base, NULL);
 	gun_base.attachment_handles[2] = create_attachment(glm::vec3(0, base_t::HEIGHT * 0.4f, 0), false, ATTMNT_BASE_EXT, &gun_base, NULL);
@@ -122,25 +113,35 @@ void create_base(glm::vec3 pos) {
 
 void update_base(base_t& base) {
 
-	// if (preview_mode != PREVIEW_MODE::PREVIEW_BASE_EXT) return;
+	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(base.rb_handle, PHYS_BASE);
+	for (kin_w_kin_col_t& col : cols) {
+		if (col.kin_type1 == PHYS_ENEMY_BULLET || col.kin_type2 == PHYS_ENEMY_BULLET) {
+			base.base_health -= 20;
 
-	// glm::vec3 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y, 0);
+			if (base.base_health < 0) {
+				delete_base(base);
+			}
+			return;
+		}
+	}
 
-	// for (int i = 0; i < NUM_BASE_ATTACH_PTS; i++) {
-	// 	transform_t* transform = get_transform(base.attach_pt_transform_handles[i]);
-	// 	game_assert_msg(transform, "could not find transform of base's attachment pt");
-	// 	bool attached = base.attach_pts_attached[i];
-	// 	if (!attached && glm::distance(mouse, transform->position) <= 20) {
-	// 		add_debug_pt(transform->position);
+}
 
-	// 		transform_t* preview_transform = get_transform(preview_base_ext.transform_handle);
-	// 		game_assert_msg(preview_transform, "transform of preview attachment not found");
+void delete_base(base_t& base) {
+	for (int i = 0; i < gun_bases.size(); i++) {
+		if (base.handle == gun_bases[i].handle) {
+			delete_transform(base.transform_handle);
+			delete_rigidbody(base.rb_handle);
+			delete_quad_render(base.quad_render_handle);
+		
+			delete_attachment(base.attachment_handles[0]);
+			delete_attachment(base.attachment_handles[1]);
+			delete_attachment(base.attachment_handles[2]);
 
-	// 		preview_base_ext.free = false;
-	// 		preview_base_ext.index_attached_to_on_base = i;
-	// 		preview_transform->position = transform->position;
-	// 	}
-	// }
+			gun_bases.erase(gun_bases.begin() + i);
+			enemy_t::deleted_base_handles.push_back(base.handle);
+		}
+	}
 }
 
 const int attachment_t::WIDTH = 10;
@@ -195,6 +196,40 @@ void update_attachment(attachment_t& attachment) {
 	update_hierarchy_based_on_globals();
 }
 
+void delete_attachment(int handle) {
+	if (handle == -1) return;
+	for (int i = 0; i < attachments.size(); i++) {
+		if (attachments[i].handle == handle) {
+			delete_attachment(attachments[i]);
+		}
+	}
+}
+
+void delete_attachment(attachment_t& att) {
+	for (int i = 0; i < attachments.size(); i++) {
+		if (att.handle == attachments[i].handle) {
+			delete_transform(att.transform_handle);
+			delete_quad_render(att.quad_render_handle);
+
+			if (att.attached) {
+				for (int i = 0; i < attached_guns.size(); i++) {
+					if (attached_guns[i].attachment_handle == att.handle) {
+						delete_attached_gun(attached_guns[i]);
+					}
+				}
+
+				for (int i = 0; i < attached_base_exts.size(); i++) {
+					if (attached_base_exts[i].attachment_handle == att.handle) {
+						delete_base_ext(attached_base_exts[i]);
+					}
+				}
+			}
+
+			attachments.erase(attachments.begin() + i);
+		}
+	}
+}
+
 attachment_t* get_attachment(int handle) {
 	for (attachment_t& att : attachments) {
 		if (att.handle == handle) {
@@ -218,11 +253,6 @@ int create_base_ext(glm::vec3 pos) {
 	base_ext.free = false;
 	base_ext.attachment_handle = preview_base_ext.attachment_handle;
 
-	// attachment.left_attach_pt_transform_handle = create_transform(pos - offset, glm::vec3(1), 0.f, 0.f);
-	// attachment.right_attach_pt_transform_handle = create_transform(pos + offset, glm::vec3(1), 0.f, 0.f);
-
-	// gun_bases[0].attach_pts_attached[preview_base_ext.index_attached_to_on_base] = true;x
-
 	attachment_t* att = get_attachment(base_ext.attachment_handle);
 	game_assert_msg(att, "attachment not found to make base ext");
 	att->attached = true;
@@ -238,31 +268,21 @@ int create_base_ext(glm::vec3 pos) {
 
 void update_base_ext(base_extension_t& attachment) {
 
-	// if (preview_mode != PREVIEW_MODE::PREVIEW_GUN) return;
+}
 
-	// transform_t* left_transform = get_transform(attachment.left_attach_pt_transform_handle);
-	// game_assert_msg(left_transform, "left transform for this attachment is not valid");
-	// transform_t* right_transform = get_transform(attachment.right_attach_pt_transform_handle);
-	// game_assert_msg(right_transform, "right transform for this attachment is not valid");
+void delete_base_ext(base_extension_t& attachment) {
+	for (int i = 0; i < attached_base_exts.size(); i++) {
+		if (attachment.handle == attached_base_exts[i].handle) {
+			delete_transform(attachment.transform_handle);
+			delete_rigidbody(attachment.rb_handle);
+			delete_quad_render(attachment.quad_render_handle);
 
-	// glm::vec3 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y, 0);
-	// if (!attachment.left_attached && glm::distance(mouse, left_transform->position) <= 20) {
-	// 	add_debug_pt(left_transform->position);
-	// 	preview_gun.free = false;
-	// 	preview_gun.attachment_handle = attachment.handle;
-	// 	preview_gun.left_attached = true;
-	// 	transform_t* gun_transform = get_transform(preview_gun.transform_handle);
-	// 	game_assert_msg(gun_transform, "transform of preview gun not found");
-	// 	gun_transform->position = left_transform->position;
-	// } else if (!attachment.right_attached && glm::distance(mouse, right_transform->position) <= 20) {
-	// 	add_debug_pt(right_transform->position);
-	// 	preview_gun.free = false;
-	// 	preview_gun.attachment_handle = attachment.handle;
-	// 	preview_gun.left_attached = false;
-	// 	transform_t* gun_transform = get_transform(preview_gun.transform_handle);
-	// 	game_assert_msg(gun_transform, "transform of preview gun not found");
-	// 	gun_transform->position = right_transform->position;
-	// }
+			delete_attachment(attachment.attachment_handles[0]);
+			delete_attachment(attachment.attachment_handles[1]);
+
+			attached_base_exts.erase(attached_base_exts.begin() + i);
+		}
+	}	
 }
 
 void init_base_ext_preview() {
@@ -486,6 +506,17 @@ void update_attached_gun(gun_t& gun) {
 	gun.last_target_dir = gun_facing_dir;
 }
 
+void delete_attached_gun(gun_t& gun) {
+	for (int i = 0; i < attached_guns.size(); i++) {
+		if (gun.handle == attached_guns[i].handle) {
+			delete_transform(gun.transform_handle);
+			delete_rigidbody(gun.rb_handle);
+			delete_quad_render(gun.quad_render_handle);
+			attached_guns.erase(attached_guns.begin() + i);
+		}
+	}
+}
+
 const float bullet_t::ALIVE_TIME = 1.f;
 const int bullet_t::WIDTH = 8;
 const int bullet_t::HEIGHT = 8;
@@ -535,6 +566,8 @@ void delete_bullet(bullet_t& bullet) {
 	}
 }
 
+std::vector<int> enemy_t::deleted_base_handles;
+
 const int enemy_t::HEIGHT = 80;
 const int enemy_t::WIDTH = 40;
 void create_enemy(glm::vec3 pos, int dir, float speed) {
@@ -572,13 +605,17 @@ void update_enemy(enemy_t& enemy) {
 			}
 		}
 	} else if (enemy.enemy_state == ENEMY_SHOOTING) {
-		transform_t* base_transform = get_transform(enemy.closest_base.transform_handle);
-		game_assert_msg(base_transform, "base transform not found");
+		if (std::find(enemy_t::deleted_base_handles.begin(), enemy_t::deleted_base_handles.end(), enemy.closest_base.handle) != enemy_t::deleted_base_handles.end()) {
+			enemy.enemy_state = ENEMY_WALKING;
+		} else {
+			transform_t* base_transform = get_transform(enemy.closest_base.transform_handle);
+			game_assert_msg(base_transform, "base transform not found");
 
-		if (enemy.last_shoot_time + enemy_t::TIME_BETWEEN_SHOTS < game::time_t::game_cur_time) {
-			enemy.last_shoot_time = game::time_t::game_cur_time;
-			glm::vec3 dir = glm::normalize(base_transform->global_position - transform->global_position);
-			create_enemy_bullet(transform->global_position, dir, 800.f);
+			if (enemy.last_shoot_time + enemy_t::TIME_BETWEEN_SHOTS < game::time_t::game_cur_time) {
+				enemy.last_shoot_time = game::time_t::game_cur_time;
+				glm::vec3 dir = glm::normalize(base_transform->global_position - transform->global_position);
+				create_enemy_bullet(transform->global_position, dir, 800.f);
+			}
 		}
 	}
 
@@ -587,7 +624,7 @@ void update_enemy(enemy_t& enemy) {
 		if (col.kin_type1 == PHYS_BULLET || col.kin_type2 == PHYS_BULLET) {
 			enemy.health -= 30;
 			if (enemy.health <= 0) {
-				add_store_credit(1);
+				add_store_credit(10);
 				delete_enemy(enemy.handle);
 				score.enemies_left_to_kill = MAX(0, score.enemies_left_to_kill-1);
 			}
@@ -630,7 +667,7 @@ void update_enemy_bullet(enemy_bullet_t& bullet) {
 
 	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(bullet.rb_handle, PHYS_ENEMY_BULLET);
 	for (kin_w_kin_col_t& col : cols) {
-		if (col.kin_type1 == PHYS_BASE) {
+		if (col.kin_type1 == PHYS_BASE || col.kin_type2 == PHYS_BASE) {
 			delete_enemy_bullet(bullet);
 			return;
 		}
@@ -708,6 +745,7 @@ void gos_update() {
 	for (enemy_t& enemy : enemies) {
 		update_enemy(enemy);
 	}
+	enemy_t::deleted_base_handles.clear();
 
 	for (enemy_bullet_t& enemy_bullet : enemy_bullets) {
 		update_enemy_bullet(enemy_bullet);
@@ -720,6 +758,10 @@ void gos_update() {
 	}
 	gun_t::enemy_died_handles.clear();
 
+	for (base_t& base : gun_bases) {
+		update_base(base);
+	}
+
 	update_hierarchy_based_on_globals();
 	update_score();
 }
@@ -730,6 +772,9 @@ void delete_gos() {
 	bullets.clear();
 	enemy_spawners.clear();
 	enemies.clear();
+	gun_bases.clear();
+	attached_base_exts.clear();
+	enemy_bullets.clear();
 
 	preview_base = base_t();
 	preview_base_ext = base_extension_t();
