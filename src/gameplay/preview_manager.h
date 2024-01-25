@@ -14,12 +14,18 @@ enum PREVIEW_MODE {
 struct preview_state_t {
     PREVIEW_MODE cur_mode = PREVIEW_NONE;
     bool preview_selector_open = false;
+    PREVIEW_MODE cur_preview_selector_selected = PREVIEW_NONE;
     
     static render_object_data preview_render_data;
     
     int circle_tex_handle = -1;
     int transform_handle = -1;
     int quad_render_handle = -1;
+
+    glm::vec2 window_rel_size = glm::vec2(0);
+
+    static const float START_WIDTH;
+    static const float START_HEIGHT;
 };
 
 void init_preview_mode();

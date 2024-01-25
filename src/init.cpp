@@ -539,6 +539,5 @@ void init() {
 		// init_parallax_bck_data();
 	}
 
-	init_camera();	
 	scene_manager_init();
 }

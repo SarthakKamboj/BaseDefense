@@ -3,11 +3,14 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #include "globals.h"
+#include "utils/time.h"
 
 extern globals_t globals;
 
 void init_camera() {
 	globals.camera.rotation = 0;
+	globals.camera.cam_view_dimensions = glm::vec2(globals.window.window_width, globals.window.window_height);
+	printf("globals.camera.cam_view_dimensions: %f, %f\n", globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.x);
 }
 
 glm::mat4 get_cam_view_matrix() {
@@ -20,8 +23,38 @@ glm::mat4 get_cam_view_matrix() {
 
 glm::vec2 mouse_to_world_pos() {
 	glm::vec2 mouse = glm::vec2(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y);
-	glm::vec2 world_mouse = glm::vec2(globals.camera.pos.x, globals.camera.pos.y) + mouse;
+	glm::vec2 mouse_normalized = mouse / glm::vec2(globals.window.window_width, globals.window.window_height);
+	glm::vec2 game_scroll_relative_pos = mouse_normalized * globals.camera.cam_view_dimensions;
+	glm::vec2 world_mouse = glm::vec2(globals.camera.pos.x, globals.camera.pos.y) + game_scroll_relative_pos;
 	return world_mouse;
 }
 
-void update_camera() {}
+void update_camera() {
+	camera_t& cam = globals.camera;
+	if (globals.window.user_input.middle_mouse_down_click) {
+		cam.drag_start_mouse_pos = glm::vec2(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y);
+		cam.drag_start_pos = cam.pos;
+		cam.dragging = true;
+	} else if (globals.window.user_input.middle_mouse_release) {
+		cam.dragging = false;
+	}
+
+	if (cam.dragging) {
+		glm::vec2 cur_mouse = glm::vec2(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y);
+		float x_delta = cur_mouse.x - cam.drag_start_mouse_pos.x;
+		cam.pos.x = cam.drag_start_pos.x - x_delta;
+	}
+
+	if (globals.window.resized) {
+		cam.cam_view_dimensions = glm::vec2(globals.window.window_width, globals.window.window_height);
+		printf("globals.camera.cam_view_dimensions: %f, %f\n", globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.x);
+	}
+
+	if (globals.window.user_input.mouse_scroll_wheel_delta_y != 0) {
+		int multiplier = globals.window.user_input.mouse_scroll_wheel_delta_y > 0 ? -1 : 1;
+		float aspect_ratio = globals.window.window_height / globals.window.window_width;
+		cam.cam_view_dimensions.x += multiplier * cam.scroll_speed;
+		cam.cam_view_dimensions.y += multiplier * aspect_ratio * cam.scroll_speed;
+		printf("globals.camera.cam_view_dimensions: %f, %f\n", globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.y);
+	}
+}

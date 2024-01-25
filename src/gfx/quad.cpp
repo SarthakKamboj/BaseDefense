@@ -136,7 +136,7 @@ void set_quad_color(int quad_handle, glm::vec3& color) {
 void draw_quad_renders() {
 	glm::mat4 view_mat = get_cam_view_matrix();
 	shader_set_mat4(quad_render_t::obj_data.shader, "view", view_mat);
-	glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+	glm::mat4 projection = glm::ortho(0.0f, globals.camera.cam_view_dimensions.x, 0.0f, globals.camera.cam_view_dimensions.y);
 	shader_set_mat4(quad_render_t::obj_data.shader, "projection", projection);
     for (int i = 0; i < quads.size(); i++) {
         const quad_render_t& quad = quads[i];

@@ -17,6 +17,9 @@ extern globals_t globals;
 preview_state_t preview_state;
 render_object_data preview_state_t::preview_render_data{};
 
+const float preview_state_t::START_WIDTH = 200;
+const float preview_state_t::START_HEIGHT = 200;
+
 void init_preview_mode() {
 
     char resources_path[256]{};
@@ -26,7 +29,8 @@ void init_preview_mode() {
 
     preview_state.circle_tex_handle = create_texture(image_path, 0);
     preview_state.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0, 0, -1);
-    preview_state.quad_render_handle = create_quad_render(preview_state.transform_handle, create_color(255,0,0), 200, 200, false, 1.f, preview_state.circle_tex_handle);
+    preview_state.quad_render_handle = create_quad_render(preview_state.transform_handle, create_color(255,0,0), preview_state_t::START_WIDTH, preview_state_t::START_HEIGHT, false, 1.f, preview_state.circle_tex_handle);
+    preview_state.window_rel_size = glm::vec2(preview_state_t::START_WIDTH, preview_state_t::START_HEIGHT) / glm::vec2(globals.window.window_width, globals.window.window_height);
     quad_render_t* q = get_quad_render(preview_state.quad_render_handle);
     game_assert_msg(q, "quad render not properly initizlied for preview");
     q->render = false;
@@ -55,20 +59,16 @@ void init_preview_mode() {
 
         // create vao and link the vbo/ebo to that vao
         data.vao = create_vao();
-        // bind_vao(data.vao);
         vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
         vao_enable_attribute(data.vao, data.vbo, 1, 4, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
         vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
         vao_bind_ebo(data.vao, data.ebo);
-        // bind_ebo(data.ebo);
-        // unbind_vao();
-        // unbind_ebo();
 
         // load in shader for these rectangle quads because the game is 2D, so everything is basically a solid color or a texture
         data.shader = create_shader("selector.vert", "selector.frag");
         // set projection matrix in the shader
-        glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
-        shader_set_mat4(data.shader, "projection", projection);
+        // glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+        // shader_set_mat4(data.shader, "projection", projection);
         shader_set_mat4(data.shader, "view", glm::mat4(1.0f));
         shader_set_int(data.shader, "selector_image_tex", 0);
 
@@ -84,31 +84,42 @@ void update_preview_mode() {
     bool selector_open = get_down('z');
     bool selector_released = get_released('z');
 
-    if (selector_open) {
-        if (!preview_state.preview_selector_open) {
+    if (selector_open || selector_released) {
+        
+        if (selector_open) {
+            glm::vec2 mouse = mouse_to_world_pos();
             transform_t* transform = get_transform(preview_state.transform_handle);
             game_assert_msg(transform, "transform not found for preview state");
-            transform->global_position.x = globals.window.user_input.mouse_x;
-            transform->global_position.y = globals.window.user_input.mouse_y;
-            update_hierarchy_based_on_globals();
-        }
-        preview_state.preview_selector_open = true;
-    } else if (selector_released) {
-        preview_state.preview_selector_open = false;
-        transform_t* transform_ptr = get_transform(preview_state.transform_handle);
-        game_assert_msg(transform_ptr != NULL, "the transform for this quad doesn't exist");
-        transform_t cur_transform = *transform_ptr;
-        glm::vec2 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y);
-        glm::vec2 selector_pos(cur_transform.global_position.x, cur_transform.global_position.y);
-        float dot_w_vert = glm::dot(glm::vec2(0,1), mouse - selector_pos);
-        if (dot_w_vert > glm::cos(glm::radians(60.f))) {
-            preview_state.cur_mode = PREVIEW_BASE;
-        } else {
-            if (glm::dot(glm::vec2(1,0), mouse - selector_pos) > 0) {
-                preview_state.cur_mode = PREVIEW_GUN;
-            } else {
-                preview_state.cur_mode = PREVIEW_BASE_EXT;
+
+            if (!preview_state.preview_selector_open) {
+                transform->global_position.x = mouse.x;
+                transform->global_position.y = mouse.y;
+                preview_state.preview_selector_open = true;
+                update_hierarchy_based_on_globals();
             }
+
+            glm::vec2 selector_pos(transform->global_position.x, transform->global_position.y);
+            glm::vec2 rel_pos = glm::normalize(mouse - selector_pos);
+
+            printf("selector_pos: %f, %f\n", selector_pos.x, selector_pos.y);
+
+            float dot_w_vert = glm::dot(glm::vec2(0,1), rel_pos);
+
+            float degrees_per_option = 360.f / NUM_PREVIEWABLE_ITEMS;
+
+            if (dot_w_vert > glm::cos(glm::radians(degrees_per_option / 2.f))) {
+                preview_state.cur_preview_selector_selected = PREVIEW_BASE;
+            } else {
+                if (glm::dot(glm::vec2(1,0), mouse - selector_pos) > 0) {
+                    preview_state.cur_preview_selector_selected = PREVIEW_GUN;
+                } else {
+                    preview_state.cur_preview_selector_selected = PREVIEW_BASE_EXT;
+                }
+            }
+
+        } else if (selector_released) {
+            preview_state.preview_selector_open = false;
+            preview_state.cur_mode = preview_state.cur_preview_selector_selected; 
         }
     }
 
@@ -131,11 +142,14 @@ void render_preview_mode() {
 
     glm::mat4 view_mat = get_cam_view_matrix();
 	shader_set_mat4(shader, "view", view_mat);
-	glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+	// glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+	glm::mat4 projection = glm::ortho(0.0f, globals.camera.cam_view_dimensions.x, 0.0f, globals.camera.cam_view_dimensions.y);
 	shader_set_mat4(shader, "projection", projection);
 
 	quad_render_t* quad = get_quad_render(preview_state.quad_render_handle);
 	game_assert_msg(quad, "could not find quad for preview_state");
+    quad->width = preview_state.window_rel_size.x * globals.camera.cam_view_dimensions.x;
+    quad->height = preview_state.window_rel_size.y * globals.camera.cam_view_dimensions.y;
 
     // get the transform for that rectangle render
     transform_t* transform_ptr = get_transform(preview_state.transform_handle);
@@ -147,23 +161,24 @@ void render_preview_mode() {
 	shader_set_mat4(shader, "model", model_matrix);
 	shader_set_vec3(shader, "color", quad->color);
     bind_texture(quad->tex_handle);
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     set_fill_mode();
 
     glm::vec2 selection_pt(0);
-    glm::vec2 mouse(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y);
-	glm::vec2 selector_pos(cur_transform.global_position.x, cur_transform.global_position.y);
-    float dot_w_vert = glm::dot(glm::vec2(0,1), mouse - selector_pos);
-    if (dot_w_vert > glm::cos(glm::radians(60.f))) {
-        selection_pt = unit_circle_val(90);
-    } else {
-        if (glm::dot(glm::vec2(1,0), mouse - selector_pos) > 0) {
-			selection_pt = unit_circle_val(-30);
-        } else {
-			// selection_pt = glm::vec2(-1, -1);
-			selection_pt = unit_circle_val(210);
+    switch (preview_state.cur_preview_selector_selected) {
+        case PREVIEW_BASE: {
+            selection_pt = unit_circle_val(90);
+            break;
+        }
+        case PREVIEW_BASE_EXT: {
+            selection_pt = unit_circle_val(210);
+            break;
+        }
+        case PREVIEW_GUN: {
+            selection_pt = unit_circle_val(-30);
+            break;
         }
     }
+    
     shader_set_vec2(shader, "selection_point", selection_pt);
 
     // draw the rectangle render after setting all shader parameters

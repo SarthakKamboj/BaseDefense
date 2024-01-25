@@ -163,15 +163,7 @@ void process_input() {
     SDL_GetMouseState(&user_input.mouse_x, &user_input.mouse_y);
     user_input.mouse_y = globals.window.window_height - user_input.mouse_y;
 
-    user_input.some_key_pressed = false;
     memset(user_input.released, 0, sizeof(user_input.released));
-    // user_input.w_pressed = false;
-    // user_input.a_pressed = false;
-    // user_input.s_pressed = false;
-    // user_input.d_pressed = false;
-    // user_input.p_pressed = false;
-    // user_input.l_pressed = false;
-    // user_input.z_pressed = false;
     user_input.space_pressed = false;
     user_input.enter_pressed = false;
 
@@ -184,9 +176,14 @@ void process_input() {
     user_input.quit = false;
     user_input.right_mouse_down_click = false;
     user_input.left_mouse_down_click = false;
+    user_input.middle_mouse_down_click = false;
+
     user_input.right_mouse_release = false;
     user_input.left_mouse_release = false;
+    user_input.middle_mouse_release = false;
 
+    user_input.mouse_scroll_wheel_delta_y = 0; 
+    
     user_input.controller_x_axis = 0;
     user_input.controller_y_axis = 0;
 
@@ -290,7 +287,6 @@ void process_input() {
 
             case SDL_CONTROLLERBUTTONDOWN: {
                 if (user_input.game_controller) {
-                    user_input.some_key_pressed = true;
                     SDL_Joystick* controller_joystick = SDL_GameControllerGetJoystick(user_input.game_controller);
                     if (event.cdevice.which == SDL_JoystickInstanceID(controller_joystick)) {
                         switch (event.cbutton.button) {
@@ -332,6 +328,9 @@ void process_input() {
                 } else if (event.button.button == SDL_BUTTON_LEFT) {
                     user_input.left_mouse_release = true;
                     user_input.left_mouse_down = false;
+                } else if (event.button.button == SDL_BUTTON_MIDDLE) {
+                    user_input.middle_mouse_release = true;
+                    user_input.middle_mouse_down = false;
                 }
                 break;
             }
@@ -342,6 +341,9 @@ void process_input() {
                 } else if (event.button.button == SDL_BUTTON_LEFT) {
                     user_input.left_mouse_down = true;
                     user_input.left_mouse_down_click = true;
+                } else if (event.button.button == SDL_BUTTON_MIDDLE) {
+                    user_input.middle_mouse_down = true;
+                    user_input.middle_mouse_down_click = true;
                 }
                 break;
             }
@@ -350,102 +352,17 @@ void process_input() {
                     user_input.released[event.key.keysym.sym - 'a'] = true;
                     user_input.down[event.key.keysym.sym - 'a'] = false;
                 }
-                // switch (event.key.keysym.sym) {	
-                //     case SDLK_w: {
-                //         user_input.w_down = false;
-                //         break;
-                //     }
-                //     case SDLK_a: {
-                //         user_input.a_down = false;
-                //         break;
-                //     }
-                //     case SDLK_s: {
-                //         user_input.s_down = false;
-                //         break;
-                //     }
-                //     case SDLK_d: {
-                //         user_input.d_down = false;
-                //         break;
-                //     }
-                //     case SDLK_p: {
-                //         user_input.p_down = false;
-                //         break;
-                //     }
-                //     case SDLK_l: {
-                //         user_input.l_down = false;
-                //         break;
-                //     }
-                //     case SDLK_RETURN: {
-                //         user_input.enter_down = false;
-                //         break;
-                //     }
-                //     case SDLK_z: {
-                //         user_input.z_down = false;
-                //         break;
-                //     }
-                //     default: break;
-                // }
             }
             break;
             case SDL_KEYDOWN: {
-                user_input.some_key_pressed = true;
                 if (event.key.keysym.sym >= 'a' && event.key.keysym.sym <= 'z') {
                     user_input.down[event.key.keysym.sym - 'a'] = true;
                     user_input.released[event.key.keysym.sym - 'a'] = false;
                 }
-                // switch (event.key.keysym.sym) {
-                    // case SDLK_ESCAPE: {
-                    //     user_input.quit = true;
-                    //     break;
-                    // }
-                    // case SDLK_w: {
-                    //     user_input.w_pressed = true;
-                    //     user_input.w_down = true;
-                    //     break;
-                    // }
-                    // case SDLK_a: {
-                    //     user_input.a_pressed = true;
-                    //     user_input.a_down = true;
-                    //     break;
-                    // }
-                    // case SDLK_s: {
-                    //     user_input.s_pressed = true;
-                    //     user_input.s_down = true;
-                    //     break;
-                    // }
-                    // case SDLK_d: {
-                    //     user_input.d_pressed = true;
-                    //     user_input.d_down = true;
-                    //     break;
-                    // }
-                    // case SDLK_l: {
-                    //     user_input.l_pressed = true;
-                    //     user_input.l_down = true;
-                    //     break;
-                    // }
-                    // case SDLK_SPACE: {
-                    //     user_input.space_pressed = true;
-                    //     break;
-                    // }
-                    // case SDLK_p: {
-                    //     user_input.p_pressed = true;
-                    //     user_input.p_down = true;
-                    //     break;
-                    // }
-                    // case SDLK_RETURN: {
-                    //     user_input.enter_down = true;
-                    //     user_input.enter_pressed = true;
-                    //     break;
-                    // }
-                    // case SDLK_z: {
-                    //     user_input.z_down = true;
-                    //     user_input.z_pressed = true;
-                    //     printf("z pressed\n");
-                    //     break;
-                    // }
-                    // default:
-                    //     break;
-                // }
+            }
+            break;
+            case SDL_MOUSEWHEEL: {
+                user_input.mouse_scroll_wheel_delta_y = event.wheel.y;
             }
             break;
         }
