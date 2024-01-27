@@ -1,7 +1,7 @@
 {
     "levels": [
         {
-            "enemies": 27,
+            "enemies": 127,
             "level_name": "level1"
         }, 
         {
