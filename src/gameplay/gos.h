@@ -217,4 +217,5 @@ void update_score();
  * @brief Update all gameobjects
 */
 void gos_update();
+void gos_update_delete_pass();
 void delete_gos();

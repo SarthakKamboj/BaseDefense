@@ -36,6 +36,10 @@ static std::vector<bullet_t> bullets;
 static std::vector<enemy_bullet_t> enemy_bullets;
 static std::vector<attachment_t> attachments;
 
+static std::vector<int> bullets_to_delete;
+static std::vector<int> enemy_bullets_to_delete;
+static std::vector<int> bases_to_delete;
+
 static std::vector<enemy_spawner_t> enemy_spawners;
 static std::vector<enemy_t> enemies;
 
@@ -111,6 +115,11 @@ void create_base(glm::vec3 pos) {
 	gun_bases.push_back(gun_base);
 }
 
+static void mark_base_for_deletion(int handle) {
+	bases_to_delete.push_back(handle);
+	enemy_t::deleted_base_handles.push_back(handle);
+}
+
 void update_base(base_t& base) {
 
 	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(base.rb_handle, PHYS_BASE);
@@ -119,12 +128,28 @@ void update_base(base_t& base) {
 			base.base_health -= 20;
 
 			if (base.base_health < 0) {
-				delete_base(base);
+				// delete_base(base);
+				mark_base_for_deletion(base.handle);
 			}
 			return;
 		}
 	}
 
+}
+
+static void delete_base_by_index(int idx, const int handle) {
+	base_t& base = gun_bases[idx];
+	if (base.handle == gun_bases[idx].handle) {
+		delete_transform(base.transform_handle);
+		delete_rigidbody(base.rb_handle);
+		delete_quad_render(base.quad_render_handle);
+	
+		delete_attachment(base.attachment_handles[0]);
+		delete_attachment(base.attachment_handles[1]);
+		delete_attachment(base.attachment_handles[2]);
+
+		gun_bases.erase(gun_bases.begin() + idx);
+	}
 }
 
 void delete_base(base_t& base) {
@@ -536,6 +561,10 @@ void create_bullet(glm::vec3& start_pos, glm::vec3& move_dir, float speed) {
 	bullets.push_back(bullet);
 }
 
+void mark_bullet_for_deletion(int bullet_handle) {
+	bullets_to_delete.push_back(bullet_handle);
+}
+
 void update_bullet(bullet_t& bullet) {
 	transform_t* bullet_transform = get_transform(bullet.transform_handle);
 	game_assert_msg(bullet_transform, "bullet transform not found");
@@ -544,13 +573,26 @@ void update_bullet(bullet_t& bullet) {
 	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(bullet.rb_handle, PHYS_BULLET);
 	for (kin_w_kin_col_t& col : cols) {
 		if (col.kin_type1 == PHYS_ENEMY || col.kin_type2 == PHYS_ENEMY) {
-			delete_bullet(bullet);
+			// delete_bullet(bullet);
+			mark_bullet_for_deletion(bullet.handle);
 			return;
 		}
 	}
 
 	if (bullet.creation_time + bullet_t::ALIVE_TIME < game::time_t::cur_time) {
-		delete_bullet(bullet);
+		// delete_bullet(bullet);
+		mark_bullet_for_deletion(bullet.handle);
+	}
+}
+
+static void delete_bullet_by_index(int idx, const int handle) {
+	bullet_t& bullet = bullets[idx];
+	if (bullet.handle == handle) {
+		delete_transform(bullet.transform_handle);
+		delete_quad_render(bullet.quad_render_handle);
+		delete_rigidbody(bullet.rb_handle);
+		bullets.erase(bullets.begin() + idx);
+		return;
 	}
 }
 
@@ -660,6 +702,10 @@ void create_enemy_bullet(glm::vec3 pos, glm::vec3 dir, float speed) {
 	enemy_bullets.push_back(enemy_bullet);
 }
 
+static void mark_enemy_bullet_for_deletion(int handle) {
+	enemy_bullets_to_delete.push_back(handle);
+}
+
 void update_enemy_bullet(enemy_bullet_t& bullet) {
 	transform_t* bullet_transform = get_transform(bullet.transform_handle);
 	game_assert_msg(bullet_transform, "bullet transform not found");
@@ -668,13 +714,25 @@ void update_enemy_bullet(enemy_bullet_t& bullet) {
 	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(bullet.rb_handle, PHYS_ENEMY_BULLET);
 	for (kin_w_kin_col_t& col : cols) {
 		if (col.kin_type1 == PHYS_BASE || col.kin_type2 == PHYS_BASE) {
-			delete_enemy_bullet(bullet);
+			// delete_enemy_bullet(bullet);
+			mark_enemy_bullet_for_deletion(bullet.handle);
 			return;
 		}
 	}
 
 	if (bullet.creation_time + bullet_t::ALIVE_TIME < game::time_t::cur_time) {
-		delete_enemy_bullet(bullet);
+		// delete_enemy_bullet(bullet);
+		mark_enemy_bullet_for_deletion(bullet.handle);
+	}
+}
+
+static void delete_enemy_bullet_by_index(int idx, const int enemy_bullet_handle) {
+	enemy_bullet_t& bullet = enemy_bullets[idx];
+	if (bullet.handle == enemy_bullet_handle) {
+		delete_transform(bullet.transform_handle);
+		delete_quad_render(bullet.quad_render_handle);
+		delete_rigidbody(bullet.rb_handle);
+		enemy_bullets.erase(enemy_bullets.begin() + idx);
 	}
 }
 
@@ -689,8 +747,6 @@ void delete_enemy_bullet(enemy_bullet_t& bullet) {
 		}
 	}
 }
-
-
 
 const float enemy_spawner_t::TIME_BETWEEN_SPAWNS = 1.5f;
 void create_enemy_spawner(glm::vec3 pos) {
@@ -736,7 +792,7 @@ void gos_update() {
 
 	for (bullet_t& bullet : bullets) {
 		update_bullet(bullet);
-	}
+	}	
 
 	for (enemy_spawner_t& enemy_spawner : enemy_spawners) {
 		update_enemy_spawner(enemy_spawner);
@@ -764,6 +820,36 @@ void gos_update() {
 
 	update_hierarchy_based_on_globals();
 	update_score();
+
+	gos_update_delete_pass();
+}
+
+void gos_update_delete_pass() {
+	for (int handle : bullets_to_delete) {
+		for (int i = 0; i < bullets.size(); i++) {
+			if (bullets[i].handle == handle) {
+				delete_bullet_by_index(i, handle);
+			}
+		}
+	}
+	bullets_to_delete.clear();
+
+	for (int handle : enemy_bullets_to_delete) {
+		for (int i = 0; i < enemy_bullets.size(); i++) {
+			if (enemy_bullets[i].handle == handle) {
+				delete_enemy_bullet_by_index(i, handle);
+			}
+		}
+	}
+	enemy_bullets_to_delete.clear();
+
+	for (int handle : bases_to_delete) {
+		for (int i = 0; i < gun_bases.size(); i++) {
+			if (gun_bases[i].handle == handle) {
+				delete_base_by_index(i, handle);
+			}
+		}
+	}
 }
 
 void delete_gos() {
