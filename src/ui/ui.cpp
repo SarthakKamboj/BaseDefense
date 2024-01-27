@@ -183,6 +183,27 @@ widget_t create_widget() {
     return widget;
 }
 
+void register_absolute_widget(widget_t& widget, const char* key, bool push_onto_stack) {
+    widget.handle = cur_widget_count++;
+    widget.absolute = true;
+    memcpy(widget.key, key, strlen(key));
+    widget.hash = hash(key);
+
+    auto& arr = *curframe_widget_arr;
+    auto& stack = *curframe_widget_stack;
+
+    if (stack.size() > 0) widget.parent_widget_handle = stack[stack.size() - 1];
+    else widget.parent_widget_handle = -1;
+    if (widget.parent_widget_handle != -1) {
+        arr[widget.parent_widget_handle].children_widget_handles.push_back(widget.handle);
+    }
+
+    arr.push_back(widget);
+    if (push_onto_stack) {
+        stack.push_back(widget.handle);
+    }
+}
+
 widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack) {
 
     widget_registration_info_t info;
@@ -333,7 +354,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
         }
 
         if (mouse_over_widget && !input_state.game_controller) {
-            // curframe_hovered_over_keys->insert(std::string(key));
+
             if (latest_z_pos > curframe_ui_element_status->hovered_over.z_pos) {
                 cur_focused_internal_handle = widget.handle;
 
@@ -385,6 +406,54 @@ void create_panel(const char* panel_name, int z_pos) {
 
 void end_panel() {
     pop_widget();
+}
+
+void create_absolute_panel(const char* panel_name, int z_pos) {
+    widget_t panel = create_widget();
+    memcpy(panel.key, panel_name, strlen(panel_name)); 
+    panel.z_pos = z_pos;
+    latest_z_pos = z_pos;
+
+    panel.style.height = globals.window.window_height;
+    panel.style.width = globals.window.window_width;
+    panel.style.widget_size_width = WIDGET_SIZE::PIXEL_BASED;
+    panel.style.widget_size_height = WIDGET_SIZE::PIXEL_BASED;
+
+    panel.render_width = panel.style.width;
+    panel.render_height = panel.style.height;
+
+    panel.content_width = panel.style.width;
+    panel.content_height = panel.style.height;
+
+    panel.x = 0;
+    panel.y = 0;
+
+    register_absolute_widget(panel, panel_name, true);
+}
+
+void end_absolute_panel() {
+    pop_widget();
+}
+
+void create_absolute_container(float x, float y, float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name) {
+
+    game_assert_msg(widget_size_width == WIDGET_SIZE::PIXEL_BASED, "widget size width of absolute container must be pixel");
+    game_assert_msg(widget_size_height == WIDGET_SIZE::PIXEL_BASED, "widget size width of absolute container must be pixel");
+
+    widget_t container = create_widget();
+    memcpy(container.key, container_name, strlen(container_name));
+    container.style.height = height;
+    container.style.width = width;
+    container.style.widget_size_width = widget_size_width;
+    container.style.widget_size_height = widget_size_height; 
+
+    container.x = x;
+    container.y = y;
+
+    container.render_width = container.style.width;
+    container.render_height = container.style.height;
+
+    register_absolute_widget(container, container_name, false); 
 }
 
 void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable, stacked_nav_handler_func_t func, UI_PROPERTIES ui_properties) {
@@ -1069,13 +1138,13 @@ void autolayout_hierarchy() {
     auto& cur_arr = *curframe_widget_arr;
     for (int i = 0; i < cur_arr.size(); i++) {
         widget_t& cur_widget = cur_arr[i];
-        if (cur_widget.parent_widget_handle != -1) continue;
+        if (cur_widget.parent_widget_handle != -1 || cur_widget.absolute) continue;
         resolve_dimensions(cur_widget.handle, -1, -1);
     }
 
     for (int i = 0; i < cur_arr.size(); i++) {
         widget_t& cur_widget = cur_arr[i];
-        if (cur_widget.parent_widget_handle != -1) continue;
+        if (cur_widget.parent_widget_handle != -1 || cur_widget.absolute) continue;
         cur_widget.x = 0 + cur_widget.style.translate.x;
         cur_widget.y = cur_widget.render_height + cur_widget.style.translate.y;
         int x_var = create_constraint_var_constant(cur_widget.x);
@@ -2095,11 +2164,11 @@ void set_translate_in_ui_anim(const char* anim_name, glm::vec2 translate) {
 
 void clear_element_status(ui_element_status_t& status) {
     status.clicked_on.widget_key = "";
-    status.clicked_on.z_pos = -200;
+    status.clicked_on.z_pos = INT_MIN;
     status.hovered_over.widget_key = "";
-    status.hovered_over.z_pos = -200;
+    status.hovered_over.z_pos = INT_MIN;
     status.mouse_enter.widget_key = "";
-    status.mouse_enter.z_pos = -200;
+    status.mouse_enter.z_pos = INT_MIN;
     status.mouse_left.widget_key = "";
-    status.mouse_left.z_pos = -200;
+    status.mouse_left.z_pos = INT_MIN;
 }

@@ -177,6 +177,7 @@ typedef int(*stacked_nav_handler_func_t)(bool right, bool left, bool up, bool do
 struct ui_anim_player_t;
 struct widget_t {
     int handle = -1;
+    bool absolute = false;
 
     int z_pos = 0;
 
@@ -231,8 +232,13 @@ void pop_widget();
 void create_panel(const char* panel_name, int z_pos);
 void end_panel();
 
+void create_absolute_panel(const char* panel_name, int z_pos);
+void end_absolute_panel();
+
 void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable = false, stacked_nav_handler_func_t func = NULL, UI_PROPERTIES ui_properties = UI_PROP_NONE);
 void end_container();
+
+void create_absolute_container(float x, float y, float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name);
 
 struct widget_registration_info_t {
     int widget_handle = -1;
@@ -242,6 +248,7 @@ struct widget_registration_info_t {
 
 widget_t create_widget();
 widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack = false);
+void register_absolute_widget(widget_t& widget, const char* key, bool push_onto_stack);
 
 void autolayout_hierarchy();
 
@@ -310,10 +317,6 @@ struct ui_mouse_event_t {
 };
 
 struct ui_element_status_t {
-    // std::unordered_set<std::string> clicked_on;
-    // std::unordered_set<std::string> hovered_over;
-    // std::unordered_set<std::string> mouse_enter;
-    // std::unordered_set<std::string> mouse_left;
     ui_mouse_event_t clicked_on;
     ui_mouse_event_t hovered_over;
     ui_mouse_event_t mouse_enter;

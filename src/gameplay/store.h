@@ -15,7 +15,7 @@ struct store_item_t {
 };
 
 struct store_t {
-    int store_credit = 0;
+    int store_credit = 1000;
     static const float TIME_BETWEEN_PURCHASES;
     time_count_t last_buy_time = TIME_BETWEEN_PURCHASES;
     bool open = false;
@@ -26,7 +26,7 @@ void add_store_credit(int amount);
 void update_store();
 
 struct inventory_t {
-    int num_bases = 1;
-    int num_base_exts = 1;
-    int num_guns = 1;
+    int num_bases = 100;
+    int num_base_exts = 100;
+    int num_guns = 1000;
 };

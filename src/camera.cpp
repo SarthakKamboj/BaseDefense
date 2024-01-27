@@ -29,6 +29,16 @@ glm::vec2 mouse_to_world_pos() {
 	return world_mouse;
 }
 
+glm::vec2 world_pos_to_screen(glm::vec2 world_pos) {
+	glm::vec2 cam_rel_world_pos = world_pos - glm::vec2(globals.camera.pos.x, globals.camera.pos.y);
+	glm::vec2 normalized_screen_pos = cam_rel_world_pos / globals.camera.cam_view_dimensions;
+	return normalized_screen_pos * glm::vec2(globals.window.window_width, globals.window.window_height);
+}
+
+glm::vec2 world_vec_to_screen_vec(glm::vec2 world_vec) {
+	return (world_vec / globals.camera.cam_view_dimensions) * glm::vec2(globals.window.window_width, globals.window.window_height);
+}
+
 void update_camera() {
 	camera_t& cam = globals.camera;
 	if (globals.window.user_input.middle_mouse_down_click) {

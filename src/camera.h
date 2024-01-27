@@ -15,4 +15,6 @@ struct camera_t {
 void init_camera();
 glm::mat4 get_cam_view_matrix();
 glm::vec2 mouse_to_world_pos();
+glm::vec2 world_pos_to_screen(glm::vec2 world_pos);
+glm::vec2 world_vec_to_screen_vec(glm::vec2 world_vec);
 void update_camera();

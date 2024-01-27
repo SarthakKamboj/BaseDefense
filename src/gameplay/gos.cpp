@@ -39,6 +39,7 @@ static std::vector<attachment_t> attachments;
 static std::vector<int> bullets_to_delete;
 static std::vector<int> enemy_bullets_to_delete;
 static std::vector<int> bases_to_delete;
+static std::vector<int> enemies_to_delete;
 
 static std::vector<enemy_spawner_t> enemy_spawners;
 static std::vector<enemy_t> enemies;
@@ -122,19 +123,44 @@ static void mark_base_for_deletion(int handle) {
 
 void update_base(base_t& base) {
 
+	transform_t* transform = get_transform(base.transform_handle);
+	game_assert_msg(transform, "transform for base not found");	
+
 	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(base.rb_handle, PHYS_BASE);
 	for (kin_w_kin_col_t& col : cols) {
 		if (col.kin_type1 == PHYS_ENEMY_BULLET || col.kin_type2 == PHYS_ENEMY_BULLET) {
 			base.base_health -= 20;
-
-			if (base.base_health < 0) {
-				// delete_base(base);
+	
+			if (base.base_health <= 0) {
 				mark_base_for_deletion(base.handle);
 			}
 			return;
 		}
 	}
 
+	glm::vec2 bar_left(transform->global_position.x - (base_t::WIDTH / 2), transform->global_position.y + (base_t::HEIGHT / 2) + 40);
+
+	glm::vec2 screen_bar_left_pos = world_pos_to_screen(bar_left);
+	glm::vec2 screen_bar_dim = world_vec_to_screen_vec(glm::vec2(base_t::WIDTH, 20));
+	
+	style_t grey_bar;
+	grey_bar.background_color = create_color(128, 128, 128, 1);
+	push_style(grey_bar);
+	char container_bck_name[256]{};
+	sprintf(container_bck_name, "base_%i_bkd", base.handle);
+	create_absolute_container(screen_bar_left_pos.x, screen_bar_left_pos.y, screen_bar_dim.x, screen_bar_dim.y, WIDGET_SIZE::PIXEL_BASED, WIDGET_SIZE::PIXEL_BASED, container_bck_name);
+	pop_style();
+
+	float weight = base.base_health / 100.f;
+	style_t health_bar;
+	health_bar.background_color = weight * create_color(0,255,0,1) + ((1 - weight) * create_color(255,0,0,1));
+	push_style(health_bar);
+
+	char container_name[256]{};
+	sprintf(container_name, "base_%i", base.handle);
+	create_absolute_container(screen_bar_left_pos.x, screen_bar_left_pos.y, screen_bar_dim.x * weight, screen_bar_dim.y, WIDGET_SIZE::PIXEL_BASED, WIDGET_SIZE::PIXEL_BASED, container_name);
+
+	pop_style();
 }
 
 static void delete_base_by_index(int idx, const int handle) {
@@ -482,7 +508,7 @@ void update_attached_gun(gun_t& gun) {
 			transform_t* enemy_transform = get_transform(enemies[i].transform_handle);
 			game_assert_msg(enemy_transform, "enemy transform not found");
 			float distance = glm::distance(enemy_transform->global_position, attachment_transform->global_position);
-			if (distance < closest) {
+			if (distance < closest && std::find(gun_t::enemy_died_handles.begin(), gun_t::enemy_died_handles.end(), enemies[i].handle) == gun_t::enemy_died_handles.end()) {
 				closest = distance;
 				gun.closest_enemy.handle = enemies[i].handle;
 				gun.closest_enemy.transform_handle = enemies[i].transform_handle;
@@ -625,6 +651,11 @@ void create_enemy(glm::vec3 pos, int dir, float speed) {
 	enemies.push_back(enemy);
 }
 
+static void mark_enemy_for_deletion(int handle) {
+	enemies_to_delete.push_back(handle);
+	gun_t::enemy_died_handles.push_back(handle);
+}
+
 const float enemy_t::DIST_TO_BASE = 150.f;
 const float enemy_t::TIME_BETWEEN_SHOTS = 2.f;
 void update_enemy(enemy_t& enemy) {
@@ -667,12 +698,45 @@ void update_enemy(enemy_t& enemy) {
 			enemy.health -= 30;
 			if (enemy.health <= 0) {
 				add_store_credit(10);
-				delete_enemy(enemy.handle);
+				mark_enemy_for_deletion(enemy.handle);
 				score.enemies_left_to_kill = MAX(0, score.enemies_left_to_kill-1);
+				return;
 			}
 		}
 	}
+
+	float health_left_pct = enemy.health / 100.f;
+	glm::vec2 health_bar_left = world_pos_to_screen(glm::vec2(transform->global_position.x - enemy_t::WIDTH / 2, transform->global_position.y + enemy_t::HEIGHT/2 + 20));
+	glm::vec2 health_bar_dim = world_vec_to_screen_vec(glm::vec2(enemy_t::WIDTH, 10));
+
+	style_t grey_bar;
+	grey_bar.background_color = create_color(128, 128, 128, 1);
+	push_style(grey_bar);
+	char container_bck[256]{};
+	sprintf(container_bck, "enemy_%i_bck", enemy.handle);
+	create_absolute_container(health_bar_left.x, health_bar_left.y, health_bar_dim.x, health_bar_dim.y, WIDGET_SIZE::PIXEL_BASED, WIDGET_SIZE::PIXEL_BASED, container_bck);
+	pop_style();
+	
+	char container[256]{};
+	sprintf(container_bck, "enemy_%i", enemy.handle);
+	style_t health_bar;
+	health_bar.background_color = health_left_pct * create_color(0,255,0,1) + ((1 - health_left_pct) * create_color(255,0,0,1));
+	push_style(health_bar);
+	create_absolute_container(health_bar_left.x, health_bar_left.y, health_bar_dim.x * health_left_pct, health_bar_dim.y, WIDGET_SIZE::PIXEL_BASED, WIDGET_SIZE::PIXEL_BASED, container);
+	pop_style();
 }
+
+static void delete_enemy_by_index(int idx, const int handle) {
+	enemy_t& enemy = enemies[idx];
+	if (enemy.handle == handle) {
+		delete_transform(enemy.transform_handle);
+		delete_rigidbody(enemy.rb_handle);
+		delete_quad_render(enemy.quad_render_handle);
+		enemies.erase(enemies.begin() + idx);
+	}
+}
+
+
 
 void delete_enemy(int enemy_handle) {
 	for (int i = 0; i < enemies.size(); i++) {
@@ -798,10 +862,12 @@ void gos_update() {
 		update_enemy_spawner(enemy_spawner);
 	}
 
+	create_absolute_panel("enemies_health_panel", -1);
 	for (enemy_t& enemy : enemies) {
 		update_enemy(enemy);
 	}
 	enemy_t::deleted_base_handles.clear();
+	end_absolute_panel();
 
 	for (enemy_bullet_t& enemy_bullet : enemy_bullets) {
 		update_enemy_bullet(enemy_bullet);
@@ -814,9 +880,11 @@ void gos_update() {
 	}
 	gun_t::enemy_died_handles.clear();
 
+	create_absolute_panel("base_health_panel", -1);
 	for (base_t& base : gun_bases) {
 		update_base(base);
 	}
+	end_absolute_panel();
 
 	update_hierarchy_based_on_globals();
 	update_score();
@@ -850,6 +918,16 @@ void gos_update_delete_pass() {
 			}
 		}
 	}
+	bases_to_delete.clear();
+
+	for (int handle : enemies_to_delete) {
+		for (int i = 0; i < enemies.size(); i++) {
+			if (enemies[i].handle == handle) {
+				delete_enemy_by_index(i, handle);
+			}
+		}
+	}
+	enemies_to_delete.clear();
 }
 
 void delete_gos() {
