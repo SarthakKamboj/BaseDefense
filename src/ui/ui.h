@@ -35,22 +35,6 @@ struct font_char_t {
 	static render_object_data ui_opengl_data;
 };
 
-enum UI_PROPERTIES : int {
-    UI_PROP_NONE = 0,
-    UI_PROP_CLICKABLE = 1<<0,
-    UI_PROP_HOVERABLE = 1<<1,
-    UI_PROP_FOCUSABLE = 1<<2,
-    UI_PROP_CURRENTLY_FOCUSED = 1<<3
-};
-OR_ENUM_DECLARATION(UI_PROPERTIES)
-
-enum class WIDGET_SIZE {
-    NONE,
-    PIXEL_BASED,
-    PARENT_PERCENT_BASED,
-    FIT_CONTENT
-};
-
 struct font_mode_t {
     int font_size = 0;
     std::unordered_map<unsigned char, font_char_t> chars;
@@ -60,7 +44,6 @@ void load_font(int font_size);
 
 struct text_dim_t {
 	float width = 0;
-	// float height = 0;
     float max_height_above_baseline = 0;
 	float max_height_below_baseline = 0;
 };
@@ -87,6 +70,13 @@ enum BCK_MODE {
 enum BORDER_RADIUS_MODE {
     BR_SINGLE_VALUE = 0,
     BR_4_CORNERS
+};
+
+enum class WIDGET_SIZE {
+    NONE,
+    PIXEL_BASED,
+    PARENT_PERCENT_BASED,
+    FIT_CONTENT
 };
 
 struct style_t {
@@ -156,68 +146,6 @@ struct style_override_t {
     bool color = false;
 };
 
-struct text_t {
-    char text[256]{};
-    // TEXT_SIZE text_size = TEXT_SIZE::REGULAR;
-    int font_size = 25;
-};
-void create_text(const char* text, int font_size = 0, bool focusable = false);
-bool create_button(const char* text, int font_size = 0, int user_handle = -1);
-
-struct image_container_t {
-    int texture_handle = -1;
-    float width = 0.f;
-    float height = 0.f;
-};
-void create_image_container(int texture_handle, float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* img_name);
-bool create_selector(int selected_option, const char** options, int num_options, float width, float height, int& updated_selected_option, const char* selector_summary, int left_arrow_user_handle, int right_arrow_user_handle);
-
-typedef int(*stacked_nav_handler_func_t)(bool right, bool left, bool up, bool down);
-
-struct ui_anim_player_t;
-struct widget_t {
-    int handle = -1;
-    bool absolute = false;
-
-    int z_pos = 0;
-
-    bool text_based = false;
-    text_t text_info;
-
-    bool image_based = false;
-    int texture_handle = -1;
-
-    std::vector<int> children_widget_handles;
-    int parent_widget_handle = NULL;
-
-    char key[256]{};
-    hash_t hash;
-
-    UI_PROPERTIES properties = UI_PROPERTIES::UI_PROP_NONE;
-    style_t style;
-
-    int attached_hover_anim_player_handle = -1;
-    std::vector<int> attached_anim_player_handles;
-
-    // all specified in pixels with (x, y) using top left as the pt
-    float x = -1.f;
-    float y = -1.f;
-
-    // does not include margins, just base width plus padding
-    float render_width = -1.f;
-    float render_height = -1.f;
-
-    // includes base width, padding, and margins
-    float content_width = -1.f;
-    float content_height = -1.f;
-
-    // extra info for stacked navigation
-    bool stacked_navigation = false;
-    stacked_nav_handler_func_t stack_nav_handler_func = NULL;
-    int user_handle = -1;
-
-};
-
 void ui_start_of_frame();
 void end_imgui();
 
@@ -227,67 +155,23 @@ void traverse_to_left_focusable();
 void push_style(style_t& style);
 void pop_style();
 
-void pop_widget();
-
-void create_panel(const char* panel_name, int z_pos);
-void end_panel();
-
-void create_absolute_panel(const char* panel_name, int z_pos);
-void end_absolute_panel();
-
-void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable = false, stacked_nav_handler_func_t func = NULL, UI_PROPERTIES ui_properties = UI_PROP_NONE);
-void end_container();
-
-void create_absolute_container(float x, float y, float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name);
-
 struct widget_registration_info_t {
     int widget_handle = -1;
     bool clicked_on = false;
     bool hovering_over = false;
 };
 
-widget_t create_widget();
+struct widget_t;
+
 widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack = false);
 void register_absolute_widget(widget_t& widget, const char* key, bool push_onto_stack);
 
-void autolayout_hierarchy();
-
-struct constraint_var_t {
-    int handle = -1;
-    char name[256]{};
-    bool constant = false;
-    float* value = NULL;
-    float cur_val = 0;
-};
-
-struct constraint_term_t {
-    float coefficient = 0;
-    int var_handle = -1;
-};
-
-struct constraint_t {
-    int left_side_var_handle;
-    std::vector<constraint_term_t> right_side;
-    std::vector<int> constant_handles;
-};
-
-int create_constraint_var(const char* var_name, float* val);
-int create_constraint_var_constant(float value);
-constraint_term_t create_constraint_term(int var_handle, float coefficient);
-void make_constraint_value_constant(int constraint_handle, float value);
-
-void create_constraint(int constraint_var_handle, std::vector<constraint_term_t>& right_side_terms, float constant);
-void resolve_constraints();
-
-void draw_background(widget_t& widget);
-void draw_image_container(widget_t& widget);
-void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec3& color);
-
+enum UI_PROPERTIES;
 struct parsed_ui_attributes_t {
     style_t style;
     char id[64]{};
     int font_size = 25;
-    UI_PROPERTIES ui_properties = UI_PROP_NONE;
+    UI_PROPERTIES ui_properties;
     char image_path[256]{};
     int z = 0;
 };
@@ -307,7 +191,6 @@ void update_ui_files();
 bool is_some_element_clicked_on();
 
 void set_ui_value(std::string& key, std::string& val);
-
 void draw_from_ui_file_layouts();
 void render_ui();
 

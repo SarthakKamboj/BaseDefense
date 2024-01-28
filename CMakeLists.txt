@@ -41,6 +41,9 @@ function(configure_game)
 
         src/ui/ui.cpp
         src/ui/ui_hash.cpp
+        src/ui/ui_layout.cpp
+        src/ui/ui_elements.cpp
+        src/ui/ui_rendering.cpp
 
         src/audio/audio.cpp
 

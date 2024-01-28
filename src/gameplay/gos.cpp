@@ -7,7 +7,7 @@
 #include "utils/time.h"
 #include "globals.h"
 #include "store.h"
-#include "ui/ui.h"
+#include "ui/ui_elements.h"
 #include "preview_manager.h"
 
 #include <vector>
