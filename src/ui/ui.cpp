@@ -289,7 +289,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     }   
 
     style_t original_style = widget.style;
-    if (hover_anim_player) {
+    if (hover_anim_player && hover_anim_player->duration_cursor > 0) {
         widget.style = get_intermediate_style(original_style, *hover_anim_player);
     }
 
@@ -327,6 +327,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 
         if (!mouse_over_widget && strcmp(prevframe_ui_element_status->hovered_over.widget_key.c_str(), key) == 0) {
             curframe_ui_element_status->mouse_left.widget_key = key;
+            curframe_ui_element_status->mouse_left.widget_handle = widget.handle;
         }
 
         if (mouse_over_widget && !input_state.game_controller) {
@@ -336,24 +337,27 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 
                 curframe_ui_element_status->hovered_over.widget_key = key;
                 curframe_ui_element_status->hovered_over.z_pos = latest_z_pos;
+                curframe_ui_element_status->hovered_over.widget_handle = widget.handle;
             
                 if (strcmp(prevframe_ui_element_status->hovered_over.widget_key.c_str(), key) != 0) {
                     curframe_ui_element_status->mouse_enter.widget_key = key;
+                    curframe_ui_element_status->mouse_enter.widget_handle = widget.handle;
                 }
             }
             info.hovering_over = true;
         }
 
-        // if (mouse_over_widget && input_state.left_mouse_release) {
         if (mouse_over_widget && get_released(LEFT_MOUSE)) {
             curframe_ui_element_status->clicked_on.widget_key = key;
             curframe_ui_element_status->clicked_on.z_pos = latest_z_pos;
+            curframe_ui_element_status->clicked_on.widget_handle = widget.handle;
             info.clicked_on = true;
         }
 
         if (widget.handle == cur_final_focused_handle && (get_pressed(KEY_ENTER) || get_pressed(CONTROLLER_A))) {
             curframe_ui_element_status->clicked_on.widget_key = key;
             curframe_ui_element_status->clicked_on.z_pos = latest_z_pos;
+            curframe_ui_element_status->clicked_on.widget_handle = widget.handle;
             info.clicked_on = true;
         }
     }
@@ -372,7 +376,6 @@ bool traverse_to_right_focusable_helper(int widget_handle, bool focus_from_cur) 
         if (!focus_from_cur || (focus_from_cur && cur_focused_internal_handle < widget.handle)) {
             cur_focused_internal_handle = widget_handle;
             stack_nav_cur = widget.stacked_navigation;
-            // widget.properties = static_cast<UI_PROPERTIES>(widget.properties | UI_PROPERTIES::UI_PROP_CURRENTLY_FOCUSED);
             printf("focused on %s\n", widget.key);
             return true;
         }
@@ -397,7 +400,6 @@ bool traverse_to_left_focusable_helper(int widget_handle, bool focus_from_cur) {
         if (!focus_from_cur || (focus_from_cur && cur_focused_internal_handle > widget.handle)) {
             cur_focused_internal_handle = widget_handle;
             stack_nav_cur = widget.stacked_navigation;
-            // widget.properties = static_cast<UI_PROPERTIES>(widget.properties | UI_PROPERTIES::UI_PROP_CURRENTLY_FOCUSED);
             printf("focused on %s\n", widget.key);
             return true;
         }
@@ -556,7 +558,8 @@ void render_ui_helper(widget_t& widget) {
     if (widget.attached_hover_anim_player_handle != -1) {
         ui_anim_player_t* hover_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
         game_assert_msg(hover_player, "hover player not found");
-        if (widget.handle == cur_final_focused_handle) {
+        // if (widget.handle == cur_final_focused_handle) {
+        if (widget.handle == curframe_ui_element_status->hovered_over.widget_handle) {
             move_ui_anim_player_forward(*hover_player);
         } else {
             move_ui_anim_player_backward(*hover_player);
@@ -1306,69 +1309,17 @@ void set_translate_in_ui_anim(const char* anim_name, glm::vec2 translate) {
 void clear_element_status(ui_element_status_t& status) {
     status.clicked_on.widget_key = "";
     status.clicked_on.z_pos = INT_MIN;
+    status.clicked_on.widget_handle = -1;
+
     status.hovered_over.widget_key = "";
     status.hovered_over.z_pos = INT_MIN;
+    status.hovered_over.widget_handle = -1;
+
     status.mouse_enter.widget_key = "";
     status.mouse_enter.z_pos = INT_MIN;
+    status.mouse_enter.widget_handle = -1;
+
     status.mouse_left.widget_key = "";
     status.mouse_left.z_pos = INT_MIN;
-}
-
-bool create_selector(int selected_option, const char** options, int num_options, float width, float height, int& updated_selected_option, const char* selector_summary, int left_arrow_user_handle, int right_arrow_user_handle) {
-    style_t container_style;
-    container_style.display_dir = DISPLAY_DIR::HORIZONTAL;
-    container_style.horizontal_align_val = ALIGN::SPACE_BETWEEN;
-    container_style.vertical_align_val = ALIGN::CENTER;
-    push_style(container_style);
-    create_container(width, height, WIDGET_SIZE::PIXEL_BASED, WIDGET_SIZE::PIXEL_BASED, "selector container");
-    pop_style();
-    
-    bool changed = false;
-    
-    style_t enabled;
-	enabled.hover_background_color = DARK_BLUE;
-	enabled.hover_color = WHITE;
-    enabled.color = DARK_BLUE;
-    enabled.padding = glm::vec2(10);
-    
-    style_t disabled;
-	disabled.hover_background_color = LIGHT_GREY;
-    disabled.color = GREY;
-    disabled.padding = glm::vec2(10);
-    
-    bool can_go_left = selected_option >= 1;
-    if (can_go_left) {
-        push_style(enabled);
-    } else {
-        push_style(disabled);
-    }
-    
-    if (create_button("<", 10, left_arrow_user_handle)) {
-        if (can_go_left) {
-            updated_selected_option = selected_option - 1;
-            changed = true;
-        }
-    }
-    pop_style();
-
-    char text_buffer[256]{};
-    sprintf(text_buffer, "%s###%s", options[selected_option], selector_summary);
-    create_text(text_buffer);
-
-    bool can_go_right = selected_option <= num_options - 2;
-    if (can_go_right) {
-        push_style(enabled);
-    } else {
-        push_style(disabled);
-    }
-    if (create_button(">", 10, right_arrow_user_handle)) {
-        if (can_go_right) {
-            updated_selected_option = selected_option + 1;
-            changed = true;
-        }
-    }
-    pop_style();
-    
-    end_container();
-    return changed;
+    status.mouse_left.widget_handle = -1;
 }

@@ -197,6 +197,7 @@ void render_ui();
 struct ui_mouse_event_t {
     std::string widget_key;
     int z_pos = 0;
+    int widget_handle;
 };
 
 struct ui_element_status_t {

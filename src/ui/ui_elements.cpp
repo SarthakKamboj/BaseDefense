@@ -215,3 +215,62 @@ void create_container(float width, float height, WIDGET_SIZE widget_size_width, 
 void end_container() {
     pop_widget();
 }
+
+bool create_selector(int selected_option, const char** options, int num_options, float width, float height, int& updated_selected_option, const char* selector_summary, int left_arrow_user_handle, int right_arrow_user_handle) {
+    style_t container_style;
+    container_style.display_dir = DISPLAY_DIR::HORIZONTAL;
+    container_style.horizontal_align_val = ALIGN::SPACE_BETWEEN;
+    container_style.vertical_align_val = ALIGN::CENTER;
+    push_style(container_style);
+    create_container(width, height, WIDGET_SIZE::PIXEL_BASED, WIDGET_SIZE::PIXEL_BASED, "selector container");
+    pop_style();
+    
+    bool changed = false;
+    
+    style_t enabled;
+	enabled.hover_background_color = DARK_BLUE;
+	enabled.hover_color = WHITE;
+    enabled.color = DARK_BLUE;
+    enabled.padding = glm::vec2(10);
+    
+    style_t disabled;
+	disabled.hover_background_color = LIGHT_GREY;
+    disabled.color = GREY;
+    disabled.padding = glm::vec2(10);
+    
+    bool can_go_left = selected_option >= 1;
+    if (can_go_left) {
+        push_style(enabled);
+    } else {
+        push_style(disabled);
+    }
+    
+    if (create_button("<", 10, left_arrow_user_handle)) {
+        if (can_go_left) {
+            updated_selected_option = selected_option - 1;
+            changed = true;
+        }
+    }
+    pop_style();
+
+    char text_buffer[256]{};
+    sprintf(text_buffer, "%s###%s", options[selected_option], selector_summary);
+    create_text(text_buffer);
+
+    bool can_go_right = selected_option <= num_options - 2;
+    if (can_go_right) {
+        push_style(enabled);
+    } else {
+        push_style(disabled);
+    }
+    if (create_button(">", 10, right_arrow_user_handle)) {
+        if (can_go_right) {
+            updated_selected_option = selected_option + 1;
+            changed = true;
+        }
+    }
+    pop_style();
+    
+    end_container();
+    return changed;
+}
