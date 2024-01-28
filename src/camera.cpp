@@ -57,7 +57,7 @@ void update_camera() {
 		cam.pos.x = cam.drag_start_pos.x - x_delta;
 	}
 
-	if (!get_down(CONTROLLER_Y)) {
+	if (!get_down(CONTROLLER_Y) && !get_down(CONTROLLER_X)) {
 		const float CAM_DRAG_SPEED = 300.f;
 		float x_delta = globals.window.user_input.controller_x_axis * CAM_DRAG_SPEED * game::time_t::delta_time;
 		cam.pos.x += x_delta;
