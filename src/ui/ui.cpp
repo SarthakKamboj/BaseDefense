@@ -368,13 +368,14 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
             info.hovering_over = true;
         }
 
-        if (mouse_over_widget && input_state.left_mouse_release) {
+        // if (mouse_over_widget && input_state.left_mouse_release) {
+        if (mouse_over_widget && get_released(LEFT_MOUSE)) {
             curframe_ui_element_status->clicked_on.widget_key = key;
             curframe_ui_element_status->clicked_on.z_pos = latest_z_pos;
             info.clicked_on = true;
         }
 
-        if (widget.handle == cur_final_focused_handle && (input_state.enter_pressed || input_state.controller_a_pressed)) {
+        if (widget.handle == cur_final_focused_handle && (get_pressed(KEY_ENTER) || get_pressed(CONTROLLER_A))) {
             curframe_ui_element_status->clicked_on.widget_key = key;
             curframe_ui_element_status->clicked_on.z_pos = latest_z_pos;
             info.clicked_on = true;
@@ -711,28 +712,28 @@ void end_imgui() {
     if (controller_centered_x && input_state.controller_x_axis >= 0.9f) {
         right_move = true;
         controller_centered_x = false;
-    } else if (get_down('d')) {
+    } else if (get_down(KEY_D)) {
         right_move = true;
     }
 
     if (controller_centered_x && input_state.controller_x_axis <= -0.9f) {
         left_move = true;
         controller_centered_x = false;
-    } else if (get_down('a')) {
+    } else if (get_down(KEY_A)) {
         left_move = true;
     }
 
     if (controller_centered_y && input_state.controller_y_axis <= -0.9f) {
         down_move = true;
         controller_centered_y = false;
-    } else if (get_down('s')) {
+    } else if (get_down(KEY_S)) {
         down_move = true;
     }
 
     if (controller_centered_y && input_state.controller_y_axis >= 0.9f) {
         up_move = true;
         controller_centered_y = false;
-    } else if (get_down('w')) {
+    } else if (get_down(KEY_W)) {
         up_move = true;
     } 
 
@@ -1955,7 +1956,8 @@ bool is_some_element_clicked_on() {
                     input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
                     input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
 
-            if (mouse_over_widget && !input_state.game_controller && globals.window.user_input.left_mouse_release) {
+            //if (mouse_over_widget && !input_state.game_controller && globals.window.user_input.left_mouse_release) {
+            if (mouse_over_widget && !input_state.game_controller && get_released(LEFT_MOUSE)) {
                 return true;
             }
         }

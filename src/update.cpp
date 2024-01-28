@@ -69,7 +69,7 @@ void update() {
             paused = true;
         }
 
-        if (get_released('p')) {
+        if (get_released(KEY_P) || get_pressed(CONTROLLER_START)) {
             paused = !paused;     
         }
 

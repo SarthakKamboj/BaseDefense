@@ -81,8 +81,8 @@ void init_preview_mode() {
 }
 
 void update_preview_mode() {
-    bool selector_open = get_down('z');
-    bool selector_released = get_released('z');
+    bool selector_open = get_down(KEY_Z) || get_down(CONTROLLER_X);
+    bool selector_released = get_released(KEY_Z) || get_released(CONTROLLER_X);
 
     if (selector_open || selector_released) {
         
@@ -99,9 +99,15 @@ void update_preview_mode() {
             }
 
             glm::vec2 selector_pos(transform->global_position.x, transform->global_position.y);
-            glm::vec2 rel_pos = glm::normalize(mouse - selector_pos);
-
-            printf("selector_pos: %f, %f\n", selector_pos.x, selector_pos.y);
+            static glm::vec2 rel_pos;
+            if (!globals.window.user_input.game_controller){
+                rel_pos = glm::normalize(mouse - selector_pos);
+            }  else {
+                glm::vec2 controller_axes(globals.window.user_input.controller_x_axis, globals.window.user_input.controller_y_axis);
+                if (glm::distance(controller_axes, glm::vec2(0)) >= 0.5f) {
+                    rel_pos = glm::normalize(controller_axes);
+                }
+            }
 
             float dot_w_vert = glm::dot(glm::vec2(0,1), rel_pos);
 
@@ -110,7 +116,7 @@ void update_preview_mode() {
             if (dot_w_vert > glm::cos(glm::radians(degrees_per_option / 2.f))) {
                 preview_state.cur_preview_selector_selected = PREVIEW_BASE;
             } else {
-                if (glm::dot(glm::vec2(1,0), mouse - selector_pos) > 0) {
+                if (glm::dot(glm::vec2(1,0), rel_pos) > 0) {
                     preview_state.cur_preview_selector_selected = PREVIEW_GUN;
                 } else {
                     preview_state.cur_preview_selector_selected = PREVIEW_BASE_EXT;

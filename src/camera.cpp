@@ -41,11 +41,11 @@ glm::vec2 world_vec_to_screen_vec(glm::vec2 world_vec) {
 
 void update_camera() {
 	camera_t& cam = globals.camera;
-	if (globals.window.user_input.middle_mouse_down_click) {
+	if (get_pressed(MIDDLE_MOUSE)) {
 		cam.drag_start_mouse_pos = glm::vec2(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y);
 		cam.drag_start_pos = cam.pos;
 		cam.dragging = true;
-	} else if (globals.window.user_input.middle_mouse_release) {
+	} else if (get_released(MIDDLE_MOUSE)) {
 		cam.dragging = false;
 	}
 
@@ -60,8 +60,15 @@ void update_camera() {
 		printf("globals.camera.cam_view_dimensions: %f, %f\n", globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.x);
 	}
 
-	if (globals.window.user_input.mouse_scroll_wheel_delta_y != 0) {
-		int multiplier = globals.window.user_input.mouse_scroll_wheel_delta_y > 0 ? -1 : 1;
+	float mouse_scroll_delta = globals.window.user_input.mouse_scroll_wheel_delta_y;
+	bool zooming_in_or_out = mouse_scroll_delta != 0 || get_down(CONTROLLER_LB) || get_down(CONTROLLER_RB);
+	if (zooming_in_or_out) {
+		int multiplier = 0;
+		if (mouse_scroll_delta > 0 || get_down(CONTROLLER_LB)) {
+			multiplier = -1;
+		} else if (mouse_scroll_delta < 0 || get_down(CONTROLLER_RB)) {
+			multiplier = 1;
+		}
 		float aspect_ratio = globals.window.window_height / globals.window.window_width;
 		cam.cam_view_dimensions.x += multiplier * cam.scroll_speed;
 		cam.cam_view_dimensions.y += multiplier * aspect_ratio * cam.scroll_speed;

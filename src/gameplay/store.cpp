@@ -82,7 +82,7 @@ void update_store() {
     set_ui_value(std::string("num_bases"), std::to_string(inventory.num_bases));
     set_ui_value(std::string("num_base_exts"), std::to_string(inventory.num_base_exts));
 
-	if (get_if_key_clicked_on("open_close_section")) {
+	if (get_if_key_clicked_on("open_close_section") || get_pressed(CONTROLLER_B)) {
         store.open = !store.open;
         store.selected_item = ITEM_NONE;	
         if (store.open) {

@@ -38,11 +38,6 @@ int get_mode_index(float w, float h) {
 		if (SDL_GetDisplayMode(0, i, &display_mode) != 0) {
 			SDL_Log("SDL_GetDisplayMode failed: %s", SDL_GetError());
 		}
-		// SDL_Log("Mode %i\tname: %s\t%i x %i and ratio is %f",
-		// 		i,
-		// 		SDL_GetPixelFormatName(display_mode.format),
-		// 		display_mode.w, display_mode.h, static_cast<float>(display_mode.w) / display_mode.h);
-		
 		float display_ratio = static_cast<float>(display_mode.w) / display_mode.h;
 		if (floor(display_ratio * 1000) == floor(ratio * 1000)) {
 			return i;
@@ -163,25 +158,10 @@ void process_input() {
     SDL_GetMouseState(&user_input.mouse_x, &user_input.mouse_y);
     user_input.mouse_y = globals.window.window_height - user_input.mouse_y;
 
+    memset(user_input.pressed, 0, sizeof(user_input.pressed));
     memset(user_input.released, 0, sizeof(user_input.released));
-    user_input.space_pressed = false;
-    user_input.enter_pressed = false;
-
-    user_input.controller_a_pressed = false;
-    user_input.controller_y_pressed = false;
-    user_input.controller_x_pressed = false;
-    user_input.controller_b_pressed = false;
-    user_input.controller_start_pressed = false;
 
     user_input.quit = false;
-    user_input.right_mouse_down_click = false;
-    user_input.left_mouse_down_click = false;
-    user_input.middle_mouse_down_click = false;
-
-    user_input.right_mouse_release = false;
-    user_input.left_mouse_release = false;
-    user_input.middle_mouse_release = false;
-
     user_input.mouse_scroll_wheel_delta_y = 0; 
     
     user_input.controller_x_axis = 0;
@@ -235,18 +215,10 @@ void process_input() {
                     if (event.cdevice.which == SDL_JoystickInstanceID(controller_joystick)) {
                         user_input.controller_state_changed = true;
                         user_input.game_controller = NULL;
-                        user_input.controller_a_down = false;
-                        user_input.controller_a_pressed = false;
-                        user_input.controller_y_down = false;
-                        user_input.controller_y_pressed = false;
-                        user_input.controller_x_down = false;
-                        user_input.controller_x_pressed = false;
-                        user_input.controller_b_down = false;
-                        user_input.controller_b_pressed = false;
-                        user_input.controller_start_down = false;
-                        user_input.controller_start_pressed = false;
-                        user_input.controller_x_axis = 0;
-                        user_input.controller_y_axis = 0;
+                        for (KEYS controller_key = CONTROLLER_A; controller_key < NUM_KEYS; controller_key++) {
+                            user_input.down[controller_key] = false;
+                            user_input.released[controller_key] = false;
+                        }
                         init_controller();
                     }
                 }
@@ -259,23 +231,38 @@ void process_input() {
                         printf("button: %i\n", (int)event.cbutton.button);
                         switch (event.cbutton.button) {
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A: {
-                                user_input.controller_a_down = false;
+                                user_input.released[CONTROLLER_A] = true;
+                                user_input.down[CONTROLLER_A] = false;
                                 break;
                             }
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y: {
-                                user_input.controller_y_down = false;
+                                user_input.released[CONTROLLER_Y] = true;
+                                user_input.down[CONTROLLER_Y] = false;
                                 break;
                             }
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B: {
-                                user_input.controller_b_down = false;
+                                user_input.released[CONTROLLER_B] = true;
+                                user_input.down[CONTROLLER_B] = false;
                                 break;
                             }
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X: {
-                                user_input.controller_x_down = false;
+                                user_input.released[CONTROLLER_X] = true;
+                                user_input.down[CONTROLLER_X] = false;
                                 break;
                             }
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START: {
-                                user_input.controller_start_down = false;
+                                user_input.released[CONTROLLER_START] = true;
+                                user_input.down[CONTROLLER_START] = false;
+                                break;
+                            }
+                            case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER: {
+                                user_input.released[CONTROLLER_LB] = true;
+                                user_input.down[CONTROLLER_LB] = false;
+                                break;
+                            }
+                            case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: {
+                                user_input.released[CONTROLLER_RB] = true;
+                                user_input.down[CONTROLLER_RB] = false;
                                 break;
                             }
                             default: break;
@@ -291,28 +278,38 @@ void process_input() {
                     if (event.cdevice.which == SDL_JoystickInstanceID(controller_joystick)) {
                         switch (event.cbutton.button) {
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_A: {
-                                user_input.controller_a_pressed = true;
-                                user_input.controller_a_down = true;
+                                user_input.down[CONTROLLER_A] = true;
+                                user_input.pressed[CONTROLLER_A] = true;
                                 break;
                             }
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y: {
-                                user_input.controller_y_pressed = true;
-                                user_input.controller_y_down = true;
+                                user_input.down[CONTROLLER_Y] = true;
+                                user_input.pressed[CONTROLLER_Y] = true;
                                 break;
                             }
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B: {
-                                user_input.controller_b_pressed = true;
-                                user_input.controller_b_down = true;
+                                user_input.down[CONTROLLER_B] = true;
+                                user_input.pressed[CONTROLLER_B] = true;
                                 break;
                             }
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X: {
-                                user_input.controller_x_pressed = true;
-                                user_input.controller_x_down = true;
+                                user_input.down[CONTROLLER_X] = true;
+                                user_input.pressed[CONTROLLER_X] = true;
                                 break;
                             }
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_START: {
-                                user_input.controller_start_down = true;
-                                user_input.controller_start_pressed = true;
+                                user_input.down[CONTROLLER_START] = true;
+                                user_input.pressed[CONTROLLER_START] = true;
+                                break;
+                            }
+                            case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_LEFTSHOULDER: {
+                                user_input.down[CONTROLLER_LB] = true;
+                                user_input.pressed[CONTROLLER_LB] = true;
+                                break;
+                            }
+                            case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: {
+                                user_input.down[CONTROLLER_RB] = true;
+                                user_input.pressed[CONTROLLER_RB] = true;
                                 break;
                             }
                             default: break;
@@ -323,27 +320,27 @@ void process_input() {
             }
             case SDL_MOUSEBUTTONUP: {
                 if (event.button.button == SDL_BUTTON_RIGHT) {
-                    user_input.right_mouse_release = true;
-                    user_input.right_mouse_down = false;
+                    user_input.released[RIGHT_MOUSE] = true;
+                    user_input.down[RIGHT_MOUSE] = false;
                 } else if (event.button.button == SDL_BUTTON_LEFT) {
-                    user_input.left_mouse_release = true;
-                    user_input.left_mouse_down = false;
+                    user_input.released[LEFT_MOUSE] = true;
+                    user_input.down[LEFT_MOUSE] = false;
                 } else if (event.button.button == SDL_BUTTON_MIDDLE) {
-                    user_input.middle_mouse_release = true;
-                    user_input.middle_mouse_down = false;
+                    user_input.released[MIDDLE_MOUSE] = true;
+                    user_input.down[MIDDLE_MOUSE] = false;
                 }
                 break;
             }
             case SDL_MOUSEBUTTONDOWN: {
                 if (event.button.button == SDL_BUTTON_RIGHT) {
-                    user_input.right_mouse_down = true;
-                    user_input.right_mouse_down_click = true;
+                    user_input.pressed[RIGHT_MOUSE] = true;
+                    user_input.down[RIGHT_MOUSE] = true;
                 } else if (event.button.button == SDL_BUTTON_LEFT) {
-                    user_input.left_mouse_down = true;
-                    user_input.left_mouse_down_click = true;
+                    user_input.pressed[LEFT_MOUSE] = true;
+                    user_input.down[LEFT_MOUSE] = true;
                 } else if (event.button.button == SDL_BUTTON_MIDDLE) {
-                    user_input.middle_mouse_down = true;
-                    user_input.middle_mouse_down_click = true;
+                    user_input.pressed[MIDDLE_MOUSE] = true;
+                    user_input.down[MIDDLE_MOUSE] = true;
                 }
                 break;
             }
@@ -357,7 +354,7 @@ void process_input() {
             case SDL_KEYDOWN: {
                 if (event.key.keysym.sym >= 'a' && event.key.keysym.sym <= 'z') {
                     user_input.down[event.key.keysym.sym - 'a'] = true;
-                    user_input.released[event.key.keysym.sym - 'a'] = false;
+                    user_input.pressed[event.key.keysym.sym - 'a'] = false;
                 }
             }
             break;
@@ -381,12 +378,22 @@ bool detect_window_error() {
     return false;
 }
 
-bool get_down(char key) {
-    game_assert_msg(key >= 'a' && key <= 'z', "key can only be from a to z");
-    return globals.window.user_input.down[key - 'a'];
+bool get_pressed(KEYS key) {
+    return globals.window.user_input.pressed[key];
 }
 
-bool get_released(char key) {
-    game_assert_msg(key >= 'a' && key <= 'z', "key can only be from a to z");
-    return globals.window.user_input.released[key - 'a'];
+bool get_down(KEYS key) {
+    return globals.window.user_input.down[key];
+}
+
+bool get_released(KEYS key) {
+    return globals.window.user_input.released[key];
+}
+
+KEYS operator++(KEYS& a, int) {
+    return static_cast<KEYS>(static_cast<int>(a) + 1);
+}
+
+bool controller_connected() {
+    return globals.window.user_input.game_controller != NULL;
 }

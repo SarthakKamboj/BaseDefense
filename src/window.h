@@ -10,6 +10,53 @@ enum ASPECT_RATIO {
     NUM_RATIOS,
 };
 
+enum KEYS {
+    KEY_A = 0,
+    KEY_B,
+    KEY_C,
+    KEY_D,
+    KEY_E,
+    KEY_F,
+    KEY_G,
+    KEY_H,
+    KEY_I,
+    KEY_J,
+    KEY_K,
+    KEY_L,
+    KEY_M,
+    KEY_N,
+    KEY_O,
+    KEY_P,
+    KEY_Q,
+    KEY_R,
+    KEY_S,
+    KEY_T,
+    KEY_U,
+    KEY_V,
+    KEY_W,
+    KEY_X,
+    KEY_Y,
+    KEY_Z,
+
+    KEY_SPACE,
+    KEY_ENTER,
+
+    LEFT_MOUSE,
+    MIDDLE_MOUSE,
+    RIGHT_MOUSE,
+
+    CONTROLLER_A,
+    CONTROLLER_Y,
+    CONTROLLER_B,
+    CONTROLLER_X,
+    CONTROLLER_START,
+    CONTROLLER_LB,
+    CONTROLLER_RB,
+
+    NUM_KEYS
+};
+KEYS operator++(KEYS& a, int);
+
 struct aspect_ratio_t {
     ASPECT_RATIO ratio;
     const char* str;
@@ -25,36 +72,25 @@ int get_mode_index(float w, float h);
 /// </summary>
 struct user_input_t {
 
-    bool down[26]{};
-    bool released[26]{};
+    // first time key down
+    bool pressed[NUM_KEYS]{};
+    // true while key is down
+    bool down[NUM_KEYS]{};
+    // true when key is released
+    bool released[NUM_KEYS]{};
     
-    bool space_pressed = false;
-    bool enter_pressed = false;
-    
-    bool controller_a_pressed = false;
-    bool controller_y_pressed = false;
-    bool controller_x_pressed = false;
-    bool controller_b_pressed = false;
-    bool controller_start_pressed = false;
-
     // true while continuously button is down
     bool enter_down = false;
 
-    bool controller_a_down = false;
-    bool controller_y_down = false;
-    bool controller_x_down = false;
-    bool controller_b_down = false;
-    bool controller_start_down = false;
-
-    bool right_mouse_down_click = false;
-    bool left_mouse_down_click = false;
-    bool middle_mouse_down_click = false;
-    bool right_mouse_release = false;
-    bool left_mouse_release = false;
-    bool middle_mouse_release = false;
-    bool right_mouse_down = false;
-    bool left_mouse_down = false;
-    bool middle_mouse_down = false;
+    // bool right_mouse_down_click = false;
+    // bool left_mouse_down_click = false;
+    // bool middle_mouse_down_click = false;
+    // bool right_mouse_release = false;
+    // bool left_mouse_release = false;
+    // bool middle_mouse_release = false;
+    // bool right_mouse_down = false;
+    // bool left_mouse_down = false;
+    // bool middle_mouse_down = false;
 
     bool quit = false;
 
@@ -63,13 +99,12 @@ struct user_input_t {
 
     // bottom left is (0,0)
     int mouse_x;
-    int mouse_y;
-
-    float controller_x_axis = 0;
-    float controller_y_axis = 0;
+    int mouse_y; 
 
 	bool controller_state_changed = false;
 	SDL_GameController* game_controller = NULL;
+    float controller_x_axis = 0;
+    float controller_y_axis = 0;
 };
 
 
@@ -92,7 +127,9 @@ void render_window();
 /// process the input for the frame
 /// </summary>
 void process_input();
-bool get_down(char key);
-bool get_released(char key);
+bool get_pressed(KEYS key);
+bool get_down(KEYS key);
+bool get_released(KEYS key);
 
 bool detect_window_error();
+bool is_controller_connected();
