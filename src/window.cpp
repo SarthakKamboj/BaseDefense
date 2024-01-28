@@ -394,6 +394,6 @@ KEYS operator++(KEYS& a, int) {
     return static_cast<KEYS>(static_cast<int>(a) + 1);
 }
 
-bool controller_connected() {
+bool is_controller_connected() {
     return globals.window.user_input.game_controller != NULL;
 }

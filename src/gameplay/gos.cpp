@@ -19,7 +19,7 @@ extern bool paused;
 static glm::vec3 invalid_placement_color = create_color(144,66,71);
 static glm::vec3 valid_placement_color = create_color(45,45,45);
 
-static const float PREVIEW_MOVE_SPEED = 500.f;
+static const float PREVIEW_MOVE_SPEED = 300.f;
 
 extern inventory_t inventory;
 extern store_t store;
