@@ -11,8 +11,9 @@ static std::vector<constraint_t> constraints;
 
 static int constraint_running_cnt = 0;
 
-extern std::vector<widget_t>* curframe_widget_arr;
-extern std::vector<int>* curframe_widget_stack;
+// extern std::vector<widget_t>* curframe_widget_arr;
+// extern std::vector<int>* curframe_widget_stack;
+extern ui_info_t* curframe_ui_info;
 extern std::vector<style_t> styles_stack;
 
 int create_constraint_var(const char* var_name, float* val) {
@@ -89,10 +90,10 @@ void resolve_constraints() {
 
 void autolayout_hierarchy() {
 
-    game_assert_msg(curframe_widget_stack->size() == 0, "widgets stack for the current frame is not empty when laying out elements");
+    game_assert_msg(curframe_ui_info->widget_stack.size() == 0, "widgets stack for the current frame is not empty when laying out elements");
     game_assert_msg(styles_stack.size() == 1, "styles stack has more than 1 style");
 
-    auto& cur_arr = *curframe_widget_arr;
+    auto& cur_arr = curframe_ui_info->widgets_arr;
     for (int i = 0; i < cur_arr.size(); i++) {
         widget_t& cur_widget = cur_arr[i];
         if (cur_widget.parent_widget_handle != -1 || cur_widget.absolute) continue;
@@ -113,7 +114,7 @@ void autolayout_hierarchy() {
 }
 
 helper_info_t resolve_positions(int widget_handle, int x_pos_handle, int y_pos_handle) {
-    auto& cur_arr = *curframe_widget_arr;
+    auto& cur_arr = curframe_ui_info->widgets_arr;
     widget_t& widget = cur_arr[widget_handle];
 
     if (widget.text_based) {
@@ -334,7 +335,7 @@ helper_info_t resolve_positions(int widget_handle, int x_pos_handle, int y_pos_h
 }
 
 helper_info_t resolve_dimensions(int cur_widget_handle, int parent_width_handle, int parent_height_handle) {
-    auto& cur_arr = *curframe_widget_arr;
+    auto& cur_arr = curframe_ui_info->widgets_arr;
     widget_t& widget = cur_arr[cur_widget_handle];
     if (widget.text_based) {
         text_dim_t text_dim = get_text_dimensions(widget.text_info.text, widget.text_info.font_size);

@@ -6,8 +6,9 @@
 extern globals_t globals;
 
 extern std::vector<style_t> styles_stack;
-extern std::vector<int>* curframe_widget_stack;
-extern std::vector<widget_t>* curframe_widget_arr;
+extern ui_info_t* curframe_ui_info;
+// extern std::vector<int>* curframe_widget_stack;
+// extern std::vector<widget_t>* curframe_widget_arr;
 
 extern int latest_z_pos;
 
@@ -72,7 +73,8 @@ bool create_button(const char* text, int font_size, int user_handle) {
     widget.render_height = widget.style.height;
 
     widget.properties = widget.properties | UI_PROP_CLICKABLE | UI_PROP_HOVERABLE;
-    auto& stack = *curframe_widget_stack;
+    // auto& stack = *curframe_widget_stack;
+    auto& stack = curframe_ui_info->widget_stack;
     if (stacked_nav_widget_in_stack) {
         widget.user_handle = user_handle;
     } else {
@@ -111,9 +113,9 @@ widget_t create_widget() {
 }
 
 void pop_widget() {
-    if (curframe_widget_stack->size() > 0) {
-        auto& arr = *curframe_widget_arr;
-        auto& stack = *curframe_widget_stack;
+    auto& arr = curframe_ui_info->widgets_arr;
+    auto& stack = curframe_ui_info->widget_stack;
+    if (stack.size() > 0) {
         if (arr[stack[stack.size()-1]].stacked_navigation) {
             stacked_nav_widget_in_stack = false;
         }

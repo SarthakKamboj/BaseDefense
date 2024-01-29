@@ -188,7 +188,7 @@ void add_active_ui_file(const char* file_name);
 void clear_active_ui_files();
 void update_ui_files();
 
-bool is_some_element_clicked_on();
+// bool is_some_element_clicked_on();
 
 void set_ui_value(std::string& key, std::string& val);
 void draw_from_ui_file_layouts();
@@ -259,3 +259,9 @@ void stop_ui_anim_player(const char* widget_key, const char* ui_anim_name);
 void parse_ui_anims(const char* path);
 void add_active_ui_anim_file(const char* file_name);
 void clear_active_ui_anim_files();
+
+struct ui_info_t {
+    std::vector<int> widget_stack;
+    std::vector<widget_t> widgets_arr;    
+    ui_element_status_t ui_element_status;
+};

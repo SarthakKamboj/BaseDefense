@@ -46,22 +46,26 @@ static bool stack_nav_cur = false;
 
 static int cur_widget_count = 0;
 
-static std::vector<int> widget_stack1;
-static std::vector<widget_t> widgets_arr1;
-static ui_element_status_t ui_element_status1;
+// static std::vector<int> widget_stack1;
+// static std::vector<widget_t> widgets_arr1;
+// static ui_element_status_t ui_element_status1;
+static ui_info_t ui_info_buffer1;
+static ui_info_t ui_info_buffer2;
 
-static std::vector<int> widget_stack2;
-static std::vector<widget_t> widgets_arr2;
-static ui_element_status_t ui_element_status2;
+// static std::vector<int> widget_stack2;
+// static std::vector<widget_t> widgets_arr2;
+// static ui_element_status_t ui_element_status2;
 
-std::vector<int>* curframe_widget_stack = &widget_stack2;
-std::vector<widget_t>* curframe_widget_arr = &widgets_arr2;
-ui_element_status_t* curframe_ui_element_status;
+// std::vector<int>* curframe_widget_stack = &widget_stack2;
+// std::vector<widget_t>* curframe_widget_arr = &widgets_arr2;
+// ui_element_status_t* curframe_ui_element_status;
+ui_info_t* curframe_ui_info = &ui_info_buffer2;
+ui_info_t* prevframe_ui_info = &ui_info_buffer1;
 bool stacked_nav_widget_in_stack = false;
 
-std::vector<int>* prevframe_widget_stack = &widget_stack1;
-std::vector<widget_t>* prevframe_widget_arr = &widgets_arr1;
-ui_element_status_t* prevframe_ui_element_status;
+// std::vector<int>* prevframe_widget_stack = &widget_stack1;
+// std::vector<widget_t>* prevframe_widget_arr = &widgets_arr1;
+// ui_element_status_t* prevframe_ui_element_status;
 
 std::vector<style_t> styles_stack;
 
@@ -98,7 +102,7 @@ void update_ui_files() {
 
 void ui_start_of_frame() {
     panel_left_used = false;
-    latest_z_pos = -200;
+    latest_z_pos = INT_MIN;
 #if UI_RELOADING
     update_ui_files();
 #endif
@@ -122,25 +126,34 @@ void ui_start_of_frame() {
     style_t default_style;
     styles_stack.push_back(default_style);
 
-    if (curframe_widget_arr == &widgets_arr1) {
-        curframe_widget_arr = &widgets_arr2;
-        curframe_widget_stack = &widget_stack2;
-        curframe_ui_element_status = &ui_element_status2;
-        prevframe_widget_arr = &widgets_arr1;
-        prevframe_widget_stack = &widget_stack1;
-        prevframe_ui_element_status = &ui_element_status1;
+    if (curframe_ui_info == &ui_info_buffer1) {
+        curframe_ui_info = &ui_info_buffer2;
+        prevframe_ui_info = &ui_info_buffer1;
     } else {
-        curframe_widget_arr = &widgets_arr1;
-        curframe_widget_stack = &widget_stack1;
-        curframe_ui_element_status = &ui_element_status1;
-        prevframe_widget_arr = &widgets_arr2;
-        prevframe_widget_stack = &widget_stack2;
-        prevframe_ui_element_status = &ui_element_status2;
+        curframe_ui_info = &ui_info_buffer1;
+        prevframe_ui_info = &ui_info_buffer2;
     }
+    // if (curframe_widget_arr == &widgets_arr1) {
+    //     curframe_widget_arr = &widgets_arr2;
+    //     curframe_widget_stack = &widget_stack2;
+    //     curframe_ui_element_status = &ui_element_status2;
+    //     prevframe_widget_arr = &widgets_arr1;
+    //     prevframe_widget_stack = &widget_stack1;
+    //     prevframe_ui_element_status = &ui_element_status1;
+    // } else {
+    //     curframe_widget_arr = &widgets_arr1;
+    //     curframe_widget_stack = &widget_stack1;
+    //     curframe_ui_element_status = &ui_element_status1;
+    //     prevframe_widget_arr = &widgets_arr2;
+    //     prevframe_widget_stack = &widget_stack2;
+    //     prevframe_ui_element_status = &ui_element_status2;
+    // }
 
-    curframe_widget_arr->clear();
-    curframe_widget_stack->clear();
-    clear_element_status(*curframe_ui_element_status);
+    // curframe_widget_arr->clear();
+    // curframe_widget_stack->clear();
+    curframe_ui_info->widgets_arr.clear();
+    curframe_ui_info->widget_stack.clear();
+    clear_element_status(curframe_ui_info->ui_element_status);
 
     cur_widget_count = 0;
 
@@ -165,8 +178,8 @@ void register_absolute_widget(widget_t& widget, const char* key, bool push_onto_
     memcpy(widget.key, key, strlen(key));
     widget.hash = hash(key);
 
-    auto& arr = *curframe_widget_arr;
-    auto& stack = *curframe_widget_stack;
+    auto& arr = curframe_ui_info->widgets_arr;
+    auto& stack = curframe_ui_info->widget_stack;
 
     if (stack.size() > 0) widget.parent_widget_handle = stack[stack.size() - 1];
     else widget.parent_widget_handle = -1;
@@ -188,10 +201,10 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     memcpy(widget.key, key, strlen(key));
     hash_t new_hash = hash(key);
 
-    auto& arr = *curframe_widget_arr;
-    auto& stack = *curframe_widget_stack;
+    auto& arr = curframe_ui_info->widgets_arr;
+    auto& stack = curframe_ui_info->widget_stack;
 
-    auto& prev_arr = *prevframe_widget_arr; 
+    auto& prev_arr = prevframe_ui_info->widgets_arr; 
 
     if (prev_arr.size() <= widget.handle) {
         ui_will_update = true;
@@ -312,7 +325,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     info.widget_handle = widget.handle;
     
     if (!ui_will_update && (widget.properties & UI_PROP_CLICKABLE)) {
-        auto& prev_arr = *prevframe_widget_arr;
+        auto& prev_arr = prevframe_ui_info->widgets_arr;
         widget_t& cached_widget = prev_arr[widget.handle];
 
         user_input_t& input_state = globals.window.user_input;
@@ -325,39 +338,42 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
                 input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
                 input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
 
-        if (!mouse_over_widget && strcmp(prevframe_ui_element_status->hovered_over.widget_key.c_str(), key) == 0) {
-            curframe_ui_element_status->mouse_left.widget_key = key;
-            curframe_ui_element_status->mouse_left.widget_handle = widget.handle;
+        ui_element_status_t& cur_elem_status = curframe_ui_info->ui_element_status;
+        ui_element_status_t& prev_elem_status = prevframe_ui_info->ui_element_status;
+
+        if (!mouse_over_widget && strcmp(prev_elem_status.hovered_over.widget_key.c_str(), key) == 0) {
+            cur_elem_status.mouse_left.widget_key = key;
+            cur_elem_status.mouse_left.widget_handle = widget.handle;
         }
 
         if (mouse_over_widget && !input_state.game_controller) {
 
-            if (latest_z_pos > curframe_ui_element_status->hovered_over.z_pos) {
+            if (latest_z_pos > cur_elem_status.hovered_over.z_pos) {
                 cur_focused_internal_handle = widget.handle;
 
-                curframe_ui_element_status->hovered_over.widget_key = key;
-                curframe_ui_element_status->hovered_over.z_pos = latest_z_pos;
-                curframe_ui_element_status->hovered_over.widget_handle = widget.handle;
+                cur_elem_status.hovered_over.widget_key = key;
+                cur_elem_status.hovered_over.z_pos = latest_z_pos;
+                cur_elem_status.hovered_over.widget_handle = widget.handle;
             
-                if (strcmp(prevframe_ui_element_status->hovered_over.widget_key.c_str(), key) != 0) {
-                    curframe_ui_element_status->mouse_enter.widget_key = key;
-                    curframe_ui_element_status->mouse_enter.widget_handle = widget.handle;
+                if (strcmp(prev_elem_status.hovered_over.widget_key.c_str(), key) != 0) {
+                    cur_elem_status.mouse_enter.widget_key = key;
+                    cur_elem_status.mouse_enter.widget_handle = widget.handle;
                 }
             }
             info.hovering_over = true;
         }
 
         if (mouse_over_widget && get_released(LEFT_MOUSE)) {
-            curframe_ui_element_status->clicked_on.widget_key = key;
-            curframe_ui_element_status->clicked_on.z_pos = latest_z_pos;
-            curframe_ui_element_status->clicked_on.widget_handle = widget.handle;
+            cur_elem_status.clicked_on.widget_key = key;
+            cur_elem_status.clicked_on.z_pos = latest_z_pos;
+            cur_elem_status.clicked_on.widget_handle = widget.handle;
             info.clicked_on = true;
         }
 
         if (widget.handle == cur_final_focused_handle && (get_pressed(KEY_ENTER) || get_pressed(CONTROLLER_A))) {
-            curframe_ui_element_status->clicked_on.widget_key = key;
-            curframe_ui_element_status->clicked_on.z_pos = latest_z_pos;
-            curframe_ui_element_status->clicked_on.widget_handle = widget.handle;
+            cur_elem_status.clicked_on.widget_key = key;
+            cur_elem_status.clicked_on.z_pos = latest_z_pos;
+            cur_elem_status.clicked_on.widget_handle = widget.handle;
             info.clicked_on = true;
         }
     }
@@ -366,7 +382,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 }
 
 bool traverse_to_right_focusable_helper(int widget_handle, bool focus_from_cur) {
-    auto& arr = *curframe_widget_arr;
+    auto& arr = curframe_ui_info->widgets_arr;
     widget_t& widget = arr[widget_handle];
     for (int child_handle : widget.children_widget_handles) {
         bool refocused = traverse_to_right_focusable_helper(child_handle, focus_from_cur);
@@ -389,7 +405,7 @@ void traverse_to_right_focusable() {
 }
 
 bool traverse_to_left_focusable_helper(int widget_handle, bool focus_from_cur) {
-    auto& arr = *curframe_widget_arr;
+    auto& arr = curframe_ui_info->widgets_arr;
     widget_t& widget = arr[widget_handle];
     for (int i = widget.children_widget_handles.size() - 1; i >= 0; i--) {
         int child_handle = widget.children_widget_handles[i];
@@ -413,7 +429,7 @@ void traverse_to_left_focusable() {
 }
 
 void update_custom_stack_nav(bool right_move, bool left_move, bool up_move, bool down_move) {
-    auto& arr = *curframe_widget_arr;
+    auto& arr = curframe_ui_info->widgets_arr;
     widget_t& widget = arr[cur_focused_internal_handle];
     int focused_user_handle = widget.stack_nav_handler_func(right_move, left_move, up_move, down_move);
     if (focused_user_handle == -1) {
@@ -559,7 +575,7 @@ void render_ui_helper(widget_t& widget) {
         ui_anim_player_t* hover_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
         game_assert_msg(hover_player, "hover player not found");
         // if (widget.handle == cur_final_focused_handle) {
-        if (widget.handle == curframe_ui_element_status->hovered_over.widget_handle) {
+        if (widget.handle == curframe_ui_info->ui_element_status.hovered_over.widget_handle) {
             move_ui_anim_player_forward(*hover_player);
         } else {
             move_ui_anim_player_backward(*hover_player);
@@ -588,7 +604,7 @@ void render_ui_helper(widget_t& widget) {
         draw_text(widget.text_info.text, glm::vec2(widget.x + widget.style.padding.x + widget.style.margin.x, widget.y - widget.style.padding.y - widget.style.margin.y), widget.text_info.font_size, widget.style.color);
     } 
 
-    auto& cur_arr = *curframe_widget_arr;
+    auto& cur_arr = curframe_ui_info->widgets_arr;
     for (int child_handle : widget.children_widget_handles) {
         render_ui_helper(cur_arr[child_handle]);
     }
@@ -891,7 +907,7 @@ void render_ui() {
         stack_nav_cur = false;
     }
 
-    auto& cur_arr = *curframe_widget_arr;
+    auto& cur_arr = curframe_ui_info->widgets_arr;
     for (widget_t& widget : cur_arr) {
         if (widget.parent_widget_handle == -1) {
             render_ui_helper(widget);
@@ -989,14 +1005,10 @@ void init_ui() {
     // set up ebo with indicies
 	data.ebo = create_ebo(indices, sizeof(indices));
 
-	// bind_vao(data.vao);
 	vao_enable_attribute(data.vao, data.vbo, 0, 3, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, position));
 	vao_enable_attribute(data.vao, data.vbo, 1, 4, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, color));
 	vao_enable_attribute(data.vao, data.vbo, 2, 2, GL_FLOAT, sizeof(vertex_t), offsetof(vertex_t, tex_coord));
     vao_bind_ebo(data.vao, data.ebo);
-	// bind_ebo(data.ebo);
-	// unbind_vao();
-	// unbind_ebo();
 
 	data.shader = create_shader("text.vert", "text.frag");
 	glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
@@ -1038,28 +1050,6 @@ void init_ui() {
             parse_ui_anims(path_char);
         }
     } 
-
-    // for (const auto& entry : fs::directory_iterator(ui_folder)) {
-    //     auto& xml = entry.path();
-    //     std::string xml_string = entry.path().string();
-    //     const char* xml_path = xml_string.c_str();
-    //     if (strcmp(get_file_extension(xml_path), "xml") != 0) continue;
-    //     static int cnt = 0;
-    //     FILE* ui_file_c = fopen(xml_path, "r");
-    //     game_assert_msg(ui_file_c, "play file not found");
-    //     ui_file_layout_t ui_file;
-    //     ui_file.document = xml_open_document(ui_file_c);
-
-    //     struct stat ui_file_stat;
-    //     if (stat(xml_path, &ui_file_stat) < 0) return;
-    //     ui_file.last_modified_time = ui_file_stat.st_mtime;
-    //     memcpy(ui_file.path, xml_path, strlen(xml_path));
-
-    //     ui_file.handle = cnt++;
-
-    //     ui_files.push_back(ui_file);
-    // }
-
 }
 
 text_dim_t get_text_dimensions(const char* text, int font_size) {
@@ -1075,52 +1065,50 @@ text_dim_t get_text_dimensions(const char* text, int font_size) {
             }
         }
     }
-    // running_dim.height = running_dim.max_height_above_baseline + running_dim.max_height_below_baseline;
-    // running_dim.height = running_dim.max_height_above_baseline;
 	return running_dim;
 }
 
 bool get_if_key_clicked_on(const char* key) {
-    return strcmp(prevframe_ui_element_status->clicked_on.widget_key.c_str(), key) == 0;
+    return strcmp(prevframe_ui_info->ui_element_status.clicked_on.widget_key.c_str(), key) == 0;
 }
 
 bool get_if_key_hovered_over(const char* key) {
-    return strcmp(prevframe_ui_element_status->hovered_over.widget_key.c_str(), key) == 0;
+    return strcmp(prevframe_ui_info->ui_element_status.hovered_over.widget_key.c_str(), key) == 0;
 }
 
 bool get_if_key_mouse_enter(const char* key) {
-    return strcmp(prevframe_ui_element_status->mouse_enter.widget_key.c_str(), key) == 0;
+    return strcmp(prevframe_ui_info->ui_element_status.mouse_enter.widget_key.c_str(), key) == 0;
 }
 
 bool get_if_key_mouse_left(const char* key) {
-    return strcmp(prevframe_ui_element_status->mouse_left.widget_key.c_str(), key) == 0;
+    return strcmp(prevframe_ui_info->ui_element_status.mouse_left.widget_key.c_str(), key) == 0;
 }
 
-bool is_some_element_clicked_on() {
-    for (int i = 0; i < prevframe_widget_arr->size(); i++) {
-        widget_t& widget = (*prevframe_widget_arr)[i];
-        if (widget.properties & UI_PROP_CLICKABLE) {
-            auto& prev_arr = *prevframe_widget_arr;
-            widget_t& cached_widget = prev_arr[widget.handle];
+// bool is_some_element_clicked_on() {
+//     for (int i = 0; i < prevframe_widget_arr->size(); i++) {
+//         widget_t& widget = (*prevframe_widget_arr)[i];
+//         if (widget.properties & UI_PROP_CLICKABLE) {
+//             auto& prev_arr = *prevframe_widget_arr;
+//             widget_t& cached_widget = prev_arr[widget.handle];
 
-            user_input_t& input_state = globals.window.user_input;
-            bool mouse_over_widget = input_state.mouse_x >= (cached_widget.x + cached_widget.style.margin.x) &&
-                    input_state.mouse_x <= (cached_widget.x + cached_widget.render_width + cached_widget.style.margin.x) &&
-                    // render x and render y specified as the top left pivot and y in ui is 0 on the
-                    // bottom and WINDOW_HEIGHT on the top, so cached_widget.y is the top y of the 
-                    // widget and cached_widget.y - cached_widget.render_height is the bottom y 
-                    // of the widget
-                    input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
-                    input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
+//             user_input_t& input_state = globals.window.user_input;
+//             bool mouse_over_widget = input_state.mouse_x >= (cached_widget.x + cached_widget.style.margin.x) &&
+//                     input_state.mouse_x <= (cached_widget.x + cached_widget.render_width + cached_widget.style.margin.x) &&
+//                     // render x and render y specified as the top left pivot and y in ui is 0 on the
+//                     // bottom and WINDOW_HEIGHT on the top, so cached_widget.y is the top y of the 
+//                     // widget and cached_widget.y - cached_widget.render_height is the bottom y 
+//                     // of the widget
+//                     input_state.mouse_y <= (cached_widget.y - cached_widget.style.margin.y) &&
+//                     input_state.mouse_y >= (cached_widget.y - cached_widget.render_height - cached_widget.style.margin.y);
 
-            //if (mouse_over_widget && !input_state.game_controller && globals.window.user_input.left_mouse_release) {
-            if (mouse_over_widget && !input_state.game_controller && get_released(LEFT_MOUSE)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
+//             //if (mouse_over_widget && !input_state.game_controller && globals.window.user_input.left_mouse_release) {
+//             if (mouse_over_widget && !input_state.game_controller && get_released(LEFT_MOUSE)) {
+//                 return true;
+//             }
+//         }
+//     }
+//     return false;
+// }
 
 void clear_active_ui_files() {
     active_ui_file_handles.clear();
@@ -1149,8 +1137,9 @@ void add_active_ui_anim_file(const char* file_name) {
 void clear_active_ui_anim_files() {
     active_ui_anim_file_handles.clear();
     ui_anim_players.clear();
-    for (int i = 0; i < prevframe_widget_arr->size(); i++) {
-        (*prevframe_widget_arr)[i].attached_hover_anim_player_handle = -1;
+    auto& prev_arr = prevframe_ui_info->widgets_arr;
+    for (int i = 0; i < prev_arr.size(); i++) {
+        prev_arr[i].attached_hover_anim_player_handle = -1;
     }
 }
 
