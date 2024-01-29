@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 		process_input();
 
 		globals.running = !globals.window.user_input.quit;
-		globals.ui_clicked_on = is_some_element_clicked_on();	
+		// globals.ui_clicked_on = is_some_element_clicked_on();	
 
 		update();
 		render();
