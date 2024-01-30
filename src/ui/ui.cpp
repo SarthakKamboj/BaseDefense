@@ -258,7 +258,6 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
         }
     } 
 
-    ui_anim_player_t* hover_anim_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
     for (int i = 0; i < anims_to_add_this_frame.size(); i++) {
         ui_anim_user_info_t& add_info = anims_to_add_this_frame[i];
         if (strcmp(widget.key, add_info.widget_key) == 0) {
@@ -313,6 +312,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     }   
 
     style_t original_style = widget.style;
+    ui_anim_player_t* hover_anim_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
     if (hover_anim_player && hover_anim_player->duration_cursor > 0) {
         widget.style = get_intermediate_style(original_style, *hover_anim_player);
     }
@@ -1246,7 +1246,7 @@ int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_an
     anim_player.anim_duration = ui_anim.anim_duration;
     anim_player.ui_anim_handle = ui_anim.handle;
     anim_player.ui_anim_file_handle = ui_anim_file_handle;
-    anim_player.duration_cursor = starting_cursor;
+    anim_player.duration_cursor = fmin(starting_cursor, ui_anim.anim_duration);
     anim_player.playing = play_upon_initialize;
     ui_anim_players.push_back(anim_player);
     return anim_player.handle;

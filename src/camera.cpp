@@ -5,9 +5,11 @@
 #include "globals.h"
 #include "utils/time.h"
 #include "gameplay/preview_manager.h"
+#include "gameplay/store.h"
 
 extern globals_t globals;
 extern preview_state_t preview_state;
+extern store_t store;
 
 void init_camera() {
 	globals.camera.rotation = 0;
@@ -47,7 +49,7 @@ bool within_screen(glm::vec2 screen_coords) {
 
 void update_camera() {
 	camera_t& cam = globals.camera;
-	if (get_pressed(MIDDLE_MOUSE)) {
+	if (!store.open && get_pressed(MIDDLE_MOUSE)) {
 		cam.drag_start_mouse_pos = glm::vec2(globals.window.user_input.mouse_x, globals.window.user_input.mouse_y);
 		cam.drag_start_pos = cam.pos;
 		cam.dragging = true;
@@ -61,7 +63,7 @@ void update_camera() {
 		cam.pos.x = cam.drag_start_pos.x - x_delta;
 	}
 
-	if (!get_down(CONTROLLER_Y) && !get_down(CONTROLLER_X)) {
+	if (!store.open && !get_down(CONTROLLER_Y) && !get_down(CONTROLLER_X)) {
 		const float CAM_DRAG_SPEED = 300.f;
 		float x_delta = globals.window.user_input.controller_x_axis * CAM_DRAG_SPEED * game::time_t::delta_time;
 		cam.pos.x += x_delta;
@@ -73,7 +75,7 @@ void update_camera() {
 	}
 
 	float mouse_scroll_delta = globals.window.user_input.mouse_scroll_wheel_delta_y;
-	bool zooming_in_or_out = mouse_scroll_delta != 0 || get_down(CONTROLLER_LB) || get_down(CONTROLLER_RB);
+	bool zooming_in_or_out = !store.open && (mouse_scroll_delta != 0 || get_down(CONTROLLER_LB) || get_down(CONTROLLER_RB));
 	if (zooming_in_or_out) {
 		float aspect_ratio = globals.window.window_height / globals.window.window_width;
 		glm::vec2 delta_dim(0);
