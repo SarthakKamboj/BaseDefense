@@ -87,8 +87,10 @@ void update_store() {
         store.selected_item = ITEM_NONE;	
         if (store.open) {
             stop_ui_anim_player("store_panel", "store_close");
+            ui_enable_controller_support();
         } else {
             play_ui_anim_player("store_panel", "store_close");
+            ui_disable_controller_support();
         }
 	}
 

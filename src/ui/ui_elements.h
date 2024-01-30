@@ -13,7 +13,7 @@ enum UI_PROPERTIES : int {
     UI_PROP_FOCUSABLE = 1<<2,
     UI_PROP_CURRENTLY_FOCUSED = 1<<3
 };
-OR_ENUM_DECLARATION(UI_PROPERTIES)
+OR_ENUM_DEFINITION(UI_PROPERTIES)
 
 struct text_t {
     char text[256]{};
@@ -90,3 +90,4 @@ void end_container();
 
 void create_absolute_container(float x, float y, float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name);
 
+widget_t* get_widget(int widget_handle);

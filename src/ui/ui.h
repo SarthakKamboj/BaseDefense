@@ -265,3 +265,20 @@ struct ui_info_t {
     std::vector<widget_t> widgets_arr;    
     ui_element_status_t ui_element_status;
 };
+
+// enum UI_CONTROL_MODE {
+//     UI_CONTROL_NONE = 0,
+//     UI_CONTROL_KBD = 1 << 0,
+//     UI_CONTROL_CNTLR = 1 << 1,
+// };
+// OR_ENUM_DECLARATION(UI_CONTROL_MODE);
+// AND_ENUM_DECLARATION(UI_CONTROL_MODE);
+// AND_W_INT_ENUM_DECLARATION(UI_CONTROL_MODE);
+
+struct ui_state_t {
+    // UI_CONTROL_MODE control_mode = UI_CONTROL_KBD | UI_CONTROL_CNTLR;
+    bool kbd_controlled = true;
+    bool ctrl_controlled = true;
+};
+void ui_disable_controller_support();
+void ui_enable_controller_support();

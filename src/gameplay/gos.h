@@ -64,7 +64,7 @@ enum ATTACHMENT_TYPE : int {
 	ATTMNT_GUN = 1 << 0,
 	ATTMNT_BASE_EXT = 1 << 2,
 };
-OR_ENUM_DECLARATION(ATTACHMENT_TYPE)
+OR_ENUM_DEFINITION(ATTACHMENT_TYPE)
 
 struct attachment_t {
 	int handle = -1;

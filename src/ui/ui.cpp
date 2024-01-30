@@ -29,7 +29,7 @@ static bool panel_left_used = false;
 
 extern globals_t globals;
 
-int latest_z_pos = -200;
+int latest_z_pos;
 
 static std::vector<ui_file_layout_t> ui_files;
 static std::vector<int> active_ui_file_handles;
@@ -40,9 +40,9 @@ static std::vector<int> active_ui_anim_file_handles;
 
 static std::vector<ui_anim_player_t> ui_anim_players;
 
-static int cur_focused_internal_handle = -1;
-static int cur_final_focused_handle = -1;
-static bool stack_nav_cur = false;
+// static int cur_focused_internal_handle = -1;
+// static int cur_final_focused_handle = -1;
+// static bool stack_nav_cur = false;
 
 static int cur_widget_count = 0;
 
@@ -62,6 +62,8 @@ static ui_info_t ui_info_buffer2;
 ui_info_t* curframe_ui_info = &ui_info_buffer2;
 ui_info_t* prevframe_ui_info = &ui_info_buffer1;
 bool stacked_nav_widget_in_stack = false;
+
+static ui_state_t ui_state;
 
 // std::vector<int>* prevframe_widget_stack = &widget_stack1;
 // std::vector<widget_t>* prevframe_widget_arr = &widgets_arr1;
@@ -107,11 +109,11 @@ void ui_start_of_frame() {
     update_ui_files();
 #endif
 
-    if (!globals.window.user_input.game_controller) {
-        cur_focused_internal_handle = -1;
-        cur_final_focused_handle = -1;
-        stack_nav_cur = false;
-    }
+    // if (!globals.window.user_input.game_controller) {
+    //     cur_focused_internal_handle = -1;
+    //     cur_final_focused_handle = -1;
+    //     stack_nav_cur = false;
+    // }
 
     glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
     shader_set_mat4(font_char_t::ui_opengl_data.shader, "projection", projection);
@@ -133,27 +135,14 @@ void ui_start_of_frame() {
         curframe_ui_info = &ui_info_buffer1;
         prevframe_ui_info = &ui_info_buffer2;
     }
-    // if (curframe_widget_arr == &widgets_arr1) {
-    //     curframe_widget_arr = &widgets_arr2;
-    //     curframe_widget_stack = &widget_stack2;
-    //     curframe_ui_element_status = &ui_element_status2;
-    //     prevframe_widget_arr = &widgets_arr1;
-    //     prevframe_widget_stack = &widget_stack1;
-    //     prevframe_ui_element_status = &ui_element_status1;
-    // } else {
-    //     curframe_widget_arr = &widgets_arr1;
-    //     curframe_widget_stack = &widget_stack1;
-    //     curframe_ui_element_status = &ui_element_status1;
-    //     prevframe_widget_arr = &widgets_arr2;
-    //     prevframe_widget_stack = &widget_stack2;
-    //     prevframe_ui_element_status = &ui_element_status2;
-    // }
-
-    // curframe_widget_arr->clear();
-    // curframe_widget_stack->clear();
+    
     curframe_ui_info->widgets_arr.clear();
     curframe_ui_info->widget_stack.clear();
+    
     clear_element_status(curframe_ui_info->ui_element_status);
+    if (is_controller_connected()) {
+        curframe_ui_info->ui_element_status.hovered_over = prevframe_ui_info->ui_element_status.hovered_over;
+    }
 
     cur_widget_count = 0;
 
@@ -191,6 +180,28 @@ void register_absolute_widget(widget_t& widget, const char* key, bool push_onto_
     if (push_onto_stack) {
         stack.push_back(widget.handle);
     }
+}
+
+void set_widget_as_hover(int widget_handle, std::string& key) {
+    ui_element_status_t& cur_elem_status = curframe_ui_info->ui_element_status;
+    ui_element_status_t& prev_elem_status = prevframe_ui_info->ui_element_status;
+
+    cur_elem_status.hovered_over.widget_key = key;
+    cur_elem_status.hovered_over.z_pos = latest_z_pos;
+    cur_elem_status.hovered_over.widget_handle = widget_handle;
+
+    if (strcmp(prev_elem_status.hovered_over.widget_key.c_str(), key.c_str()) != 0) {
+        cur_elem_status.mouse_enter.widget_key = key;
+        cur_elem_status.mouse_enter.widget_handle = widget_handle;
+        printf("mouse enter: %s\n", key.c_str());
+    }
+}
+
+void set_widget_mouse_leave(int widget_handle, std::string& key) {
+    ui_element_status_t& cur_elem_status = curframe_ui_info->ui_element_status;
+    cur_elem_status.mouse_left.widget_key = key;
+    cur_elem_status.mouse_left.widget_handle = widget_handle;
+    printf("mouse leave: %s\n", key.c_str());
 }
 
 widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack) {
@@ -341,109 +352,147 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
         ui_element_status_t& cur_elem_status = curframe_ui_info->ui_element_status;
         ui_element_status_t& prev_elem_status = prevframe_ui_info->ui_element_status;
 
-        if (!mouse_over_widget && strcmp(prev_elem_status.hovered_over.widget_key.c_str(), key) == 0) {
-            cur_elem_status.mouse_left.widget_key = key;
-            cur_elem_status.mouse_left.widget_handle = widget.handle;
+        if (!is_controller_connected() && !mouse_over_widget && strcmp(prev_elem_status.hovered_over.widget_key.c_str(), key) == 0) {
+            set_widget_mouse_leave(widget.handle, std::string(key));
         }
 
-        if (mouse_over_widget && !input_state.game_controller) {
+        if (mouse_over_widget && !is_controller_connected()) {
 
             if (latest_z_pos > cur_elem_status.hovered_over.z_pos) {
-                cur_focused_internal_handle = widget.handle;
-
-                cur_elem_status.hovered_over.widget_key = key;
-                cur_elem_status.hovered_over.z_pos = latest_z_pos;
-                cur_elem_status.hovered_over.widget_handle = widget.handle;
-            
-                if (strcmp(prev_elem_status.hovered_over.widget_key.c_str(), key) != 0) {
-                    cur_elem_status.mouse_enter.widget_key = key;
-                    cur_elem_status.mouse_enter.widget_handle = widget.handle;
-                }
+                set_widget_as_hover(widget.handle, std::string(key));
+                info.hovering_over = true;
             }
-            info.hovering_over = true;
-        }
-
-        if (mouse_over_widget && get_released(LEFT_MOUSE)) {
+        } 
+    
+        bool clicked_on_cur_element = (prev_elem_status.hovered_over.widget_handle == widget.handle && (get_released(LEFT_MOUSE) || (ui_state.ctrl_controlled && get_pressed(CONTROLLER_A))));
+        if (clicked_on_cur_element) {
             cur_elem_status.clicked_on.widget_key = key;
             cur_elem_status.clicked_on.z_pos = latest_z_pos;
             cur_elem_status.clicked_on.widget_handle = widget.handle;
             info.clicked_on = true;
         }
-
-        if (widget.handle == cur_final_focused_handle && (get_pressed(KEY_ENTER) || get_pressed(CONTROLLER_A))) {
-            cur_elem_status.clicked_on.widget_key = key;
-            cur_elem_status.clicked_on.z_pos = latest_z_pos;
-            cur_elem_status.clicked_on.widget_handle = widget.handle;
-            info.clicked_on = true;
-        }
-    }
+    } 
 
     return info;
 }
 
-bool traverse_to_right_focusable_helper(int widget_handle, bool focus_from_cur) {
+float quantize_angle(float angle, int num_quanta) {
+    float angle_per_quanta = 360.f / num_quanta;
+    angle += (angle_per_quanta / 2.f);
+    int section = fmin(num_quanta - 1, floor(angle / angle_per_quanta));
+    return section * angle_per_quanta;
+}
+
+static void traverse_ui(int widget_handle, glm::vec2 dir) {
     auto& arr = curframe_ui_info->widgets_arr;
-    widget_t& widget = arr[widget_handle];
-    for (int child_handle : widget.children_widget_handles) {
-        bool refocused = traverse_to_right_focusable_helper(child_handle, focus_from_cur);
-        if (refocused) return true;
-    }
-    if (widget.properties & UI_PROPERTIES::UI_PROP_FOCUSABLE) {
-        if (!focus_from_cur || (focus_from_cur && cur_focused_internal_handle < widget.handle)) {
-            cur_focused_internal_handle = widget_handle;
-            stack_nav_cur = widget.stacked_navigation;
-            printf("focused on %s\n", widget.key);
-            return true;
+    widget_t* cur_hover_widget = get_widget(widget_handle);
+    if (!cur_hover_widget) {
+        for (int i = 0; i < arr.size(); i++) {
+            widget_t& widget = arr[i];
+            if ((widget.properties & UI_PROP_HOVERABLE) == 0) continue;
+
+            float other_x = widget.x + widget.style.margin.x + (widget.render_width / 2.f);
+            float other_y = widget.y - widget.style.margin.y - (widget.render_height / 2.f);
+            glm::vec2 other_widget_pos(other_x, other_y);
+            if (!within_screen(other_widget_pos)) continue;
+
+            set_widget_as_hover(widget.handle, std::string(widget.key));
+            return;
         }
-    }
-    return false;
-}
-
-void traverse_to_right_focusable() {
-    bool refocused = traverse_to_right_focusable_helper(0, true);
-    if (!refocused) traverse_to_right_focusable_helper(0, false);
-}
-
-bool traverse_to_left_focusable_helper(int widget_handle, bool focus_from_cur) {
-    auto& arr = curframe_ui_info->widgets_arr;
-    widget_t& widget = arr[widget_handle];
-    for (int i = widget.children_widget_handles.size() - 1; i >= 0; i--) {
-        int child_handle = widget.children_widget_handles[i];
-        bool refocused = traverse_to_left_focusable_helper(child_handle, focus_from_cur);
-        if (refocused) return true;
-    }
-    if (widget.properties & UI_PROPERTIES::UI_PROP_FOCUSABLE) {
-        if (!focus_from_cur || (focus_from_cur && cur_focused_internal_handle > widget.handle)) {
-            cur_focused_internal_handle = widget_handle;
-            stack_nav_cur = widget.stacked_navigation;
-            printf("focused on %s\n", widget.key);
-            return true;
-        }
-    }
-    return false;
-}
-
-void traverse_to_left_focusable() {
-    bool refocused = traverse_to_left_focusable_helper(0, true);
-    if (!refocused) traverse_to_left_focusable_helper(0, false);
-}
-
-void update_custom_stack_nav(bool right_move, bool left_move, bool up_move, bool down_move) {
-    auto& arr = curframe_ui_info->widgets_arr;
-    widget_t& widget = arr[cur_focused_internal_handle];
-    int focused_user_handle = widget.stack_nav_handler_func(right_move, left_move, up_move, down_move);
-    if (focused_user_handle == -1) {
-        stack_nav_cur = false;
     } else {
-        for (widget_t& widget : arr) {
-            if (widget.user_handle == focused_user_handle) {
-                cur_final_focused_handle = widget.handle;
+
+        struct running_info_t {
+            float angle = FLT_MAX;
+            float distance = FLT_MAX;
+            float weight = FLT_MAX;
+            int widget_handle = -1;
+            std::string widget_key;
+        };
+
+        // int new_widget_handle = -1;
+        // std::string new_widget_key;
+        // float running_weight = FLT_MAX;
+        running_info_t running_info;
+
+        float cur_x = cur_hover_widget->x + cur_hover_widget->style.margin.x + (cur_hover_widget->render_width / 2.f);
+        float cur_y = cur_hover_widget->y - cur_hover_widget->style.margin.y - (cur_hover_widget->render_height / 2.f);
+        glm::vec2 cur_widget_pos(cur_x, cur_y);
+
+        for (int i = 0; i < arr.size(); i++) {
+            widget_t& widget = arr[i];
+            if ((widget.properties & UI_PROP_HOVERABLE) == 0 || widget.handle == widget_handle) continue;
+            float other_x = widget.x + widget.style.margin.x + (widget.render_width / 2.f);
+            float other_y = widget.y - widget.style.margin.y - (widget.render_height / 2.f);
+            glm::vec2 other_widget_pos(other_x, other_y);
+
+            if (!within_screen(other_widget_pos)) continue;
+
+            glm::vec2 diff = other_widget_pos - cur_widget_pos;
+            glm::vec2 diff_normalized = glm::normalize(diff);
+            float dotted = glm::dot(dir, diff_normalized);
+            if (dotted <= 0) continue;
+
+            // weighting
+            float pre_quantized_angle = glm::degrees(acos(dotted));
+            float angle = quantize_angle(pre_quantized_angle, 8);
+            float distance = glm::distance(diff, glm::vec2(0));
+
+            float weight = distance * dotted;
+            // float weight = (distance * distance) + (angle * angle);
+
+            bool update_running = (angle == 0 && running_info.angle != 0) || 
+                (running_info.angle == angle && distance < running_info.distance) || (running_info.angle != 0 && angle != 0 && weight < running_info.weight);
+
+            // if (angle < running_info.angle || (angle == running_info.angle && diff_len < running_info.distance)) {
+            if (update_running) {
+                running_info.angle = angle;
+                running_info.distance = distance;
+                running_info.weight = weight;
+                running_info.widget_handle = widget.handle;
+                running_info.widget_key = widget.key;
             }
+
+        }
+
+        if (running_info.widget_handle != -1) {
+            set_widget_as_hover(running_info.widget_handle, running_info.widget_key);
+            set_widget_mouse_leave(widget_handle, std::string(cur_hover_widget->key));
+        }
+        else {
+            printf("none found\n");
         }
     }
 }
 
 void end_imgui() {
+    if (!is_controller_connected() || !ui_state.ctrl_controlled) return;
+
+    // ui will update causing unnecessary unfocusing or ui elements
+    if (ui_will_update /*|| globals.window.user_input.controller_state_changed */) {
+        ui_element_status_t original_curframe = curframe_ui_info->ui_element_status;
+        clear_element_status(curframe_ui_info->ui_element_status);
+        for (int i = 0; i < curframe_ui_info->widgets_arr.size(); i++) {
+            widget_t& widget = curframe_ui_info->widgets_arr[i];
+            if (strcmp(widget.key, "") == 0) continue;
+            if (strcmp(widget.key, original_curframe.hovered_over.widget_key.c_str()) == 0) {
+                curframe_ui_info->ui_element_status.hovered_over.widget_handle = widget.handle;
+                curframe_ui_info->ui_element_status.hovered_over.widget_key = widget.key;
+            }
+            if (strcmp(widget.key, original_curframe.clicked_on.widget_key.c_str()) == 0) {
+                curframe_ui_info->ui_element_status.clicked_on.widget_handle = widget.handle;
+                curframe_ui_info->ui_element_status.clicked_on.widget_key = widget.key;
+            }
+            if (strcmp(widget.key, original_curframe.mouse_enter.widget_key.c_str()) == 0) {
+                curframe_ui_info->ui_element_status.mouse_enter.widget_handle = widget.handle;
+                curframe_ui_info->ui_element_status.mouse_enter.widget_key = widget.key;
+            }
+            if (strcmp(widget.key, original_curframe.mouse_left.widget_key.c_str()) == 0) {
+                curframe_ui_info->ui_element_status.mouse_left.widget_handle = widget.handle;
+                curframe_ui_info->ui_element_status.mouse_left.widget_key = widget.key;
+            }
+        }
+    }
+
     static bool controller_centered_x = true;
     static bool controller_centered_y = true;
 
@@ -456,70 +505,28 @@ void end_imgui() {
     bool up_move = false;
     bool down_move = false;
 
+    glm::vec2 dir_vec(0);
     if (controller_centered_x && input_state.controller_x_axis >= 0.9f) {
         right_move = true;
         controller_centered_x = false;
-    } else if (get_down(KEY_D)) {
-        right_move = true;
-    }
-
-    if (controller_centered_x && input_state.controller_x_axis <= -0.9f) {
+        dir_vec = glm::vec2(1,0);
+    } else if (controller_centered_x && input_state.controller_x_axis <= -0.9f) {
         left_move = true;
         controller_centered_x = false;
-    } else if (get_down(KEY_A)) {
-        left_move = true;
-    }
-
-    if (controller_centered_y && input_state.controller_y_axis <= -0.9f) {
+        dir_vec = glm::vec2(-1,0);
+    } else if (controller_centered_y && input_state.controller_y_axis <= -0.9f) {
         down_move = true;
         controller_centered_y = false;
-    } else if (get_down(KEY_S)) {
-        down_move = true;
-    }
-
-    if (controller_centered_y && input_state.controller_y_axis >= 0.9f) {
+        dir_vec = glm::vec2(0,-1);
+    } else if (controller_centered_y && input_state.controller_y_axis >= 0.9f) {
         up_move = true;
         controller_centered_y = false;
-    } else if (get_down(KEY_W)) {
-        up_move = true;
+        dir_vec = glm::vec2(0,1);
     } 
 
-    if (ui_will_update) {
-        stack_nav_cur = false;   
+    if (dir_vec != glm::vec2(0)) {
+        traverse_ui(curframe_ui_info->ui_element_status.hovered_over.widget_handle, dir_vec);
     }
-
-    if (!stack_nav_cur) {
-        if (right_move || down_move) {
-            traverse_to_right_focusable();
-        }
-
-        if (left_move || up_move) {
-            traverse_to_left_focusable();
-        }
-    }
-
-    if (stack_nav_cur) {
-        update_custom_stack_nav(right_move, left_move, up_move, down_move);
-
-        if (!stack_nav_cur) {
-            if (right_move || down_move) {
-                traverse_to_right_focusable();
-            }
-        
-            if (left_move || up_move) {
-                traverse_to_left_focusable();
-            }
-
-            if (stack_nav_cur) {
-                update_custom_stack_nav(right_move, left_move, up_move, down_move);
-            } else {
-                cur_final_focused_handle = cur_focused_internal_handle;
-            }
-        }
-
-    } else { 
-        cur_final_focused_handle = cur_focused_internal_handle;
-    }  
 
     anims_to_add_this_frame.clear();
     anims_to_start_this_frame.clear();
@@ -790,7 +797,7 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
             int font_size = 0;
             sscanf(content, "%i", &ui_attrs.font_size);
         } else if (strcmp(name, "clickable") == 0) {
-            ui_attrs.ui_properties = ui_attrs.ui_properties | UI_PROP_CLICKABLE;
+            ui_attrs.ui_properties = ui_attrs.ui_properties | UI_PROP_CLICKABLE | UI_PROP_HOVERABLE;
         } else if (strcmp(name, "z") == 0) {
             ui_attrs.z = atoi(content);
         }
@@ -898,14 +905,14 @@ void draw_from_ui_file_layouts() {
 
 void render_ui() {  
 
-    end_imgui();
 	autolayout_hierarchy();
+    end_imgui();
 
-    if (ui_will_update) {
-        cur_focused_internal_handle = -1;
-        cur_final_focused_handle = -1;
-        stack_nav_cur = false;
-    }
+    // if (ui_will_update) {
+    //     cur_focused_internal_handle = -1;
+    //     cur_final_focused_handle = -1;
+    //     stack_nav_cur = false;
+    // }
 
     auto& cur_arr = curframe_ui_info->widgets_arr;
     for (widget_t& widget : cur_arr) {
@@ -1311,4 +1318,20 @@ void clear_element_status(ui_element_status_t& status) {
     status.mouse_left.widget_key = "";
     status.mouse_left.z_pos = INT_MIN;
     status.mouse_left.widget_handle = -1;
+}
+
+// OR_ENUM_DEFINITION(UI_CONTROL_MODE)
+// AND_ENUM_DEFINITION(UI_CONTROL_MODE);
+// AND_W_INT_ENUM_DEFINITION(UI_CONTROL_MODE);
+
+void ui_disable_controller_support() {
+    ui_state.ctrl_controlled = false;
+    // if ((ui_state.control_mode & UI_CONTROL_CNTLR) != 0) {
+    //     ui_state.control_mode = ui_state.control_mode & (~UI_CONTROL_CNTLR);
+    // }
+}
+
+void ui_enable_controller_support() {
+    ui_state.ctrl_controlled = true;
+    // ui_state.control_mode = ui_state.control_mode | UI_CONTROL_CNTLR;
 }

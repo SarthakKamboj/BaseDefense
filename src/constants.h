@@ -48,9 +48,29 @@
 #define game_info_log(msg) printf(msg)
 #define game_error_log(msg) printf("ERROR: %s", msg)
 
-#define OR_ENUM_DECLARATION(ENUM_TYPE) \
+#define OR_ENUM_DECLARATION(ENUM_TYPE) inline ENUM_TYPE operator|(ENUM_TYPE a, ENUM_TYPE b)
+#define AND_ENUM_DECLARATION(ENUM_TYPE) inline ENUM_TYPE operator&(ENUM_TYPE a, ENUM_TYPE b)
+#define AND_W_INT_ENUM_DECLARATION(ENUM_TYPE) inline ENUM_TYPE operator&(ENUM_TYPE a, int b)
+#define XOR_ENUM_DECLARATION(ENUM_TYPE) inline ENUM_TYPE operator^(ENUM_TYPE a, ENUM_TYPE b)
+
+#define OR_ENUM_DEFINITION(ENUM_TYPE) \
     inline ENUM_TYPE operator|(ENUM_TYPE a, ENUM_TYPE b) { \
         return static_cast<ENUM_TYPE>(static_cast<int>(a) | static_cast<int>(b)); \
+    }
+
+#define XOR_ENUM_DEFINITION(ENUM_TYPE) \
+    inline ENUM_TYPE operator^(ENUM_TYPE a, ENUM_TYPE b) { \
+        return static_cast<ENUM_TYPE>(static_cast<int>(a) ^ static_cast<int>(b)); \
+    }
+
+#define AND_ENUM_DEFINITION(ENUM_TYPE) \
+    inline ENUM_TYPE operator^(ENUM_TYPE a, ENUM_TYPE b) { \
+        return static_cast<ENUM_TYPE>(static_cast<int>(a) & static_cast<int>(b)); \
+    }
+
+#define AND_W_INT_ENUM_DEFINITION(ENUM_TYPE) \
+    inline ENUM_TYPE operator^(ENUM_TYPE a, int b) { \
+        return static_cast<ENUM_TYPE>(static_cast<int>(a) & b); \
     }
 
 #define _TESTING 0

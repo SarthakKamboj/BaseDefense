@@ -70,6 +70,8 @@ void scene_manager_update(scene_manager_t& sm) {
         clear_active_ui_anim_files();
         paused = false;
 
+        ui_enable_controller_support();
+
         if (sm.cur_level == TEST_UI_LEVEL) {
             add_active_ui_file("pause_menu.xml");
         } else if (sm.cur_level == MAIN_MENU_LEVEL) {
@@ -118,6 +120,8 @@ void scene_manager_update(scene_manager_t& sm) {
             score.enemies_left_to_kill = scene_manager_t::levels[sm.cur_level-1].num_enemies_to_kill;
             inventory = inventory_t();
             store = store_t();
+
+            ui_disable_controller_support();
         }
     } 
 }

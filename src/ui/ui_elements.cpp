@@ -12,7 +12,7 @@ extern ui_info_t* curframe_ui_info;
 
 extern int latest_z_pos;
 
-extern bool stacked_nav_widget_in_stack;
+// extern bool stacked_nav_widget_in_stack;
 
 void create_text(const char* text, int font_size, bool focusable) {
     const char* key = text;
@@ -75,11 +75,11 @@ bool create_button(const char* text, int font_size, int user_handle) {
     widget.properties = widget.properties | UI_PROP_CLICKABLE | UI_PROP_HOVERABLE;
     // auto& stack = *curframe_widget_stack;
     auto& stack = curframe_ui_info->widget_stack;
-    if (stacked_nav_widget_in_stack) {
-        widget.user_handle = user_handle;
-    } else {
-        widget.properties = widget.properties | UI_PROP_FOCUSABLE;
-    }
+    // if (stacked_nav_widget_in_stack) {
+    //     widget.user_handle = user_handle;
+    // } else {
+    widget.properties = widget.properties | UI_PROP_FOCUSABLE;
+    // }
 
     widget_registration_info_t widget_info = register_widget(widget, key);
 
@@ -116,9 +116,9 @@ void pop_widget() {
     auto& arr = curframe_ui_info->widgets_arr;
     auto& stack = curframe_ui_info->widget_stack;
     if (stack.size() > 0) {
-        if (arr[stack[stack.size()-1]].stacked_navigation) {
-            stacked_nav_widget_in_stack = false;
-        }
+        // if (arr[stack[stack.size()-1]].stacked_navigation) {
+        //     stacked_nav_widget_in_stack = false;
+        // }
         stack.pop_back();
     }
 }
@@ -275,4 +275,12 @@ bool create_selector(int selected_option, const char** options, int num_options,
     
     end_container();
     return changed;
+}
+
+widget_t* get_widget(int widget_handle) {
+    auto& arr = curframe_ui_info->widgets_arr;
+    for (int i = 0; i < arr.size(); i++) {
+        if (arr[i].handle == widget_handle) return &arr[i];
+    }
+    return NULL;
 }
