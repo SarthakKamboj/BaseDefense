@@ -43,6 +43,10 @@ glm::vec2 world_vec_to_screen_vec(glm::vec2 world_vec) {
 	return (world_vec / globals.camera.cam_view_dimensions) * glm::vec2(globals.window.window_width, globals.window.window_height);
 }
 
+glm::vec2 normalized_screen_coord(glm::vec2 screen_coord) {
+	return screen_coord / glm::vec2(globals.window.window_width, globals.window.window_height);
+}
+
 bool within_screen(glm::vec2 screen_coords) {
 	return screen_coords.x >= 0 && screen_coords.x <= globals.window.window_width && screen_coords.y >= 0 && screen_coords.y <= globals.window.window_height;
 }

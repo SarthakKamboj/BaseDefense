@@ -196,6 +196,7 @@ void process_input() {
                         window.window_height = event.window.data2;
                         window.resized = true;
                         glViewport(0, 0, window.window_width, window.window_height);
+                        printf("new window size: (%f, %f)", window.window_width, window.window_height);
                         break;
                     }
                     default: break;

@@ -23,6 +23,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H  
 
+#define TRAVERSE_UI_EXTRA_DEBUG 0
+
 namespace fs = std::filesystem;
 
 static bool panel_left_used = false;
@@ -40,34 +42,16 @@ static std::vector<int> active_ui_anim_file_handles;
 
 static std::vector<ui_anim_player_t> ui_anim_players;
 
-// static int cur_focused_internal_handle = -1;
-// static int cur_final_focused_handle = -1;
-// static bool stack_nav_cur = false;
-
 static int cur_widget_count = 0;
 
-// static std::vector<int> widget_stack1;
-// static std::vector<widget_t> widgets_arr1;
-// static ui_element_status_t ui_element_status1;
 static ui_info_t ui_info_buffer1;
 static ui_info_t ui_info_buffer2;
 
-// static std::vector<int> widget_stack2;
-// static std::vector<widget_t> widgets_arr2;
-// static ui_element_status_t ui_element_status2;
-
-// std::vector<int>* curframe_widget_stack = &widget_stack2;
-// std::vector<widget_t>* curframe_widget_arr = &widgets_arr2;
-// ui_element_status_t* curframe_ui_element_status;
 ui_info_t* curframe_ui_info = &ui_info_buffer2;
 ui_info_t* prevframe_ui_info = &ui_info_buffer1;
 bool stacked_nav_widget_in_stack = false;
 
 static ui_state_t ui_state;
-
-// std::vector<int>* prevframe_widget_stack = &widget_stack1;
-// std::vector<widget_t>* prevframe_widget_arr = &widgets_arr1;
-// ui_element_status_t* prevframe_ui_element_status;
 
 std::vector<style_t> styles_stack;
 
@@ -193,7 +177,6 @@ void set_widget_as_hover(int widget_handle, std::string& key) {
     if (strcmp(prev_elem_status.hovered_over.widget_key.c_str(), key.c_str()) != 0) {
         cur_elem_status.mouse_enter.widget_key = key;
         cur_elem_status.mouse_enter.widget_handle = widget_handle;
-        printf("mouse enter: %s\n", key.c_str());
     }
 }
 
@@ -201,7 +184,6 @@ void set_widget_mouse_leave(int widget_handle, std::string& key) {
     ui_element_status_t& cur_elem_status = curframe_ui_info->ui_element_status;
     cur_elem_status.mouse_left.widget_key = key;
     cur_elem_status.mouse_left.widget_handle = widget_handle;
-    printf("mouse leave: %s\n", key.c_str());
 }
 
 widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack) {
@@ -377,7 +359,8 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 }
 
 float quantize_angle(float angle, int num_quanta) {
-    float angle_per_quanta = 360.f / num_quanta;
+    // float angle_per_quanta = 360.f / num_quanta;
+    float angle_per_quanta = 2 * 3.141526f / num_quanta;
     angle += (angle_per_quanta / 2.f);
     int section = fmin(num_quanta - 1, floor(angle / angle_per_quanta));
     return section * angle_per_quanta;
@@ -386,6 +369,10 @@ float quantize_angle(float angle, int num_quanta) {
 static void traverse_ui(int widget_handle, glm::vec2 dir) {
     auto& arr = curframe_ui_info->widgets_arr;
     widget_t* cur_hover_widget = get_widget(widget_handle);
+#if TRAVERSE_UI_EXTRA_DEBUG == 1
+    static int test_index;
+    test_index = 0;
+#endif
     if (!cur_hover_widget) {
         for (int i = 0; i < arr.size(); i++) {
             widget_t& widget = arr[i];
@@ -409,50 +396,59 @@ static void traverse_ui(int widget_handle, glm::vec2 dir) {
             std::string widget_key;
         };
 
-        // int new_widget_handle = -1;
-        // std::string new_widget_key;
-        // float running_weight = FLT_MAX;
         running_info_t running_info;
 
         float cur_x = cur_hover_widget->x + cur_hover_widget->style.margin.x + (cur_hover_widget->render_width / 2.f);
         float cur_y = cur_hover_widget->y - cur_hover_widget->style.margin.y - (cur_hover_widget->render_height / 2.f);
         glm::vec2 cur_widget_pos(cur_x, cur_y);
 
+#if TRAVERSE_UI_EXTRA_DEBUG == 1
+        printf("\nverts = [\n");
+#endif
         for (int i = 0; i < arr.size(); i++) {
             widget_t& widget = arr[i];
-            if ((widget.properties & UI_PROP_HOVERABLE) == 0 || widget.handle == widget_handle) continue;
             float other_x = widget.x + widget.style.margin.x + (widget.render_width / 2.f);
             float other_y = widget.y - widget.style.margin.y - (widget.render_height / 2.f);
             glm::vec2 other_widget_pos(other_x, other_y);
-
+            if ((widget.properties & UI_PROP_HOVERABLE) == 0) continue; 
             if (!within_screen(other_widget_pos)) continue;
+
+#if TRAVERSE_UI_EXTRA_DEBUG == 1
+            printf("\t(%f, %f)%s # %i %s\n", other_widget_pos.x, other_widget_pos.y, i == arr.size() - 1 ? "" : ",", test_index++, widget.key);
+#endif
+            if (widget.handle == widget_handle) continue;
 
             glm::vec2 diff = other_widget_pos - cur_widget_pos;
             glm::vec2 diff_normalized = glm::normalize(diff);
             float dotted = glm::dot(dir, diff_normalized);
             if (dotted <= 0) continue;
 
-            // weighting
-            float pre_quantized_angle = glm::degrees(acos(dotted));
-            float angle = quantize_angle(pre_quantized_angle, 8);
-            float distance = glm::distance(diff, glm::vec2(0));
+            glm::vec2 diff_screen_norm = normalized_screen_coord(diff);
+            float screen_norm_distance = glm::distance(diff_screen_norm, glm::vec2(0)) * 10.f;
+            
+            float parallel_to_diff_screen = glm::dot(dir, diff_screen_norm);
+            float perpen_to_diff_screen_squared = (screen_norm_distance * screen_norm_distance) - (parallel_to_diff_screen * parallel_to_diff_screen);
 
-            float weight = distance * dotted;
-            // float weight = (distance * distance) + (angle * angle);
+            // will be between 0 and pi/2
+            float pre_quantized_angle = acos(dotted);
+            float angle = quantize_angle(pre_quantized_angle, 16);
+
+            float weight = glm::pow(parallel_to_diff_screen * 10, 2) + glm::pow(perpen_to_diff_screen_squared * 100, 2);
 
             bool update_running = (angle == 0 && running_info.angle != 0) || 
-                (running_info.angle == angle && distance < running_info.distance) || (running_info.angle != 0 && angle != 0 && weight < running_info.weight);
+                (running_info.angle == angle && screen_norm_distance < running_info.distance) || (running_info.angle != 0 && angle != 0 && weight < running_info.weight);
 
-            // if (angle < running_info.angle || (angle == running_info.angle && diff_len < running_info.distance)) {
             if (update_running) {
                 running_info.angle = angle;
-                running_info.distance = distance;
+                running_info.distance = screen_norm_distance;
                 running_info.weight = weight;
                 running_info.widget_handle = widget.handle;
                 running_info.widget_key = widget.key;
             }
-
         }
+#if TRAVERSE_UI_EXTRA_DEBUG == 1
+        printf("]\n");
+#endif
 
         if (running_info.widget_handle != -1) {
             set_widget_as_hover(running_info.widget_handle, running_info.widget_key);
