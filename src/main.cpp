@@ -8,9 +8,9 @@
 #include "utils/io.h"
 #include "gfx/quad.h"
 #include "globals.h"
-
 #include "ui/ui.h"
 #include "utils/json.h"
+#include "ui/ui_elements.h"
 
 #define WANT_EXTRA_INFO 1
 
@@ -20,6 +20,20 @@ bool level_finished = false;
 
 int main(int argc, char *argv[])
 {	 
+
+	widget_t widget1;
+	widget1.x = 0;
+	widget1.y = 1600;
+	widget1.render_height = 800;
+	widget1.render_width = 800;
+
+	widget_t widget2;
+	widget2.x = 400;
+	widget2.y = 400;
+	widget2.render_height = 100;
+	widget2.render_width = 100;
+	bool behind = partially_behind_widget(widget2, widget1);
+	game_assert_msg(behind == false, "should be behind");
 
 	bool running_in_vs = false;
 	if (argc > 1) {

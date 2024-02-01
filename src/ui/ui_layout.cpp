@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "ui/ui.h"
 #include "ui_elements.h"
+#include "globals.h"
 
 #include <unordered_map>
 
@@ -15,6 +16,8 @@ static int constraint_running_cnt = 0;
 // extern std::vector<int>* curframe_widget_stack;
 extern ui_info_t* curframe_ui_info;
 extern std::vector<style_t> styles_stack;
+extern globals_t globals;
+extern int max_z_pos_visible;
 
 int create_constraint_var(const char* var_name, float* val) {
     constraint_var_t constraint_value;
@@ -105,6 +108,9 @@ void autolayout_hierarchy() {
         if (cur_widget.parent_widget_handle != -1 || cur_widget.absolute) continue;
         cur_widget.x = 0 + cur_widget.style.translate.x;
         cur_widget.y = cur_widget.render_height + cur_widget.style.translate.y;
+        if (cur_widget.x == 0 && cur_widget.y == globals.window.window_height) {
+            max_z_pos_visible = MAX(cur_widget.z_pos, max_z_pos_visible);
+        }
         int x_var = create_constraint_var_constant(cur_widget.x);
         int y_var = create_constraint_var_constant(cur_widget.y);
         resolve_positions(cur_widget.handle, x_var, y_var);

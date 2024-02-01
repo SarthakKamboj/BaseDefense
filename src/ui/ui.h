@@ -282,3 +282,5 @@ struct ui_state_t {
 };
 void ui_disable_controller_support();
 void ui_enable_controller_support();
+
+bool partially_behind_widget(widget_t& widget, widget_t& check_against_widget);

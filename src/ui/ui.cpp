@@ -32,6 +32,7 @@ static bool panel_left_used = false;
 extern globals_t globals;
 
 int latest_z_pos;
+int max_z_pos_visible;
 
 static std::vector<ui_file_layout_t> ui_files;
 static std::vector<int> active_ui_file_handles;
@@ -56,6 +57,7 @@ static ui_state_t ui_state;
 std::vector<style_t> styles_stack;
 
 static bool ui_will_update = false;
+static bool ui_positions_changed = false;
 
 static std::unordered_map<int, hash_t> handle_hashes;
 
@@ -89,6 +91,7 @@ void update_ui_files() {
 void ui_start_of_frame() {
     panel_left_used = false;
     latest_z_pos = INT_MIN;
+    max_z_pos_visible = INT_MIN;
 #if UI_RELOADING
     update_ui_files();
 #endif
@@ -102,6 +105,7 @@ void ui_start_of_frame() {
     glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
     shader_set_mat4(font_char_t::ui_opengl_data.shader, "projection", projection);
     ui_will_update = globals.window.resized;
+    ui_positions_changed = false;
 
     for (int i = 0; i < font_modes.size(); i++) {
         font_modes[i].used_last_frame = false;
@@ -174,6 +178,8 @@ void set_widget_as_hover(int widget_handle, std::string& key) {
     cur_elem_status.hovered_over.z_pos = latest_z_pos;
     cur_elem_status.hovered_over.widget_handle = widget_handle;
 
+    printf("widget %s is hovered now", key.c_str());
+
     if (strcmp(prev_elem_status.hovered_over.widget_key.c_str(), key.c_str()) != 0) {
         cur_elem_status.mouse_enter.widget_key = key;
         cur_elem_status.mouse_enter.widget_handle = widget_handle;
@@ -191,6 +197,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     widget_registration_info_t info;
 
     widget.handle = cur_widget_count++;
+    widget.z_pos = latest_z_pos;
     memcpy(widget.key, key, strlen(key));
     hash_t new_hash = hash(key);
 
@@ -366,6 +373,72 @@ float quantize_angle(float angle, int num_quanta) {
     return section * angle_per_quanta;
 }
 
+bool partially_behind_widget(widget_t& widget, widget_t& check_against_widget) {
+
+    glm::mat4 re_centering_matrix(1.0f);
+    re_centering_matrix = glm::translate(re_centering_matrix, glm::vec3(-check_against_widget.x, -(check_against_widget.y - check_against_widget.render_height), 0));
+
+    glm::mat4 four_corners(1.0f);
+    four_corners[0] = glm::vec4(widget.x, widget.y, 0, 1);
+    four_corners[1] = glm::vec4(widget.x, widget.y - widget.render_height, 0, 1);
+    four_corners[2] = glm::vec4(widget.x + widget.render_width, widget.y, 0, 1);
+    four_corners[3] = glm::vec4(widget.x + widget.render_width, widget.y - widget.render_height, 0, 1);
+
+	glm::mat4 normalize = glm::ortho(0.0f, check_against_widget.render_width, 0.0f, check_against_widget.render_height);
+
+    // glm::mat4 centered_corners = re_centering_matrix * four_corners;
+    glm::mat4 centered_corners = re_centering_matrix * four_corners;
+    glm::mat4 normalized_corners = normalize * centered_corners;
+
+    for (int i = 0; i < 4; i++) {
+        glm::vec4 corner = normalized_corners[i];
+        if (corner.x >= -1 && corner.x <= 1 && corner.y >= -1 && corner.y <= 1) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool widget_has_background(widget_t& widget) {
+    return (widget.style.background_color != TRANSPARENT_COLOR && widget.style.bck_mode == BCK_SOLID) ||
+        (widget.style.bck_mode == BCK_GRADIENT_4_CORNERS && widget.style.top_left_bck_color != TRANSPARENT_COLOR) ||
+        (widget.style.bck_mode == BCK_GRADIENT_TOP_LEFT_TO_BOTTOM_RIGHT && widget.style.top_left_bck_color != TRANSPARENT_COLOR);
+}
+
+static bool hover_widget_partially_covered_helper(widget_t& hover_widget, widget_t& possible_cover_widget) {
+    if (possible_cover_widget.text_based || possible_cover_widget.image_based || widget_has_background(possible_cover_widget)) {
+        bool fully_behind = partially_behind_widget(hover_widget, possible_cover_widget);
+        if (fully_behind) {
+            return true;
+        }
+    }
+
+    for (int i = 0; i < possible_cover_widget.children_widget_handles.size(); i++) {
+        int child_handle = possible_cover_widget.children_widget_handles[i];
+        widget_t* child_widget = get_widget(child_handle);
+        game_assert_msg(child_widget, "child widget cannot be found");
+        if (hover_widget_partially_covered_helper(hover_widget, *child_widget)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool hover_widget_partially_covered(widget_t& hover_widget) {
+    for (int j = 0; j < curframe_ui_info->widgets_arr.size(); j++) {
+        widget_t& widget = curframe_ui_info->widgets_arr[j];
+        if (widget.parent_widget_handle == -1 && widget.z_pos > hover_widget.z_pos) {
+            if (hover_widget_partially_covered_helper(hover_widget, widget)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 static void traverse_ui(int widget_handle, glm::vec2 dir) {
     auto& arr = curframe_ui_info->widgets_arr;
     widget_t* cur_hover_widget = get_widget(widget_handle);
@@ -382,6 +455,7 @@ static void traverse_ui(int widget_handle, glm::vec2 dir) {
             float other_y = widget.y - widget.style.margin.y - (widget.render_height / 2.f);
             glm::vec2 other_widget_pos(other_x, other_y);
             if (!within_screen(other_widget_pos)) continue;
+            if (hover_widget_partially_covered(widget)) continue;
 
             set_widget_as_hover(widget.handle, std::string(widget.key));
             return;
@@ -417,6 +491,7 @@ static void traverse_ui(int widget_handle, glm::vec2 dir) {
             printf("\t(%f, %f)%s # %i %s\n", other_widget_pos.x, other_widget_pos.y, i == arr.size() - 1 ? "" : ",", test_index++, widget.key);
 #endif
             if (widget.handle == widget_handle) continue;
+            if (hover_widget_partially_covered(widget)) continue;
 
             glm::vec2 diff = other_widget_pos - cur_widget_pos;
             glm::vec2 diff_normalized = glm::normalize(diff);
@@ -433,6 +508,7 @@ static void traverse_ui(int widget_handle, glm::vec2 dir) {
             float pre_quantized_angle = acos(dotted);
             float angle = quantize_angle(pre_quantized_angle, 16);
 
+            // weight is distance is screen normalized vec was stretched on the non-dir axis
             float weight = glm::pow(parallel_to_diff_screen * 10, 2) + glm::pow(perpen_to_diff_screen_squared * 100, 2);
 
             bool update_running = (angle == 0 && running_info.angle != 0) || 
@@ -463,16 +539,19 @@ static void traverse_ui(int widget_handle, glm::vec2 dir) {
 void end_imgui() {
     if (!is_controller_connected() || !ui_state.ctrl_controlled) return;
 
-    // ui will update causing unnecessary unfocusing or ui elements
-    if (ui_will_update /*|| globals.window.user_input.controller_state_changed */) {
+    if (ui_will_update || ui_positions_changed) {
         ui_element_status_t original_curframe = curframe_ui_info->ui_element_status;
         clear_element_status(curframe_ui_info->ui_element_status);
         for (int i = 0; i < curframe_ui_info->widgets_arr.size(); i++) {
             widget_t& widget = curframe_ui_info->widgets_arr[i];
             if (strcmp(widget.key, "") == 0) continue;
             if (strcmp(widget.key, original_curframe.hovered_over.widget_key.c_str()) == 0) {
-                curframe_ui_info->ui_element_status.hovered_over.widget_handle = widget.handle;
-                curframe_ui_info->ui_element_status.hovered_over.widget_key = widget.key;
+                widget_t* hover_widget = get_widget(original_curframe.hovered_over.widget_handle);
+                game_assert_msg(hover_widget, "hover widget not found");
+                if (within_screen(glm::vec2(hover_widget->x, hover_widget->y)) && !hover_widget_partially_covered(*hover_widget)) {
+                    curframe_ui_info->ui_element_status.hovered_over.widget_handle = widget.handle;
+                    curframe_ui_info->ui_element_status.hovered_over.widget_key = widget.key;
+                }
             }
             if (strcmp(widget.key, original_curframe.clicked_on.widget_key.c_str()) == 0) {
                 curframe_ui_info->ui_element_status.clicked_on.widget_handle = widget.handle;
@@ -487,6 +566,8 @@ void end_imgui() {
                 curframe_ui_info->ui_element_status.mouse_left.widget_key = widget.key;
             }
         }
+    } else if (globals.window.user_input.controller_state_changed) {
+        clear_element_status(curframe_ui_info->ui_element_status);
     }
 
     static bool controller_centered_x = true;
@@ -567,6 +648,9 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
     }
     if (anim->style_params_overriden.translate) {
         new_style.translate = (anim_weight * anim->style.translate) + (1 - anim_weight) * original_style.translate;
+        if (anim_weight > 0 && anim_weight < 1) {
+            ui_positions_changed = true;
+        }
     }
 
     return new_style;

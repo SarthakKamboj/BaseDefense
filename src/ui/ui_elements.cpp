@@ -11,6 +11,7 @@ extern ui_info_t* curframe_ui_info;
 // extern std::vector<widget_t>* curframe_widget_arr;
 
 extern int latest_z_pos;
+extern int max_z_pos_visible;
 
 // extern bool stacked_nav_widget_in_stack;
 
