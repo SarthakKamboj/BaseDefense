@@ -50,6 +50,7 @@ struct widget_t {
 
     char key[256]{};
     hash_t hash;
+    int index_to_prev_for_same_widget = -1;
 
     UI_PROPERTIES properties = UI_PROPERTIES::UI_PROP_NONE;
     style_t style;

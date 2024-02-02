@@ -15,9 +15,11 @@ static int constraint_running_cnt = 0;
 // extern std::vector<widget_t>* curframe_widget_arr;
 // extern std::vector<int>* curframe_widget_stack;
 extern ui_info_t* curframe_ui_info;
+extern ui_info_t* prevframe_ui_info;
 extern std::vector<style_t> styles_stack;
 extern globals_t globals;
 extern int max_z_pos_visible;
+extern bool ui_positions_changed;
 
 int create_constraint_var(const char* var_name, float* val) {
     constraint_var_t constraint_value;
@@ -117,6 +119,17 @@ void autolayout_hierarchy() {
     }
 
     resolve_constraints();
+
+    for (int i = 0; i < cur_arr.size(); i++) {
+        widget_t& cur_widget = cur_arr[i];
+        if (cur_widget.index_to_prev_for_same_widget != -1) {
+            widget_t& prev_widget = prevframe_ui_info->widgets_arr[cur_widget.index_to_prev_for_same_widget];
+            if (cur_widget.x != prev_widget.x || cur_widget.y != prev_widget.y) {
+                ui_positions_changed = true;
+                break;
+            }
+        }
+    }
 }
 
 helper_info_t resolve_positions(int widget_handle, int x_pos_handle, int y_pos_handle) {

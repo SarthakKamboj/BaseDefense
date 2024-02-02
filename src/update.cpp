@@ -13,6 +13,7 @@
 #include "gameplay/preview_manager.h"
 
 extern globals_t globals;
+extern store_t store;
 
 bool paused = false;
 void update() {
@@ -96,7 +97,9 @@ void update() {
                 ui_enable_controller_support();
             } else {
                 play_ui_anim_player("pause_panel", "pause_menu_close");
-                ui_disable_controller_support();
+                if (!store.open) {
+                    ui_disable_controller_support();
+                }
             }
         }
     }
