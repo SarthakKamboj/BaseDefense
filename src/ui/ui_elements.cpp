@@ -198,7 +198,7 @@ void create_absolute_container(float x, float y, float width, float height, WIDG
 
 void create_container(float width, float height, WIDGET_SIZE widget_size_width, WIDGET_SIZE widget_size_height, const char* container_name, bool focusable, stacked_nav_handler_func_t func, UI_PROPERTIES ui_properties) {
     widget_t container = create_widget();
-    memcpy(container.key, container_name, strlen(container_name));
+    memcpy(container.key, container_name, strlen(container_name)); 
     container.style.height = height;
     container.style.width = width;
     container.style.widget_size_width = widget_size_width;
@@ -284,4 +284,17 @@ widget_t* get_widget(int widget_handle) {
         if (arr[i].handle == widget_handle) return &arr[i];
     }
     return NULL;
+}
+
+void print_ui_properties(UI_PROPERTIES props) {
+    if (props & UI_PROP_CLICKABLE) {
+        printf("UI_PROP_CLICKABLE ");
+    }
+    if (props & UI_PROP_HOVERABLE) {
+        printf("UI_PROP_HOVERABLE ");
+    }
+    if (props & UI_PROP_FOCUSABLE) {
+        printf("UI_PROP_FOCUSABLE ");
+    }
+    printf("\n");
 }

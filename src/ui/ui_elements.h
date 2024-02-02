@@ -14,6 +14,7 @@ enum UI_PROPERTIES : int {
     UI_PROP_CURRENTLY_FOCUSED = 1<<3
 };
 OR_ENUM_DEFINITION(UI_PROPERTIES)
+void print_ui_properties(UI_PROPERTIES props);
 
 struct text_t {
     char text[256]{};
@@ -52,7 +53,7 @@ struct widget_t {
     hash_t hash;
     int index_to_prev_for_same_widget = -1;
 
-    UI_PROPERTIES properties = UI_PROPERTIES::UI_PROP_NONE;
+    UI_PROPERTIES properties = UI_PROP_NONE;
     style_t style;
 
     int attached_hover_anim_player_handle = -1;

@@ -866,6 +866,7 @@ bool set_parameter_in_style(style_t& style, const char* name, const char* conten
 
 parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
     parsed_ui_attributes_t ui_attrs;
+    ui_attrs.ui_properties = UI_PROP_NONE;
     style_t& style = ui_attrs.style;
     size_t num_attrs = get_zero_terminated_array_attributes(attributes);
     for (size_t i = 0; i < num_attrs; i++) {
@@ -883,7 +884,7 @@ parsed_ui_attributes_t get_style_and_key(xml_attribute** attributes) {
         } else if (strcmp(name, "font_size") == 0) {
             int font_size = 0;
             sscanf(content, "%i", &ui_attrs.font_size);
-        } else if (strcmp(name, "clickable") == 0) {
+        } else if (strcmp(name, "clickable") == 0) { 
             ui_attrs.ui_properties = ui_attrs.ui_properties | UI_PROP_CLICKABLE | UI_PROP_HOVERABLE;
         } else if (strcmp(name, "z") == 0) {
             ui_attrs.z = atoi(content);
@@ -912,7 +913,7 @@ void draw_from_ui_file_layout_helper(xml_node* node) {
             game_error_log("container not given a name through id attribute");
             // make memory location of node the id
             sprintf(attrs.id, "%i\n", node);
-        }
+        } 
         create_container(attrs.style.width, attrs.style.height, attrs.style.widget_size_width, attrs.style.widget_size_height, attrs.id, false, 0, attrs.ui_properties);
     }  else if (strcmp(zero_terminated_element_name, "text") == 0 || strcmp(zero_terminated_element_name, "button") == 0) {
         bool is_text_element = strcmp(zero_terminated_element_name, "text") == 0;
