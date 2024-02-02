@@ -768,8 +768,6 @@ static void delete_enemy_by_index(int idx, const int handle) {
 	}
 }
 
-
-
 void delete_enemy(int enemy_handle) {
 	for (int i = 0; i < enemies.size(); i++) {
 		if (enemies[i].handle == enemy_handle) {
@@ -810,14 +808,12 @@ void update_enemy_bullet(enemy_bullet_t& bullet) {
 	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(bullet.rb_handle, PHYS_ENEMY_BULLET);
 	for (kin_w_kin_col_t& col : cols) {
 		if (col.kin_type1 == PHYS_BASE || col.kin_type2 == PHYS_BASE) {
-			// delete_enemy_bullet(bullet);
 			mark_enemy_bullet_for_deletion(bullet.handle);
 			return;
 		}
 	}
 
-	if (bullet.creation_time + bullet_t::ALIVE_TIME < game::time_t::cur_time) {
-		// delete_enemy_bullet(bullet);
+	if (bullet.creation_time + bullet_t::ALIVE_TIME < game::time_t::game_cur_time) {
 		mark_enemy_bullet_for_deletion(bullet.handle);
 	}
 }
@@ -844,7 +840,7 @@ void delete_enemy_bullet(enemy_bullet_t& bullet) {
 	}
 }
 
-const float enemy_spawner_t::TIME_BETWEEN_SPAWNS = 1.5f;
+const float enemy_spawner_t::TIME_BETWEEN_SPAWNS = 2.5f;
 void create_enemy_spawner(glm::vec3 pos) {
 	static int cnt = 0;
 	enemy_spawner_t enemy_spawner;	
@@ -904,8 +900,6 @@ void gos_update() {
 	for (enemy_bullet_t& enemy_bullet : enemy_bullets) {
 		update_enemy_bullet(enemy_bullet);
 	}
-
-	update_hierarchy_based_on_globals();
 
 	for (gun_t& gun : attached_guns) {
 		update_attached_gun(gun);
