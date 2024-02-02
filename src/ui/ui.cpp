@@ -32,7 +32,6 @@ static bool panel_left_used = false;
 extern globals_t globals;
 
 int latest_z_pos;
-int max_z_pos_visible;
 
 static std::vector<ui_file_layout_t> ui_files;
 static std::vector<int> active_ui_file_handles;
@@ -91,7 +90,6 @@ void update_ui_files() {
 void ui_start_of_frame() {
     panel_left_used = false;
     latest_z_pos = INT_MIN;
-    max_z_pos_visible = INT_MIN;
 #if UI_RELOADING
     update_ui_files();
 #endif

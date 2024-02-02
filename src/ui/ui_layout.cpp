@@ -18,7 +18,6 @@ extern ui_info_t* curframe_ui_info;
 extern ui_info_t* prevframe_ui_info;
 extern std::vector<style_t> styles_stack;
 extern globals_t globals;
-extern int max_z_pos_visible;
 extern bool ui_positions_changed;
 
 int create_constraint_var(const char* var_name, float* val) {
@@ -110,9 +109,6 @@ void autolayout_hierarchy() {
         if (cur_widget.parent_widget_handle != -1 || cur_widget.absolute) continue;
         cur_widget.x = 0 + cur_widget.style.translate.x;
         cur_widget.y = cur_widget.render_height + cur_widget.style.translate.y;
-        if (cur_widget.x == 0 && cur_widget.y == globals.window.window_height) {
-            max_z_pos_visible = MAX(cur_widget.z_pos, max_z_pos_visible);
-        }
         int x_var = create_constraint_var_constant(cur_widget.x);
         int y_var = create_constraint_var_constant(cur_widget.y);
         resolve_positions(cur_widget.handle, x_var, y_var);
