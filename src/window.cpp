@@ -170,6 +170,13 @@ void process_input() {
     if (user_input.game_controller) {
         user_input.controller_x_axis = SDL_GameControllerGetAxis(user_input.game_controller, SDL_CONTROLLER_AXIS_LEFTX) / 32768.f;
         user_input.controller_y_axis = SDL_GameControllerGetAxis(user_input.game_controller, SDL_CONTROLLER_AXIS_LEFTY) / -32768.f;
+
+        if (abs(user_input.controller_x_axis) < 0.1) {
+            user_input.controller_x_axis = 0;
+        }
+        if (abs(user_input.controller_y_axis) < 0.1) {
+            user_input.controller_y_axis = 0;
+        }
     }
 
     SDL_Event event;
@@ -355,7 +362,7 @@ void process_input() {
             case SDL_KEYDOWN: {
                 if (event.key.keysym.sym >= 'a' && event.key.keysym.sym <= 'z') {
                     user_input.down[event.key.keysym.sym - 'a'] = true;
-                    user_input.pressed[event.key.keysym.sym - 'a'] = false;
+                    user_input.pressed[event.key.keysym.sym - 'a'] = true;
                 }
             }
             break;
