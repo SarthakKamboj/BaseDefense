@@ -1,6 +1,10 @@
 #include "time.h"
 #include "SDL.h"
 
+#include "globals.h"
+
+extern globals_t globals;
+
 time_count_t game::time_t::delta_time = 0;
 time_count_t game::time_t::cur_time = 0;
 time_count_t game::time_t::game_cur_time = 0;
@@ -26,7 +30,7 @@ void create_debug_timer(const char* msg, game_timer_t& debug_timer) {
 
 game_timer_t::~game_timer_t() {
     end_timer(*this);
-    if (msg[0] != 0) {
+    if (msg[0] != 0 && get_pressed(PRINT_FRAME_TIME_LOGS_KEY)) {
         printf("elapsed time was %lfs. %s\n", this->elapsed_time_sec, this->msg);
     }
 }

@@ -248,9 +248,11 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
 int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_anim_t& ui_anim, bool play_upon_initialize, time_count_t starting_cursor = 0);
 void move_ui_anim_player_forward(ui_anim_player_t& player);
 void move_ui_anim_player_backward(ui_anim_player_t& player);
-ui_anim_player_t* get_ui_anim_player(int handle);
+ui_anim_player_t* get_ui_anim_player_by_idx(int idx);
+ui_anim_player_t* get_ui_anim_player_by_handle(int handle);
 ui_anim_t* get_ui_anim(int handle);
 void set_translate_in_ui_anim(const char* anim_name, glm::vec2 translate);
+void reset_ui_anim_player_cnt();
 
 void add_ui_anim_to_widget(const char* widget_key, const char* ui_anim_name, time_count_t start_anim_duration_cursor = 0, bool start_playing = false);
 void play_ui_anim_player(const char* widget_key, const char* ui_anim_name);

@@ -65,6 +65,7 @@ void scene_manager_update(scene_manager_t& sm) {
         sm.level_to_load = -1;
     
         unload_level();
+        reset_ui_anim_player_cnt();
     
         clear_active_ui_files();
         clear_active_ui_anim_files();

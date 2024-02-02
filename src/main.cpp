@@ -80,10 +80,9 @@ int main(int argc, char *argv[])
 		end_timer(frame_timer);
 
 		game::time_t::delta_time = fmin(frame_timer.elapsed_time_sec, 1 / 60.f);
-		// game::time_t::delta_time = frame_timer.elapsed_time_sec;
 		game::time_t::cur_time += game::time_t::delta_time;	
 
-		if (get_down(KEY_P)) {
+		if (get_pressed(PRINT_FRAME_TIME_LOGS_KEY)) {
 			std::cout << "delta time " << game::time_t::delta_time << std::endl;
 			std::cout << "cur time " << game::time_t::cur_time << std::endl;
 			std::cout << "fps: " << 1 / game::time_t::delta_time << std::endl;

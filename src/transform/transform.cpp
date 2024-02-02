@@ -307,6 +307,8 @@ void set_global_rot(transform_t* t, glm::vec3& rot) {
     update_local_recursively(t);
 }
 
+// TODO: will need to optimize this, especially since a lot of objs do not need updating and 
+// this becomes a bigger problem as the # of objs increases
 void update_hierarchy_based_on_globals() {
     for (int i = 0; i < transforms.size(); i++) {
         if (transforms[i].parent_transform_handle == -1) {

@@ -57,7 +57,7 @@ static ui_state_t ui_state;
 std::vector<style_t> styles_stack;
 
 static bool ui_will_update = false;
-static bool ui_positions_changed = false;
+bool ui_positions_changed = false;
 
 static std::unordered_map<int, hash_t> handle_hashes;
 
@@ -178,9 +178,10 @@ void set_widget_as_hover(int widget_handle, std::string& key) {
     cur_elem_status.hovered_over.z_pos = latest_z_pos;
     cur_elem_status.hovered_over.widget_handle = widget_handle;
 
-    printf("widget %s is hovered now", key.c_str());
+    printf("widget %s is hovered now\n", key.c_str());
 
     if (strcmp(prev_elem_status.hovered_over.widget_key.c_str(), key.c_str()) != 0) {
+        printf("widget %s is mouse entered\n", key.c_str());
         cur_elem_status.mouse_enter.widget_key = key;
         cur_elem_status.mouse_enter.widget_handle = widget_handle;
     }
@@ -190,6 +191,7 @@ void set_widget_mouse_leave(int widget_handle, std::string& key) {
     ui_element_status_t& cur_elem_status = curframe_ui_info->ui_element_status;
     cur_elem_status.mouse_left.widget_key = key;
     cur_elem_status.mouse_left.widget_handle = widget_handle;
+    printf("widget %s is mouse left\n", key.c_str());
 }
 
 widget_registration_info_t register_widget(widget_t& widget, const char* key, bool push_onto_stack) {
@@ -198,7 +200,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 
     widget.handle = cur_widget_count++;
     widget.z_pos = latest_z_pos;
-    memcpy(widget.key, key, strlen(key));
+    memcpy(widget.key, key, strlen(key)); 
     hash_t new_hash = hash(key);
 
     auto& arr = curframe_ui_info->widgets_arr;
@@ -210,7 +212,11 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
         ui_will_update = true;
     } else {
         hash_t& prev_hash = prev_arr[widget.handle].hash;
-        ui_will_update = ui_will_update || !is_same_hash(new_hash, prev_hash);
+        bool same_element = is_same_hash(new_hash, prev_hash);
+        ui_will_update = ui_will_update || !same_element;
+        if (same_element) {
+            widget.index_to_prev_for_same_widget = widget.handle;
+        }
     }
 
     widget.hash = new_hash;
@@ -270,7 +276,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 
     if (start_anim_user_info) {
         for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
-            ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
+            ui_anim_player_t* attached_player = get_ui_anim_player_by_idx(widget.attached_anim_player_handles[i]);
             game_assert_msg(attached_player, "could not find anim player for the animation trying to be started");
             ui_anim_t* attached_player_anim = get_ui_anim(attached_player->ui_anim_handle);
             game_assert_msg(attached_player_anim, "could not find anim for attached player");
@@ -290,7 +296,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
 
     if (stop_anim_user_info) {
         for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
-            ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
+            ui_anim_player_t* attached_player = get_ui_anim_player_by_idx(widget.attached_anim_player_handles[i]);
             game_assert_msg(attached_player, "could not find anim player for the animation trying to be started");
             ui_anim_t* attached_player_anim = get_ui_anim(attached_player->ui_anim_handle);
             game_assert_msg(attached_player_anim, "could not find anim for attached player");
@@ -301,13 +307,13 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
     }   
 
     style_t original_style = widget.style;
-    ui_anim_player_t* hover_anim_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
+    ui_anim_player_t* hover_anim_player = get_ui_anim_player_by_idx(widget.attached_hover_anim_player_handle);
     if (hover_anim_player && hover_anim_player->duration_cursor > 0) {
         widget.style = get_intermediate_style(original_style, *hover_anim_player);
     }
 
     for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
-        ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
+        ui_anim_player_t* attached_player = get_ui_anim_player_by_idx(widget.attached_anim_player_handles[i]);
         game_assert_msg(attached_player, "could not find animation player");
         if (attached_player->duration_cursor / attached_player->anim_duration > 0) {
             widget.style = get_intermediate_style(original_style, *attached_player);
@@ -537,6 +543,10 @@ static void traverse_ui(int widget_handle, glm::vec2 dir) {
 }
 
 void end_imgui() {
+    if (globals.window.user_input.controller_state_changed) {
+        clear_element_status(curframe_ui_info->ui_element_status);
+    }
+
     if (!is_controller_connected() || !ui_state.ctrl_controlled) return;
 
     if (ui_will_update || ui_positions_changed) {
@@ -546,7 +556,7 @@ void end_imgui() {
             widget_t& widget = curframe_ui_info->widgets_arr[i];
             if (strcmp(widget.key, "") == 0) continue;
             if (strcmp(widget.key, original_curframe.hovered_over.widget_key.c_str()) == 0) {
-                widget_t* hover_widget = get_widget(original_curframe.hovered_over.widget_handle);
+                widget_t* hover_widget = get_widget(widget.handle);
                 game_assert_msg(hover_widget, "hover widget not found");
                 if (within_screen(glm::vec2(hover_widget->x, hover_widget->y)) && !hover_widget_partially_covered(*hover_widget)) {
                     curframe_ui_info->ui_element_status.hovered_over.widget_handle = widget.handle;
@@ -566,8 +576,6 @@ void end_imgui() {
                 curframe_ui_info->ui_element_status.mouse_left.widget_key = widget.key;
             }
         }
-    } else if (globals.window.user_input.controller_state_changed) {
-        clear_element_status(curframe_ui_info->ui_element_status);
     }
 
     static bool controller_centered_x = true;
@@ -648,9 +656,8 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
     }
     if (anim->style_params_overriden.translate) {
         new_style.translate = (anim_weight * anim->style.translate) + (1 - anim_weight) * original_style.translate;
-        if (anim_weight > 0 && anim_weight < 1) {
-            ui_positions_changed = true;
-        }
+        // if (anim_weight > 0 && anim_weight < 1) {
+        // }
     }
 
     return new_style;
@@ -659,7 +666,7 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
 void render_ui_helper(widget_t& widget) {
 
     if (widget.attached_hover_anim_player_handle != -1) {
-        ui_anim_player_t* hover_player = get_ui_anim_player(widget.attached_hover_anim_player_handle);
+        ui_anim_player_t* hover_player = get_ui_anim_player_by_idx(widget.attached_hover_anim_player_handle);
         game_assert_msg(hover_player, "hover player not found");
         // if (widget.handle == cur_final_focused_handle) {
         if (widget.handle == curframe_ui_info->ui_element_status.hovered_over.widget_handle) {
@@ -670,7 +677,7 @@ void render_ui_helper(widget_t& widget) {
     }
 
     for (int i = 0; i < widget.attached_anim_player_handles.size(); i++) {
-        ui_anim_player_t* attached_player = get_ui_anim_player(widget.attached_anim_player_handles[i]);
+        ui_anim_player_t* attached_player = get_ui_anim_player_by_idx(widget.attached_anim_player_handles[i]);
         game_assert_msg(attached_player, "attached player not found");
         if (attached_player->playing) {
             move_ui_anim_player_forward(*attached_player);
@@ -1318,10 +1325,10 @@ void parse_ui_anims(const char* path) {
     ui_anim_files.push_back(anim_file);
 }
 
+static int ui_anim_player_cnt = 0;
 int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_anim_t& ui_anim, bool play_upon_initialize, time_count_t starting_cursor) {
     ui_anim_player_t anim_player;
-    static int cnt = 0;
-    anim_player.handle = cnt++;
+    anim_player.handle = ui_anim_player_cnt++;
     memcpy(anim_player.widget_key, widget_key, strlen(widget_key));
     anim_player.anim_duration = ui_anim.anim_duration;
     anim_player.ui_anim_handle = ui_anim.handle;
@@ -1330,6 +1337,10 @@ int create_ui_anim_player(const char* widget_key, int ui_anim_file_handle, ui_an
     anim_player.playing = play_upon_initialize;
     ui_anim_players.push_back(anim_player);
     return anim_player.handle;
+}
+
+void reset_ui_anim_player_cnt() {
+    ui_anim_player_cnt = 0;
 }
 
 void add_ui_anim_to_widget(const char* widget_key, const char* ui_anim_name, time_count_t start_anim_duration_cursor, bool start_playing) {
@@ -1355,7 +1366,12 @@ void stop_ui_anim_player(const char* widget_key, const char* ui_anim_name) {
     anims_to_stop_this_frame.push_back(stop);
 }
 
-ui_anim_player_t* get_ui_anim_player(int handle) {
+ui_anim_player_t* get_ui_anim_player_by_idx(int idx) {
+    if (idx >= ui_anim_players.size()) return NULL;
+    return &ui_anim_players[idx]; 
+}
+
+ui_anim_player_t* get_ui_anim_player_by_handle(int handle) {
     for (int i = 0; i < ui_anim_players.size(); i++) {
         if (ui_anim_players[i].handle == handle) {
             return &ui_anim_players[i];

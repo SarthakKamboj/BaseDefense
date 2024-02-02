@@ -40,6 +40,8 @@
 #define CREDITS_LEVEL 1027
 #define HIGH_SCORES_LEVEL 1028
 
+#define PRINT_FRAME_TIME_LOGS_KEY KEY_M
+
 // #define game_assert(exp) if ((exp) == false) std::cout << "on line " << __LINE__ << " in file " << __FILE__ << " the game_assert failed" << std::endl;
 #define game_assert(exp) assert(exp)
 #define game_assert_msg(exp, msg) assert(exp && msg)
