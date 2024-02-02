@@ -64,6 +64,10 @@ void update() {
         bool prev_paused = paused;
         update_store();
 
+        if (globals.window.resized) {
+            set_translate_in_ui_anim("pause_menu_close", glm::vec2(0, globals.window.window_height));
+        }
+
         set_ui_value(std::string("pause_text"), std::string("| |"));
         set_ui_value(std::string("space"), std::string(" "));
         if (get_if_key_clicked_on("pause_icon_btn")) {
