@@ -1,4 +1,4 @@
-<panel id="main_panel" hor_align="center" display_dir="vertical" z="0">
+<panel id="main_panel" hor_align="center" display_dir="vertical" z="14">
     <container id="header_info" width="0.9" height="0.1"
     ver_align="center" hor_align="space_between"
     content_spacing="10"
