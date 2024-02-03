@@ -15,6 +15,7 @@
 #include "window.h"
 #include "globals.h"
 #include "gameplay/gos.h"
+#include "gameplay/gos_globals.h"
 
 extern globals_t globals;
 
@@ -540,4 +541,5 @@ void init() {
 	}
 
 	scene_manager_init();
+	init_gos_globals();
 }

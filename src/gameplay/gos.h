@@ -2,7 +2,6 @@
 
 #include "utils/time.h"
 #include "constants.h"
-#include "preview_manager.h"
 
 #include "glm/glm.hpp"
 
@@ -11,7 +10,7 @@
 #define NUM_BASE_ATTACH_PTS 3
 #define NUM_BASE_EXT_ATTACH_PTS 2
 
-void init_preview_items();
+// void init_preview_items();
 
 struct base_t {
 	int handle = -1;
@@ -30,8 +29,6 @@ struct base_t {
 	static const int HEIGHT;
 	// static const int Z_POSITION;
 };
-void init_preview_base();
-void update_preview_base();
 void create_base(glm::vec2 pos);
 void update_base(base_t& base);
 void delete_base(base_t& base);
@@ -40,7 +37,7 @@ struct base_extension_t {
 	int handle = -1;
 
 	bool previewing = true;
-	bool free = true;
+	// bool free = true;
 
 	int transform_handle = -1;
 	int quad_render_handle = -1;
@@ -52,13 +49,9 @@ struct base_extension_t {
 
 	static const int WIDTH;
 	static const int HEIGHT;
-	// static const int Z_POSITION;
 };
-void init_base_ext_preview();
-void update_preview_base_ext();
 int create_base_ext(glm::vec2 pos);
 void update_base_ext(base_extension_t& attachment);
-// base_extension_t* get_base_ext();
 void delete_base_ext(base_extension_t& attachment);
 
 enum ATTACHMENT_TYPE : int {
@@ -79,7 +72,6 @@ struct attachment_t {
 
 	static const int WIDTH;
 	static const int HEIGHT;
-	// static const int Z_POSITION;
 };
 int create_attachment(glm::vec2 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base, base_extension_t* base_ext);
 void update_attachment(attachment_t& attachment);
@@ -96,7 +88,7 @@ struct gun_t {
 	int handle = -1;
 
 	bool previewing = true;
-	bool free = true;
+	// bool free = true;
 
 	int transform_handle = -1;
 	int quad_render_handle = -1;
@@ -115,12 +107,10 @@ struct gun_t {
 
 	static const int WIDTH;
 	static const int HEIGHT;
-	// static const int Z_POSITION;
 	static const float RETARGET_ANIM_TIME;
 
 	static std::vector<int> enemy_died_handles;
 };
-void init_preview_gun();
 void create_attached_gun(int attachment_handle, bool facing_left, float fire_rate);
 void update_attached_gun(gun_t& gun);
 void delete_attached_gun(gun_t& gun);

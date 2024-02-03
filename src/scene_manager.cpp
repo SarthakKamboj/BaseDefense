@@ -10,6 +10,7 @@
 #include "utils/json.h"
 #include "utils/io.h"
 #include "globals.h"
+#include "gameplay/preview_manager.h"
 
 extern score_t score;
 extern inventory_t inventory;
@@ -96,7 +97,7 @@ void scene_manager_update(scene_manager_t& sm) {
             enemy_t::deleted_base_handles.clear();
             gun_t::enemy_died_handles.clear();
 
-            init_preview_items();
+            init_preview_mode();
 	        init_camera();	
             create_enemy_spawner(glm::vec2(50, 50));
 

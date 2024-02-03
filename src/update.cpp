@@ -89,7 +89,6 @@ void update() {
             update_camera();
             update_rigidbodies();
             update_image_anim_players();
-            update_preview_mode(); 
             gos_update();
         } else {
             delta_time = 0;

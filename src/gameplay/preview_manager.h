@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gfx/gfx_data/object_data.h"
+#include "gos.h"
 
 enum PREVIEW_MODE {
 	PREVIEW_GUN = 0,
@@ -9,6 +10,13 @@ enum PREVIEW_MODE {
 	NUM_PREVIEWABLE_ITEMS,
 
 	PREVIEW_NONE
+};
+
+struct att_summary_info_t {
+    int att_handle = -1;
+    int att_transform_handle = -1;
+    float x_pos = 0;
+    ATTACHMENT_TYPE attachment_types = ATTMNT_NONE;
 };
 
 struct preview_state_t {
@@ -29,8 +37,28 @@ struct preview_state_t {
 
     float cur_width = 0;
     float cur_height = 0;
+
+    gun_t preview_gun;
+    base_extension_t preview_base_ext;
+    base_t preview_base;
+
+    std::vector<att_summary_info_t> sorted_att_infos;
+    int active_att_idx = -1;
 };
 
 void init_preview_mode();
 void update_preview_mode();
 void render_preview_mode();
+
+void init_preview_base();
+void update_preview_base();
+
+void init_base_ext_preview();
+void init_preview_gun();
+
+void update_attachable_preview_item();
+void add_attachment_to_preview_manager(attachment_t& att);
+void delete_attachment_from_preview_manager(int att_handle);
+
+void move_att_selection_left();
+void move_att_selection_right();

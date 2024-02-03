@@ -9,18 +9,12 @@
 #include "store.h"
 #include "ui/ui_elements.h"
 #include "preview_manager.h"
+#include "gos_globals.h"
 
 #include <vector>
 #include <algorithm>
 #include <limits.h>
 #include <map>
-
-extern bool paused;
-
-static glm::vec3 invalid_placement_color = create_color(144,66,71);
-static glm::vec3 valid_placement_color = create_color(45,45,45);
-
-static const float PREVIEW_MOVE_SPEED = 300.f;
 
 extern inventory_t inventory;
 extern store_t store;
@@ -28,9 +22,8 @@ extern preview_state_t preview_state;
 
 score_t score;
 
-extern float panel_left;
-
 extern globals_t globals;
+extern go_globals_t go_globals;
 
 static std::vector<base_t> gun_bases;
 static std::vector<base_extension_t> attached_base_exts;
@@ -47,99 +40,15 @@ static std::vector<int> enemies_to_delete;
 static std::vector<enemy_spawner_t> enemy_spawners;
 static std::vector<enemy_t> enemies;
 
-static gun_t preview_gun;
-static base_extension_t preview_base_ext;
-static base_t preview_base;
-
-#define PREVIEW_Z_POS_KEY "preview"
-#define ATT_Z_POS_KEY "att"
-#define BASE_Z_POS_KEY "base"
-#define BASE_EXT_Z_POS_KEY "base_ext"
-#define GUN_Z_POS_KEY "gun"
-#define BULLET_Z_POS_KEY "bullet"
-#define ENEMY_BULLET_Z_POS_KEY "enemy_bullet"
-#define ENEMY_SPAWNER_Z_POS_KEY "enemy_spawner"
-#define ENEMY_Z_POS_KEY "enemy"
-
-static std::map<std::string, int> z_positions = {
-	{PREVIEW_Z_POS_KEY, 6},
-	{ATT_Z_POS_KEY, 5},
-	{BASE_Z_POS_KEY, 0},
-	{BASE_EXT_Z_POS_KEY, 3},
-	{GUN_Z_POS_KEY, 4},
-	{BULLET_Z_POS_KEY, 2},
-	{ENEMY_BULLET_Z_POS_KEY, 2},
-	{ENEMY_SPAWNER_Z_POS_KEY, 0},
-	{ENEMY_Z_POS_KEY, 1}
-};
-
-void init_preview_items() {
-	init_preview_mode();
-	init_preview_gun();
-	init_base_ext_preview();
-	init_preview_base();
-}
-
 const int base_t::WIDTH = 100;
 const int base_t::HEIGHT = 300;
-// const int base_t::Z_POSITION = 1;
-
-void init_preview_base() {
-	preview_base.handle = -1;
-
-	preview_base.transform_handle = create_transform(glm::vec3(0, 0, z_positions[PREVIEW_Z_POS_KEY]), glm::vec3(1), 0.f, 0.f);
-	preview_base.quad_render_handle = create_quad_render(preview_base.transform_handle, create_color(60,90,30), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
-	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYS_NONE, true, false);
-}
-
-void update_preview_base() {	
-	quad_render_t* quad_render = get_quad_render(preview_base.quad_render_handle);
-	game_assert_msg(quad_render, "quad render for base not found");	
-
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE || store.open || paused) {
-		quad_render->render = false;
-		return;
-	}
-
-	transform_t* preview_transform = get_transform(preview_base.transform_handle);
-	game_assert_msg(preview_transform, "could not find transform for preview base");
-
-	if (!globals.window.user_input.game_controller) {
-		glm::vec2 mouse = mouse_to_world_pos();
-		preview_transform->global_position = glm::vec3(mouse.x, base_t::HEIGHT * 0.5f, 0.f);
-	} else {
-		float cur_x = preview_transform->global_position.x;
-		float delta_x = globals.window.user_input.controller_x_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;
-		preview_transform->global_position = glm::vec3(cur_x + delta_x, base_t::HEIGHT * 0.5f, 0.f);
-	}
-
-	if (inventory.num_bases == 0) {
-		quad_render->color = invalid_placement_color;
-	} else {
-		quad_render->color = valid_placement_color;
-	}
-
-	// if (globals.window.user_input.left_mouse_release && inventory.num_bases > 0) {
-	bool released_preview_button = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
-	if (released_preview_button && inventory.num_bases > 0) {
-		glm::vec3& pos = preview_transform->global_position;
-		create_base(glm::vec2(pos.x, pos.y));
-		inventory.num_bases--;
-	}
-
-	// bool left_down = globals.window.user_input.left_mouse_down;
-	bool preview_mode_on = get_down(LEFT_MOUSE) || get_down(CONTROLLER_Y);
-	quad_render->render = preview_mode_on;
-
-	update_hierarchy_based_on_globals();
-}
 
 void create_base(glm::vec2 pos) {
 	static int cnt = 0;
 	base_t gun_base;
 	gun_base.handle = cnt++;
 
-	glm::vec3 place_pos(pos.x, pos.y, z_positions[BASE_Z_POS_KEY]);
+	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[BASE_Z_POS_KEY]);
 	gun_base.transform_handle = create_transform(place_pos, glm::vec3(1), 0.f, 0.f);
 	gun_base.quad_render_handle = create_quad_render(gun_base.transform_handle, create_color(59,74,94), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
 	gun_base.rb_handle = create_rigidbody(gun_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYS_BASE, true, true);
@@ -234,7 +143,6 @@ void delete_base(base_t& base) {
 
 const int attachment_t::WIDTH = 10;
 const int attachment_t::HEIGHT = 10;
-// const int attachment_t::Z_POSITION = 3;
 
 int create_attachment(glm::vec2 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base, base_extension_t* ext) {
 
@@ -246,7 +154,7 @@ int create_attachment(glm::vec2 pos, bool facing_left, ATTACHMENT_TYPE attmt_typ
 	attmt.handle = cnt++;
 	attmt.attachment_types = attmt_types;
 	attmt.facing_left = facing_left;
-	glm::vec3 place_pos(pos.x, pos.y, z_positions[ATT_Z_POS_KEY]);
+	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[ATT_Z_POS_KEY]);
 	if (base) {
 		attmt.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, base->transform_handle);
 	} else {
@@ -254,6 +162,7 @@ int create_attachment(glm::vec2 pos, bool facing_left, ATTACHMENT_TYPE attmt_typ
 	}
 	attmt.quad_render_handle = create_quad_render(attmt.transform_handle, glm::vec3(1,0,0), attachment_t::WIDTH, attachment_t::HEIGHT, false, 0, -1);
 	attachments.push_back(attmt);
+	add_attachment_to_preview_manager(attmt);
 	return attmt.handle;
 }
 
@@ -266,20 +175,36 @@ void update_attachment(attachment_t& attachment) {
 	if (preview_state.cur_mode == PREVIEW_GUN && (attachment.attachment_types & ATTMNT_GUN) == 0) return;
 	if (preview_state.cur_mode == PREVIEW_BASE_EXT && (attachment.attachment_types & ATTMNT_BASE_EXT) == 0) return;
 
-	transform_t* preview_transform = preview_state.cur_mode == PREVIEW_GUN ? get_transform(preview_gun.transform_handle) : get_transform(preview_base_ext.transform_handle);
+	transform_t* preview_transform = preview_state.cur_mode == PREVIEW_GUN ? get_transform(preview_state.preview_gun.transform_handle) : get_transform(preview_state.preview_base_ext.transform_handle);
 	game_assert_msg(preview_transform, "preview transform not found");
 
 	glm::vec3 preview_obj_pos = glm::vec3(preview_transform->global_position.x, preview_transform->global_position.y, 0);
 	if (glm::distance(preview_obj_pos, attachment_transform->global_position) > 20) return;
 
+	bool preview_btn_released = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
 	if (preview_state.cur_mode == PREVIEW_MODE::PREVIEW_GUN) {
-		preview_gun.free = false;
-		preview_gun.attachment_handle = attachment.handle;
+		preview_state.preview_gun.attachment_handle = attachment.handle;
 		preview_transform->global_position = attachment_transform->global_position;
+	
+		if(preview_btn_released && inventory.num_guns > 0) {
+			attachment_t* att = get_attachment(preview_state.preview_gun.attachment_handle);
+			game_assert_msg(att, "attachment to create gun not found");
+			create_attached_gun(preview_state.preview_gun.attachment_handle, att->facing_left, 2.f);
+			inventory.num_guns--;
+			delete_attachment_from_preview_manager(attachment.handle);
+		}	
 	} else if (preview_state.cur_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
-		preview_base_ext.attachment_handle = attachment.handle;
-		preview_base_ext.free = false;
+		preview_state.preview_base_ext.attachment_handle = attachment.handle;
 		preview_transform->global_position = attachment_transform->global_position;
+
+		transform_t* transform = get_transform(preview_state.preview_base_ext.transform_handle);
+		game_assert_msg(transform, "transform of preview attachment not found");
+		if(preview_btn_released && inventory.num_base_exts > 0) {
+			glm::vec3& pos = transform->global_position;
+			create_base_ext(glm::vec2(pos.x, pos.y));
+			inventory.num_base_exts--;
+			delete_attachment_from_preview_manager(attachment.handle);
+		}
 	}
 
 	update_hierarchy_based_on_globals();
@@ -315,6 +240,7 @@ void delete_attachment(attachment_t& att) {
 			}
 
 			attachments.erase(attachments.begin() + i);
+			delete_attachment_from_preview_manager(att.handle);
 		}
 	}
 }
@@ -336,13 +262,12 @@ int create_base_ext(glm::vec2 pos) {
 	base_extension_t base_ext;
 	base_ext.handle = cnt++;
 
-	glm::vec3 place_pos(pos.x, pos.y, z_positions[BASE_EXT_Z_POS_KEY]);
+	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[BASE_EXT_Z_POS_KEY]);
 	base_ext.transform_handle = create_transform(place_pos, glm::vec3(1), 0.f, 0.f);
 	base_ext.quad_render_handle = create_quad_render(base_ext.transform_handle, create_color(240,74,94), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
 	base_ext.rb_handle = create_rigidbody(base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_NONE, false, true);
 	base_ext.previewing = false;
-	base_ext.free = false;
-	base_ext.attachment_handle = preview_base_ext.attachment_handle;
+	base_ext.attachment_handle = preview_state.preview_base_ext.attachment_handle;
 
 	attachment_t* att = get_attachment(base_ext.attachment_handle);
 	game_assert_msg(att, "attachment not found to make base ext");
@@ -376,108 +301,24 @@ void delete_base_ext(base_extension_t& attachment) {
 	}	
 }
 
-void init_base_ext_preview() {
-	preview_base_ext.handle = -1;
-
-	preview_base_ext.transform_handle = create_transform(glm::vec3(0, 0, z_positions[PREVIEW_Z_POS_KEY]), glm::vec3(1), 0.f, 0.f);
-	preview_base_ext.quad_render_handle = create_quad_render(preview_base_ext.transform_handle, create_color(145, 145, 145), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
-	preview_base_ext.rb_handle = create_rigidbody(preview_base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_NONE, true, false);
-}
-
-void update_preview_base_ext() {
-	// bool left_down = globals.window.user_input.left_mouse_down;
-	// bool left_release = globals.window.user_input.left_mouse_release;
-
-	bool preview_down = get_down(LEFT_MOUSE) || get_down(CONTROLLER_Y);
-	bool preview_btn_released = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
-
-	quad_render_t* preview_quad = get_quad_render(preview_base_ext.quad_render_handle);
-	game_assert_msg(preview_quad, "quad render for preview attachment not found");
-
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE_EXT || store.open || paused) {
-		preview_quad->render = false;
-		return;
-	}
-
-	preview_quad->render = preview_down;
-
-	if (inventory.num_base_exts == 0) {
-		preview_quad->color = invalid_placement_color;
-	} else {
-		preview_quad->color = valid_placement_color;
-	}
-
-	transform_t* transform = get_transform(preview_base_ext.transform_handle);
-	game_assert_msg(transform, "transform of preview attachment not found");
-	if(preview_btn_released && !preview_base_ext.free && inventory.num_base_exts > 0) {
-		preview_base_ext.free = true;
-		glm::vec3& pos = transform->global_position;
-		create_base_ext(glm::vec2(pos.x, pos.y));
-		inventory.num_base_exts--;
-		return;
-	}	
-
-	if (!preview_down) {	
-		return;
-	}
-
-	if (preview_base_ext.free) {
-		if (is_controller_connected()) {
-			// float cur_x = preview_transform->global_position.x;
-			// float cur_y = preview_transform->global_position.x;
-			float delta_x = globals.window.user_input.controller_x_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;
-			float delta_y = globals.window.user_input.controller_y_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;
-
-			transform->global_position += glm::vec3(delta_x, delta_y, 0);
-		} else {
-			glm::vec2 mouse = mouse_to_world_pos();
-			transform->global_position = glm::vec3(mouse.x, mouse.y, 0);
-		}
-	}	
-}
-
-base_extension_t* get_base_ext(int handle) {
-	for (int i = 0; i < attached_base_exts.size(); i++) {
-		if (handle == attached_base_exts[i].handle) {
-			return &attached_base_exts[i];
-		}
-	}
-	return NULL;
-}
-
-void init_preview_gun() {
-	preview_gun.handle = -1;
-
-	preview_gun.attachment_handle = -1;
-
-	preview_gun.transform_handle = create_transform(glm::vec3(0, 0, z_positions[PREVIEW_Z_POS_KEY]), glm::vec3(1), 0.f, 0.f, -1);
-	preview_gun.quad_render_handle = create_quad_render(preview_gun.transform_handle, valid_placement_color, gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
-	preview_gun.rb_handle = create_rigidbody(preview_gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYS_NONE, false, false);
-}
-
 const int gun_t::WIDTH = 80;
 const int gun_t::HEIGHT = 20;
-// const int gun_t::Z_POSITION = 5;
 void create_attached_gun(int attachment_handle, bool facing_left, float fire_rate) {
 	static int cnt = 0;
 
 	gun_t gun;
 	gun.handle = cnt++;
-	gun.attachment_handle = preview_gun.attachment_handle;
+	gun.attachment_handle = preview_state.preview_gun.attachment_handle;
 
 	attachment_t* att = get_attachment(gun.attachment_handle);
 	game_assert_msg(att, "attachment not found to make gun");
 	att->attached = true;
 
-	transform_t* att_transform = get_transform(att->transform_handle);
-	game_assert_msg(att_transform, "transform of attachment not found");
-	// att_transform->ro
-
 	gun.fire_rate = fire_rate;
 	gun.facing_left = facing_left;
 
 	int multiplier = facing_left ? -1 : 1;
-	glm::vec3 gun_pos = glm::vec3(multiplier * gun_t::WIDTH / 2.f, 0, z_positions[GUN_Z_POS_KEY]);
+	glm::vec3 gun_pos = glm::vec3(multiplier * gun_t::WIDTH / 2.f, 0, go_globals.z_positions[GUN_Z_POS_KEY]);
 
 	gun.transform_handle = create_transform(gun_pos, glm::vec3(1), 0.f, 0.f, att->transform_handle);
 	transform_t* g = get_transform(gun.transform_handle);
@@ -485,7 +326,6 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYS_NONE, true, true);
 
 	gun.previewing = false;
-	gun.free = false;
 
 	if (gun.facing_left) {
 		gun.prev_enemy_last_target_dir = glm::vec2(-1,0);
@@ -495,57 +335,6 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 	gun.last_target_dir = gun.prev_enemy_last_target_dir;
 
 	attached_guns.push_back(gun);
-}
-
-void update_preview_gun() {
-	// bool left_down = globals.window.user_input.left_mouse_down;
-	// bool left_release = globals.window.user_input.left_mouse_release;
-	bool preview_down = get_down(LEFT_MOUSE) || get_down(CONTROLLER_Y);
-	bool preview_btn_released = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
-
-	quad_render_t* preview_quad = get_quad_render(preview_gun.quad_render_handle);
-	game_assert_msg(preview_quad, "quad render for preview gun not found");
-
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_GUN || store.open || paused) {
-		preview_quad->render = false;
-		return;
-	}
-
-	preview_quad->render = preview_down;
-
-	if (inventory.num_guns == 0) {
-		preview_quad->color = invalid_placement_color;
-	} else {
-		preview_quad->color = valid_placement_color;
-	}
-
-	if(preview_btn_released && !preview_gun.free && inventory.num_guns > 0) {
-		attachment_t* att = get_attachment(preview_gun.attachment_handle);
-		game_assert_msg(att, "attachment to create gun not found");
-		create_attached_gun(preview_gun.attachment_handle, att->facing_left, 2.f);
-		inventory.num_guns--;
-		preview_gun.free = true;
-		return;
-	}	
-
-	if (!preview_down) {	
-		return;
-	}
-
-	if (preview_gun.free) {
-		transform_t* transform = get_transform(preview_gun.transform_handle);
-		game_assert_msg(transform, "transform of preview gun not found");
-
-		if (is_controller_connected()) {
-			float delta_x = globals.window.user_input.controller_x_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;
-			float delta_y = globals.window.user_input.controller_y_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;
-
-			transform->global_position += glm::vec3(delta_x, delta_y, 0);
-		} else {
-			glm::vec2 mouse = mouse_to_world_pos();
-			transform->global_position = glm::vec3(mouse.x, mouse.y, 0);
-		}
-	}
 }
 
 std::vector<int> gun_t::enemy_died_handles;
@@ -641,7 +430,7 @@ void create_bullet(glm::vec2 start_pos, glm::vec3& move_dir, float speed) {
 	bullet_t bullet;
 	bullet.handle = cnt++;
 
- 	glm::vec3 place_pos(start_pos.x, start_pos.y, z_positions[BULLET_Z_POS_KEY]);
+ 	glm::vec3 place_pos(start_pos.x, start_pos.y, go_globals.z_positions[BULLET_Z_POS_KEY]);
 	bullet.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, -1);
 	bullet.quad_render_handle = create_quad_render(bullet.transform_handle, glm::vec3(1,1,0), bullet_t::WIDTH, bullet_t::HEIGHT, false, 0, -1);
 	bullet.rb_handle = create_rigidbody(bullet.transform_handle, false, bullet_t::WIDTH, bullet_t::HEIGHT, true, PHYS_BULLET, true, true);
@@ -710,7 +499,7 @@ void create_enemy(glm::vec2 pos, int dir, float speed) {
 	enemy.dir = dir;
 	enemy.enemy_state = ENEMY_WALKING;
 	enemy.speed = speed;
-	glm::vec3 place_pos(pos.x, pos.y, z_positions[ENEMY_Z_POS_KEY]);
+	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[ENEMY_Z_POS_KEY]);
 	enemy.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, -1);
 	enemy.quad_render_handle = create_quad_render(enemy.transform_handle, create_color(75, 25, 25), enemy_t::WIDTH, enemy_t::HEIGHT, false, 0, -1);
 	enemy.rb_handle = create_rigidbody(enemy.transform_handle, false, enemy_t::WIDTH, enemy_t::HEIGHT, true, PHYS_ENEMY, true, true);
@@ -822,7 +611,7 @@ void create_enemy_bullet(glm::vec2 pos, glm::vec3 dir, float speed) {
 	static int cnt = 0;
 	enemy_bullet_t enemy_bullet;
 	enemy_bullet.handle = cnt++;
- 	glm::vec3 place_pos(pos.x, pos.y, z_positions[ENEMY_BULLET_Z_POS_KEY]);
+ 	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[ENEMY_BULLET_Z_POS_KEY]);
 	enemy_bullet.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, -1);
 	enemy_bullet.rb_handle = create_rigidbody(enemy_bullet.transform_handle, false, enemy_bullet_t::WIDTH, enemy_bullet_t::HEIGHT, true, PHYS_ENEMY_BULLET, true, true);
 	enemy_bullet.quad_render_handle = create_quad_render(enemy_bullet.transform_handle, glm::vec3(0,1,0), enemy_bullet_t::WIDTH, enemy_bullet_t::HEIGHT, false, 0.f, -1);
@@ -881,7 +670,7 @@ void create_enemy_spawner(glm::vec2 pos) {
 	static int cnt = 0;
 	enemy_spawner_t enemy_spawner;	
 	enemy_spawner.handle = cnt++;
-	glm::vec3 place_pos(pos.x, pos.y, z_positions[ENEMY_SPAWNER_Z_POS_KEY]);
+	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[ENEMY_SPAWNER_Z_POS_KEY]);
 	enemy_spawner.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, -1);
 	enemy_spawner.quad_render_handle = create_quad_render(enemy_spawner.transform_handle, create_color(25,25,75), 60, 140, false, 0, -1);
 
@@ -899,7 +688,6 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 }
 
 void update_score() {
-	// score.enemies_left_to_kill = MAX(0, 10-num_enemies_killed);
     set_ui_value(std::string("num_enemies_left_to_kill"), std::to_string(score.enemies_left_to_kill));
 	if (score.enemies_left_to_kill == 0) {
 		globals.scene_manager.queue_level_load = true;
@@ -908,17 +696,12 @@ void update_score() {
 }
 
 void gos_update() {
-	update_preview_base();
-
-	preview_base_ext.free = true;
-	preview_gun.free = true;
+    update_preview_mode(); 	
 
 	for (attachment_t& att : attachments) {
 		update_attachment(att);
 	}
 
-	update_preview_gun();
-	update_preview_base_ext();	
 
 	for (bullet_t& bullet : bullets) {
 		update_bullet(bullet);
@@ -928,7 +711,7 @@ void gos_update() {
 		update_enemy_spawner(enemy_spawner);
 	}
 
-	create_absolute_panel("enemies_health_panel", z_positions[ENEMY_Z_POS_KEY]);
+	create_absolute_panel("enemies_health_panel", go_globals.z_positions[ENEMY_Z_POS_KEY]);
 	for (enemy_t& enemy : enemies) {
 		update_enemy(enemy);
 	}
@@ -944,7 +727,7 @@ void gos_update() {
 	}
 	gun_t::enemy_died_handles.clear();
 
-	create_absolute_panel("base_health_panel", z_positions[BASE_Z_POS_KEY]);
+	create_absolute_panel("base_health_panel", go_globals.z_positions[BASE_Z_POS_KEY]);
 	for (base_t& base : gun_bases) {
 		update_base(base);
 	}
@@ -1004,7 +787,7 @@ void delete_gos() {
 	attached_base_exts.clear();
 	enemy_bullets.clear();
 
-	preview_base = base_t();
-	preview_base_ext = base_extension_t();
-	preview_gun = gun_t();
+	preview_state.preview_base = base_t();
+	preview_state.preview_base_ext = base_extension_t();
+	preview_state.preview_gun = gun_t();
 }
