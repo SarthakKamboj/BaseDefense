@@ -11,8 +11,6 @@ inventory_t inventory;
 
 const float store_t::TIME_BETWEEN_PURCHASES = 4.f;
 
-extern float panel_left;
-
 static store_item_t store_items[3] = {
     store_item_t {
         ITEM_BASE,

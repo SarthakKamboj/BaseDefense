@@ -27,8 +27,6 @@
 
 namespace fs = std::filesystem;
 
-static bool panel_left_used = false;
-
 extern globals_t globals;
 
 int latest_z_pos;
@@ -88,7 +86,6 @@ void update_ui_files() {
 }
 
 void ui_start_of_frame() {
-    panel_left_used = false;
     latest_z_pos = INT_MIN;
 #if UI_RELOADING
     update_ui_files();
