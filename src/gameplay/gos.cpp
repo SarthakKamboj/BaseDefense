@@ -53,8 +53,6 @@ void create_base(glm::vec2 pos) {
 	gun_base.quad_render_handle = create_quad_render(gun_base.transform_handle, create_color(59,74,94), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
 	gun_base.rb_handle = create_rigidbody(gun_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYS_BASE, true, true);
 
-	gun_base.previewing = false;
-
 	gun_base.attachment_handles[0] = create_attachment(glm::vec2(-base_t::WIDTH * 0.4f, 0), true, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base, NULL);
 	gun_base.attachment_handles[1] = create_attachment(glm::vec2(base_t::WIDTH * 0.4f, 0), false, ATTMNT_GUN | ATTMNT_BASE_EXT, &gun_base, NULL);
 	gun_base.attachment_handles[2] = create_attachment(glm::vec2(0, base_t::HEIGHT * 0.4f), false, ATTMNT_BASE_EXT, &gun_base, NULL);
@@ -270,7 +268,6 @@ int create_base_ext(glm::vec2 pos) {
 	base_ext.transform_handle = create_transform(place_pos, glm::vec3(1), 0.f, 0.f);
 	base_ext.quad_render_handle = create_quad_render(base_ext.transform_handle, create_color(240,74,94), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
 	base_ext.rb_handle = create_rigidbody(base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_NONE, false, true);
-	base_ext.previewing = false;
 	base_ext.attachment_handle = preview_state.preview_base_ext.attachment_handle;
 
 	attachment_t* att = get_attachment(base_ext.attachment_handle);
@@ -328,8 +325,6 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 	transform_t* g = get_transform(gun.transform_handle);
 	gun.quad_render_handle = create_quad_render(gun.transform_handle, create_color(30,0,120), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
 	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYS_NONE, true, true);
-
-	gun.previewing = false;
 
 	if (gun.facing_left) {
 		gun.prev_enemy_last_target_dir = glm::vec2(-1,0);

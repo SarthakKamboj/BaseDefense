@@ -10,14 +10,10 @@
 #define NUM_BASE_ATTACH_PTS 3
 #define NUM_BASE_EXT_ATTACH_PTS 2
 
-// void init_preview_items();
-
 struct base_t {
 	int handle = -1;
 
 	int base_health = 100;
-
-	bool previewing = true;
 
 	int transform_handle = -1;
 	int quad_render_handle = -1;
@@ -27,17 +23,19 @@ struct base_t {
 
 	static const int WIDTH;
 	static const int HEIGHT;
-	// static const int Z_POSITION;
 };
 void create_base(glm::vec2 pos);
 void update_base(base_t& base);
 void delete_base(base_t& base);
 
+enum BASE_EXT_TYPE {
+	THREE_ATT_BOTTOM_GONE = 0,
+	THREE_ATT_RIGHT_GONE,
+	THREE_ATT_LEFT_GONE,
+};
+
 struct base_extension_t {
 	int handle = -1;
-
-	bool previewing = true;
-	// bool free = true;
 
 	int transform_handle = -1;
 	int quad_render_handle = -1;
@@ -86,9 +84,6 @@ struct closest_entity_t {
 
 struct gun_t {
 	int handle = -1;
-
-	bool previewing = true;
-	// bool free = true;
 
 	int transform_handle = -1;
 	int quad_render_handle = -1;
