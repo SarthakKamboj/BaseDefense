@@ -52,7 +52,7 @@ void draw_background(widget_t& widget) {
         bottom_right_color = widget.style.bottom_right_bck_color;
     }
 
-	glm::vec3 origin = glm::vec3(x, y, 0);
+	glm::vec3 origin = glm::vec3(x, y, widget.z_pos);
 
 	vertex_t updated_vertices[4];
     updated_vertices[0] = create_vertex(origin + glm::vec3(width, 0, 0.0f), top_right_color, glm::vec2(0,0)); // top right
@@ -72,7 +72,7 @@ void draw_background(widget_t& widget) {
     draw_obj(font_char_t::ui_opengl_data);
 }
 
-void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec3& color) {
+void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec3& color, int z_pos) {
 	// shader_set_vec3(font_char_t::ui_opengl_data.shader, "color", color);
 	shader_set_float(font_char_t::ui_opengl_data.shader, "tex_influence", 1.f);
 	shader_set_int(font_char_t::ui_opengl_data.shader, "is_character_tex", 1);
@@ -97,10 +97,10 @@ void draw_text(const char* text, glm::vec2 starting_pos, int font_size, glm::vec
                     running_pos.x = origin.x + fc.bearing.x + (fc.width / 2);
                     running_pos.y = origin.y + fc.bearing.y - (fc.height / 2);
 
-                    updated_vertices[0] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), color_vec4, glm::vec2(1,0)); // top right
-                    updated_vertices[1] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), color_vec4, glm::vec2(1,1)); // bottom right
-                    updated_vertices[2] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y - (fc.height / 2), 0.0f), color_vec4, glm::vec2(0,1)); // bottom left
-                    updated_vertices[3] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y + (fc.height / 2), 0.0f), color_vec4, glm::vec2(0,0)); // top left
+                    updated_vertices[0] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y + (fc.height / 2), z_pos), color_vec4, glm::vec2(1,0)); // top right
+                    updated_vertices[1] = create_vertex(glm::vec3(running_pos.x + (fc.width / 2), running_pos.y - (fc.height / 2), z_pos), color_vec4, glm::vec2(1,1)); // bottom right
+                    updated_vertices[2] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y - (fc.height / 2), z_pos), color_vec4, glm::vec2(0,1)); // bottom left
+                    updated_vertices[3] = create_vertex(glm::vec3(running_pos.x - (fc.width / 2), running_pos.y + (fc.height / 2), z_pos), color_vec4, glm::vec2(0,0)); // top left
                     update_vbo_data(font_char_t::ui_opengl_data.vbo, (float*)updated_vertices, sizeof(updated_vertices));
 
                     // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -124,10 +124,10 @@ void draw_image_container(widget_t& widget) {
 
     glm::vec2 top_left(widget.x, widget.y);
 
-    updated_vertices[0] = create_vertex(glm::vec3(top_left.x + widget.render_width, top_left.y, 0.0f), glm::vec4(0,1,1,1), glm::vec2(1,1)); // top right
-    updated_vertices[1] = create_vertex(glm::vec3(top_left.x + widget.render_width, top_left.y - widget.render_height, 0.f), glm::vec4(0,0,1,1), glm::vec2(1,0)); // bottom right
-    updated_vertices[2] = create_vertex(glm::vec3(top_left.x, top_left.y - widget.render_height, 0.0f), glm::vec4(0,1,0,1), glm::vec2(0,0)); // bottom left
-    updated_vertices[3] = create_vertex(glm::vec3(top_left.x, top_left.y, 0.0f), glm::vec4(1,0,0,1), glm::vec2(0,1)); // top left
+    updated_vertices[0] = create_vertex(glm::vec3(top_left.x + widget.render_width, top_left.y, widget.z_pos), glm::vec4(0,1,1,1), glm::vec2(1,1)); // top right
+    updated_vertices[1] = create_vertex(glm::vec3(top_left.x + widget.render_width, top_left.y - widget.render_height, widget.z_pos), glm::vec4(0,0,1,1), glm::vec2(1,0)); // bottom right
+    updated_vertices[2] = create_vertex(glm::vec3(top_left.x, top_left.y - widget.render_height, widget.z_pos), glm::vec4(0,1,0,1), glm::vec2(0,0)); // bottom left
+    updated_vertices[3] = create_vertex(glm::vec3(top_left.x, top_left.y, widget.z_pos), glm::vec4(1,0,0,1), glm::vec2(0,1)); // top left
     update_vbo_data(font_char_t::ui_opengl_data.vbo, (float*)updated_vertices, sizeof(updated_vertices));
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

@@ -10,6 +10,7 @@
 #include "constants.h"
 #include "globals.h"
 #include "gfx_data/texture.h"
+#include "renderer.h"
 
 extern globals_t globals;
 
@@ -61,7 +62,8 @@ void init_quad_data() {
     // load in shader for these rectangle quads because the game is 2D, so everything is basically a solid color or a texture
 	data.shader = create_shader("rectangle.vert", "rectangle.frag");
     // set projection matrix in the shader
-	glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+	// glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+	glm::mat4 projection = get_ortho_matrix(globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.y);
 	shader_set_mat4(data.shader, "projection", projection);
 	shader_set_mat4(data.shader, "view", glm::mat4(1.0f));
 	shader_set_int(data.shader, "tex", 0);
@@ -136,7 +138,8 @@ void set_quad_color(int quad_handle, glm::vec3& color) {
 void draw_quad_renders() {
 	glm::mat4 view_mat = get_cam_view_matrix();
 	shader_set_mat4(quad_render_t::obj_data.shader, "view", view_mat);
-	glm::mat4 projection = glm::ortho(0.0f, globals.camera.cam_view_dimensions.x, 0.0f, globals.camera.cam_view_dimensions.y);
+	// glm::mat4 projection = glm::ortho(0.0f, globals.camera.cam_view_dimensions.x, 0.0f, globals.camera.cam_view_dimensions.y);
+	glm::mat4 projection = get_ortho_matrix(globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.y);
 	shader_set_mat4(quad_render_t::obj_data.shader, "projection", projection);
     for (int i = 0; i < quads.size(); i++) {
         const quad_render_t& quad = quads[i];

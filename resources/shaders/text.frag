@@ -3,7 +3,7 @@
 out vec4 frag_color;
 
 in vec2 tex_coord;
-in vec2 pos;
+in vec3 pos;
 in vec4 out_color;
 
 uniform bool round_vertices;
@@ -41,25 +41,27 @@ void main() {
         vec3 bottom_right_inner = bottom_right + vec3(-br_border_radius, br_border_radius, 0);
 
         if (pos.x >= top_right_inner.x && pos.y >= top_right_inner.y) {
-            vec2 pos_rel_inner = pos - top_right_inner.xy;
+            vec2 pos_rel_inner = pos.xy - top_right_inner.xy;
             if (dot(pos_rel_inner, pos_rel_inner) >= tr_border_radius * tr_border_radius) {
                 frag_color = vec4(0,0,0,0);
             }
         } else if (pos.x <= top_left_inner.x && pos.y >= top_left_inner.y) {
-            vec2 pos_rel_inner = pos - top_left_inner.xy;
+            vec2 pos_rel_inner = pos.xy - top_left_inner.xy;
             if (dot(pos_rel_inner, pos_rel_inner) >= tl_border_radius * tl_border_radius) {
                 frag_color = vec4(0,0,0,0);
             }
         } else if (pos.x >= bottom_right_inner.x && pos.y <= bottom_right_inner.y) {
-            vec2 pos_rel_inner = pos - bottom_right_inner.xy;
+            vec2 pos_rel_inner = pos.xy - bottom_right_inner.xy;
             if (dot(pos_rel_inner, pos_rel_inner) >= br_border_radius * br_border_radius) {
                 frag_color = vec4(0,0,0,0);
             }
         } else if (pos.x <= bottom_left_inner.x && pos.y <= bottom_left_inner.y) {
-            vec2 pos_rel_inner = pos - bottom_left_inner.xy;
+            vec2 pos_rel_inner = pos.xy - bottom_left_inner.xy;
             if (dot(pos_rel_inner, pos_rel_inner) >= bl_border_radius * bl_border_radius) {
                 frag_color = vec4(0,0,0,0);
             }
         }
     }
+
+    // frag_color = vec4(pos.z, pos.z, pos.z, 1.0);
 }

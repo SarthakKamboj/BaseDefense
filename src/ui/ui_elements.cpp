@@ -126,7 +126,6 @@ void pop_widget() {
 void create_panel(const char* panel_name, int z_pos) {
     widget_t panel = create_widget();
     memcpy(panel.key, panel_name, strlen(panel_name)); 
-    panel.z_pos = z_pos;
     latest_z_pos = z_pos;
 
     panel.style.height = globals.window.window_height;
@@ -150,7 +149,6 @@ void end_panel() {
 void create_absolute_panel(const char* panel_name, int z_pos) {
     widget_t panel = create_widget();
     memcpy(panel.key, panel_name, strlen(panel_name)); 
-    panel.z_pos = z_pos;
     latest_z_pos = z_pos;
 
     panel.style.height = globals.window.window_height;

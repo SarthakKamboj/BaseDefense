@@ -28,10 +28,11 @@ struct base_t {
 
 	static const int WIDTH;
 	static const int HEIGHT;
+	// static const int Z_POSITION;
 };
 void init_preview_base();
 void update_preview_base();
-void create_base(glm::vec3 pos);
+void create_base(glm::vec2 pos);
 void update_base(base_t& base);
 void delete_base(base_t& base);
 
@@ -51,10 +52,11 @@ struct base_extension_t {
 
 	static const int WIDTH;
 	static const int HEIGHT;
+	// static const int Z_POSITION;
 };
 void init_base_ext_preview();
 void update_preview_base_ext();
-int create_base_ext(glm::vec3 pos);
+int create_base_ext(glm::vec2 pos);
 void update_base_ext(base_extension_t& attachment);
 // base_extension_t* get_base_ext();
 void delete_base_ext(base_extension_t& attachment);
@@ -77,8 +79,9 @@ struct attachment_t {
 
 	static const int WIDTH;
 	static const int HEIGHT;
+	// static const int Z_POSITION;
 };
-int create_attachment(glm::vec3 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base, base_extension_t* base_ext);
+int create_attachment(glm::vec2 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base, base_extension_t* base_ext);
 void update_attachment(attachment_t& attachment);
 attachment_t* get_attachment(int handle);
 void delete_attachment(int handle);
@@ -112,7 +115,7 @@ struct gun_t {
 
 	static const int WIDTH;
 	static const int HEIGHT;
-
+	// static const int Z_POSITION;
 	static const float RETARGET_ANIM_TIME;
 
 	static std::vector<int> enemy_died_handles;
@@ -137,7 +140,7 @@ struct bullet_t {
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-void create_bullet(glm::vec3& start_pos, glm::vec3& move_dir, float speed);
+void create_bullet(glm::vec2 start_pos, glm::vec3& move_dir, float speed);
 void update_bullet(bullet_t& bullet);
 void delete_bullet(bullet_t& bullet);
 
@@ -161,7 +164,7 @@ struct enemy_bullet_t {
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-void create_enemy_bullet(glm::vec3 pos, glm::vec3 dir, float speed);
+void create_enemy_bullet(glm::vec2 pos, glm::vec3 dir, float speed);
 void delete_enemy_bullet(enemy_bullet_t& enemy_bullet);
 
 struct enemy_t {
@@ -187,7 +190,7 @@ struct enemy_t {
 	static std::vector<int> deleted_base_handles;
 };
 
-void create_enemy(glm::vec3 pos, int dir, float speed);
+void create_enemy(glm::vec2 pos, int dir, float speed);
 void update_enemy(enemy_t& enemy);
 void delete_enemy(int enemy_handle);
 
@@ -205,7 +208,7 @@ struct enemy_spawner_t {
 	time_count_t enemy_relative_time = 0;
 };
 
-void create_enemy_spawner(glm::vec3 pos);
+void create_enemy_spawner(glm::vec2 pos);
 void update_enemy_spawner(enemy_spawner_t& spawner);
 
 struct score_t {

@@ -26,6 +26,9 @@ struct preview_state_t {
 
     static const float START_WIDTH;
     static const float START_HEIGHT;
+
+    float cur_width = 0;
+    float cur_height = 0;
 };
 
 void init_preview_mode();

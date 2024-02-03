@@ -98,7 +98,7 @@ void scene_manager_update(scene_manager_t& sm) {
 
             init_preview_items();
 	        init_camera();	
-            create_enemy_spawner(glm::vec3(50, 50, 0));
+            create_enemy_spawner(glm::vec2(50, 50));
 
             add_active_ui_file("play.xml");
             add_active_ui_file("play_anims.json");

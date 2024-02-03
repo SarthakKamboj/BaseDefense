@@ -34,6 +34,9 @@ void init_preview_mode() {
     quad_render_t* q = get_quad_render(preview_state.quad_render_handle);
     game_assert_msg(q, "quad render not properly initizlied for preview");
     q->render = false;
+
+    preview_state.cur_width = preview_state_t::START_WIDTH;
+    preview_state.cur_height = preview_state_t::START_HEIGHT;
  
     render_object_data& data = preview_state_t::preview_render_data;
 
@@ -86,21 +89,30 @@ void update_preview_mode() {
 
     if (selector_open || selector_released) {
         
+        float ratio = preview_state_t::START_HEIGHT / preview_state_t::START_WIDTH;
+        preview_state.cur_width = fmin(250.f, preview_state.window_rel_size.x * globals.camera.cam_view_dimensions.x);
+        preview_state.cur_height = ratio * preview_state.cur_width;
+        
         if (selector_open) {
             glm::vec2 mouse = mouse_to_world_pos();
             transform_t* transform = get_transform(preview_state.transform_handle);
             game_assert_msg(transform, "transform not found for preview state");
 
             if (!preview_state.preview_selector_open) {
-                transform->global_position.x = mouse.x;
-                transform->global_position.y = mouse.y;
+                if (is_controller_connected()) {
+                    transform->global_position.x = globals.window.window_width / 2.f;
+                    transform->global_position.y = globals.window.window_height / 2.f;
+                } else {
+                    transform->global_position.x = mouse.x;
+                    transform->global_position.y = mouse.y;
+                }
                 preview_state.preview_selector_open = true;
                 update_hierarchy_based_on_globals();
             }
 
             glm::vec2 selector_pos(transform->global_position.x, transform->global_position.y);
             static glm::vec2 rel_pos;
-            if (!globals.window.user_input.game_controller){
+            if (!is_controller_connected()){
                 rel_pos = glm::normalize(mouse - selector_pos);
             }  else {
                 glm::vec2 controller_axes(globals.window.user_input.controller_x_axis, globals.window.user_input.controller_y_axis);
@@ -148,14 +160,13 @@ void render_preview_mode() {
 
     glm::mat4 view_mat = get_cam_view_matrix();
 	shader_set_mat4(shader, "view", view_mat);
-	// glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
-	glm::mat4 projection = glm::ortho(0.0f, globals.camera.cam_view_dimensions.x, 0.0f, globals.camera.cam_view_dimensions.y);
+	glm::mat4 projection = get_ortho_matrix(globals.window.window_width, globals.window.window_height);
 	shader_set_mat4(shader, "projection", projection);
 
 	quad_render_t* quad = get_quad_render(preview_state.quad_render_handle);
 	game_assert_msg(quad, "could not find quad for preview_state");
-    quad->width = preview_state.window_rel_size.x * globals.camera.cam_view_dimensions.x;
-    quad->height = preview_state.window_rel_size.y * globals.camera.cam_view_dimensions.y;
+    quad->width = preview_state.cur_width;
+    quad->height = preview_state.cur_height;
 
     // get the transform for that rectangle render
     transform_t* transform_ptr = get_transform(preview_state.transform_handle);

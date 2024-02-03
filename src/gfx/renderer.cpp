@@ -47,3 +47,14 @@ void set_fill_mode() {
 void set_wireframe_mode() {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
+
+glm::mat4 get_ortho_matrix(float width, float height) {
+	// return glm::ortho(0.f, width, 0.f, height);
+	int max_z = 100;
+	int min_z = -100;
+
+	glm::mat4 ortho_mat(1.0f);
+	ortho_mat = glm::scale(ortho_mat, glm::vec3(2 / width, 2 / height, -1.f / (max_z - min_z)));
+	ortho_mat = glm::translate(ortho_mat, glm::vec3(-width/2, -height/2, -max_z));
+	return ortho_mat;
+}

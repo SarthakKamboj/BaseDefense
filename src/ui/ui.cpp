@@ -94,13 +94,7 @@ void ui_start_of_frame() {
     update_ui_files();
 #endif
 
-    // if (!globals.window.user_input.game_controller) {
-    //     cur_focused_internal_handle = -1;
-    //     cur_final_focused_handle = -1;
-    //     stack_nav_cur = false;
-    // }
-
-    glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+	glm::mat4 projection = get_ortho_matrix(globals.window.window_width, globals.window.window_height);
     shader_set_mat4(font_char_t::ui_opengl_data.shader, "projection", projection);
     ui_will_update = globals.window.resized;
     ui_positions_changed = false;
@@ -150,6 +144,7 @@ void pop_style() {
 void register_absolute_widget(widget_t& widget, const char* key, bool push_onto_stack) {
     widget.handle = cur_widget_count++;
     widget.absolute = true;
+    widget.z_pos = latest_z_pos;
     memcpy(widget.key, key, strlen(key));
     widget.hash = hash(key);
 
@@ -388,7 +383,8 @@ bool partially_behind_widget(widget_t& widget, widget_t& check_against_widget) {
     four_corners[2] = glm::vec4(widget.x + widget.render_width, widget.y, 0, 1);
     four_corners[3] = glm::vec4(widget.x + widget.render_width, widget.y - widget.render_height, 0, 1);
 
-	glm::mat4 normalize = glm::ortho(0.0f, check_against_widget.render_width, 0.0f, check_against_widget.render_height);
+	// glm::mat4 normalize = glm::ortho(0.0f, check_against_widget.render_width, 0.0f, check_against_widget.render_height);
+	glm::mat4 normalize = get_ortho_matrix(check_against_widget.render_width, check_against_widget.render_height);
 
     // glm::mat4 centered_corners = re_centering_matrix * four_corners;
     glm::mat4 centered_corners = re_centering_matrix * four_corners;
@@ -693,7 +689,7 @@ void render_ui_helper(widget_t& widget) {
     if (widget.image_based) {
         draw_image_container(widget);
     } else if (widget.text_based) { 
-        draw_text(widget.text_info.text, glm::vec2(widget.x + widget.style.padding.x + widget.style.margin.x, widget.y - widget.style.padding.y - widget.style.margin.y), widget.text_info.font_size, widget.style.color);
+        draw_text(widget.text_info.text, glm::vec2(widget.x + widget.style.padding.x + widget.style.margin.x, widget.y - widget.style.padding.y - widget.style.margin.y), widget.text_info.font_size, widget.style.color, widget.z_pos);
     } 
 
     auto& cur_arr = curframe_ui_info->widgets_arr;
@@ -1104,7 +1100,8 @@ void init_ui() {
     vao_bind_ebo(data.vao, data.ebo);
 
 	data.shader = create_shader("text.vert", "text.frag");
-	glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+	// glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
+	glm::mat4 projection = get_ortho_matrix(globals.window.window_width, globals.window.window_height);
 	shader_set_mat4(data.shader, "projection", projection);
 	shader_set_int(data.shader, "character_tex", 0);
 	shader_set_int(data.shader, "image_tex", 1);

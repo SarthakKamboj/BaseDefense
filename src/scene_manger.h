@@ -13,7 +13,8 @@ struct levels_data_t {
 struct scene_manager_t {
 	bool queue_level_load = true;
 	int cur_level = -1;
-	int level_to_load = MAIN_MENU_LEVEL;
+	// int level_to_load = MAIN_MENU_LEVEL;
+	int level_to_load = LEVEL_1;
 	static std::vector<levels_data_t> levels;
 	static std::vector<bool> levels_unlocked;
 };

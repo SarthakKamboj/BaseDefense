@@ -6,13 +6,13 @@ layout (location = 2) in vec2 in_tex;
 
 uniform mat4 projection;
 
-out vec2 pos;
+out vec3 pos;
 out vec2 tex_coord;
 out vec4 out_color;
 
 void main() {
-    pos = in_pos.xy;
-	gl_Position = projection * vec4(in_pos.xy, 0.0, 1.0);
+    pos = in_pos;
+	gl_Position = projection * vec4(in_pos, 1.0);
     tex_coord = in_tex;
     out_color = in_color;
 }
