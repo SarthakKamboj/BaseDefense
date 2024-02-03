@@ -383,9 +383,6 @@ void update_attachable_preview_item() {
 			transform_t* att_transform = get_transform(summary.att_transform_handle);
 			game_assert_msg(att_transform, "att transform not found");
 
-			// float delta_x = globals.window.user_input.controller_x_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;
-			// float delta_y = globals.window.user_input.controller_y_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;
-
 			transform->global_position.x = att_transform->global_position.x;
 			transform->global_position.y = att_transform->global_position.y;
 		}
