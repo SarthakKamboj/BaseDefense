@@ -124,7 +124,8 @@ void update_preview_base() {
 
 	if (!is_controller_connected()) {
 		glm::vec2 mouse = mouse_to_world_pos();
-		preview_transform->global_position = glm::vec3(mouse.x, base_t::HEIGHT * 0.5f, 0.f);
+		preview_transform->global_position.x = mouse.x;
+		preview_transform->global_position.y = base_t::HEIGHT * 0.5f;
 	} else {
 		float cur_x = preview_transform->global_position.x;
 		float delta_x = globals.window.user_input.controller_x_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;

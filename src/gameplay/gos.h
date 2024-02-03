@@ -118,7 +118,7 @@ void delete_attached_gun(gun_t& gun);
 struct bullet_t {
 	int handle = -1;
 
-	glm::vec3 dir = glm::vec3(0);
+	glm::vec2 dir = glm::vec2(0);
 	float speed = 0;
 	time_count_t creation_time = 0;
 	static const float ALIVE_TIME;
@@ -130,7 +130,7 @@ struct bullet_t {
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-void create_bullet(glm::vec2 start_pos, glm::vec3& move_dir, float speed);
+void create_bullet(glm::vec2 start_pos, glm::vec2 move_dir, float speed);
 void update_bullet(bullet_t& bullet);
 void delete_bullet(bullet_t& bullet);
 
@@ -146,7 +146,7 @@ struct enemy_bullet_t {
 	int quad_render_handle = -1;
 	int rb_handle = -1;
 
-	glm::vec3 dir = glm::vec3(0);
+	glm::vec2 dir = glm::vec2(0);
 	float speed = 0;
 	time_count_t creation_time = 0;
 	static const float ALIVE_TIME;
@@ -154,7 +154,7 @@ struct enemy_bullet_t {
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-void create_enemy_bullet(glm::vec2 pos, glm::vec3 dir, float speed);
+void create_enemy_bullet(glm::vec2 pos, glm::vec2 dir, float speed);
 void delete_enemy_bullet(enemy_bullet_t& enemy_bullet);
 
 struct enemy_t {

@@ -184,7 +184,8 @@ void update_attachment(attachment_t& attachment) {
 	bool preview_btn_released = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
 	if (preview_state.cur_mode == PREVIEW_MODE::PREVIEW_GUN) {
 		preview_state.preview_gun.attachment_handle = attachment.handle;
-		preview_transform->global_position = attachment_transform->global_position;
+		preview_transform->global_position.x = attachment_transform->global_position.x;
+		preview_transform->global_position.y = attachment_transform->global_position.y;
 	
 		if(preview_btn_released && inventory.num_guns > 0) {
 			attachment_t* att = get_attachment(preview_state.preview_gun.attachment_handle);
@@ -195,7 +196,8 @@ void update_attachment(attachment_t& attachment) {
 		}	
 	} else if (preview_state.cur_mode == PREVIEW_MODE::PREVIEW_BASE_EXT) {
 		preview_state.preview_base_ext.attachment_handle = attachment.handle;
-		preview_transform->global_position = attachment_transform->global_position;
+		preview_transform->global_position.x = attachment_transform->global_position.x;
+		preview_transform->global_position.y = attachment_transform->global_position.y;
 
 		transform_t* transform = get_transform(preview_state.preview_base_ext.transform_handle);
 		game_assert_msg(transform, "transform of preview attachment not found");
@@ -406,7 +408,8 @@ void update_attached_gun(gun_t& gun) {
 	float time_between_fires = 1 / gun.fire_rate;
 	if (gun.closest_enemy.handle != -1 && gun.time_since_last_fire + time_between_fires < game::time_t::game_cur_time && t >= 1) {
 		gun.time_since_last_fire = game::time_t::game_cur_time;
-		create_bullet(attachment_transform->global_position, glm::vec3(gun_facing_dir.x, gun_facing_dir.y, 0), 800.f);
+		glm::vec2 pos(attachment_transform->global_position.x, attachment_transform->global_position.y);
+		create_bullet(pos, glm::vec2(gun_facing_dir.x, gun_facing_dir.y), 800.f);
 	}
 
 	gun.last_target_dir = gun_facing_dir;
@@ -427,7 +430,7 @@ const float bullet_t::ALIVE_TIME = 1.f;
 const int bullet_t::WIDTH = 8;
 const int bullet_t::HEIGHT = 8;
 
-void create_bullet(glm::vec2 start_pos, glm::vec3& move_dir, float speed) {
+void create_bullet(glm::vec2 start_pos, glm::vec2 move_dir, float speed) {
 	static int cnt = 0;
 	bullet_t bullet;
 	bullet.handle = cnt++;
@@ -450,12 +453,13 @@ void mark_bullet_for_deletion(int bullet_handle) {
 void update_bullet(bullet_t& bullet) {
 	transform_t* bullet_transform = get_transform(bullet.transform_handle);
 	game_assert_msg(bullet_transform, "bullet transform not found");
-	bullet_transform->global_position += bullet.dir * glm::vec3(bullet.speed * game::time_t::delta_time);
+	glm::vec2 displace = bullet.dir * glm::vec2(bullet.speed * game::time_t::delta_time);
+	bullet_transform->global_position.x += displace.x;
+	bullet_transform->global_position.y += displace.y;
 
 	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(bullet.rb_handle, PHYS_BULLET);
 	for (kin_w_kin_col_t& col : cols) {
 		if (col.kin_type1 == PHYS_ENEMY || col.kin_type2 == PHYS_ENEMY) {
-			// delete_bullet(bullet);
 			mark_bullet_for_deletion(bullet.handle);
 			return;
 		}
@@ -520,7 +524,7 @@ void update_enemy(enemy_t& enemy) {
 	game_assert_msg(transform, "transform for enemy not found");
 
 	if (enemy.enemy_state == ENEMY_WALKING) {
-		transform->global_position += glm::vec3(enemy.speed * enemy.dir * game::time_t::delta_time,0,0);	
+		transform->global_position += glm::vec3(enemy.speed * enemy.dir * game::time_t::delta_time,0,0);
 		float closest_distance = FLT_MAX;
 		for (int i = 0; i < gun_bases.size(); i++) {
 			int base_transform_handle = gun_bases[i].transform_handle;
@@ -543,7 +547,8 @@ void update_enemy(enemy_t& enemy) {
 
 			if (enemy.last_shoot_time + enemy_t::TIME_BETWEEN_SHOTS < game::time_t::game_cur_time) {
 				enemy.last_shoot_time = game::time_t::game_cur_time;
-				glm::vec3 dir = glm::normalize(base_transform->global_position - transform->global_position);
+				glm::vec3 normalized_diff = glm::normalize(base_transform->global_position - transform->global_position);
+				glm::vec2 dir = glm::vec2(normalized_diff.x, normalized_diff.y);
 				glm::vec3& pos = transform->global_position;
 				create_enemy_bullet(glm::vec2(pos.x, pos.y), dir, 800.f);
 			}
@@ -609,7 +614,7 @@ void delete_enemy(int enemy_handle) {
 const int enemy_bullet_t::WIDTH = 8;
 const int enemy_bullet_t::HEIGHT = 8;
 const float enemy_bullet_t::ALIVE_TIME = 1.f;
-void create_enemy_bullet(glm::vec2 pos, glm::vec3 dir, float speed) {
+void create_enemy_bullet(glm::vec2 pos, glm::vec2 dir, float speed) {
 	static int cnt = 0;
 	enemy_bullet_t enemy_bullet;
 	enemy_bullet.handle = cnt++;
@@ -630,7 +635,9 @@ static void mark_enemy_bullet_for_deletion(int handle) {
 void update_enemy_bullet(enemy_bullet_t& bullet) {
 	transform_t* bullet_transform = get_transform(bullet.transform_handle);
 	game_assert_msg(bullet_transform, "bullet transform not found");
-	bullet_transform->global_position += bullet.dir * glm::vec3(bullet.speed * game::time_t::delta_time);
+	glm::vec2 displace = bullet.dir * glm::vec2(bullet.speed * game::time_t::delta_time);
+	bullet_transform->global_position.x += displace.x;
+	bullet_transform->global_position.y += displace.y;
 
 	std::vector<kin_w_kin_col_t> cols = get_from_kin_w_kin_cols(bullet.rb_handle, PHYS_ENEMY_BULLET);
 	for (kin_w_kin_col_t& col : cols) {
