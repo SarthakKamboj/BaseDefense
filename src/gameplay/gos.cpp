@@ -215,6 +215,7 @@ void delete_attachment(int handle) {
 	for (int i = 0; i < attachments.size(); i++) {
 		if (attachments[i].handle == handle) {
 			delete_attachment(attachments[i]);
+			return;
 		}
 	}
 }
@@ -239,8 +240,9 @@ void delete_attachment(attachment_t& att) {
 				}
 			}
 
-			attachments.erase(attachments.begin() + i);
 			delete_attachment_from_preview_manager(att.handle);
+			attachments.erase(attachments.begin() + i);
+			return;
 		}
 	}
 }
