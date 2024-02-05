@@ -178,13 +178,13 @@ void clear_debug_pts() {
 void draw_debug_pt(glm::vec3 pos) {
 	transform_t cur_transform; 
 	cur_transform.global_position = pos;
-	cur_transform.global_position.z = 10;
-	cur_transform.global_scale *= 5.f;
+	cur_transform.global_position.z = 90;
+	cur_transform.global_scale = glm::vec3(5.f, 5.f, 1.f);
 
 	glm::mat4 model_matrix = get_global_model_matrix(cur_transform);
     // get model matrix and color and set them in the shader
 	shader_set_mat4(quad_render_t::obj_data.shader, "model", model_matrix);
-	shader_set_vec3(quad_render_t::obj_data.shader, "color", glm::vec3(1,0,0));
+	shader_set_vec3(quad_render_t::obj_data.shader, "color", glm::vec3(0,1,0));
 	shader_set_float(quad_render_t::obj_data.shader, "tex_influence", 0);
     set_fill_mode();
     // draw the rectangle render after setting all shader parameters

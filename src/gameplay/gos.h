@@ -6,9 +6,10 @@
 #include "glm/glm.hpp"
 
 #include <vector>
+#include <unordered_map>
 
 #define NUM_BASE_ATTACH_PTS 3
-#define NUM_BASE_EXT_ATTACH_PTS 2
+#define MAX_NUM_BASE_EXT_ATTACH_PTS 3
 
 struct base_t {
 	int handle = -1;
@@ -32,6 +33,11 @@ enum BASE_EXT_TYPE {
 	THREE_ATT_BOTTOM_GONE = 0,
 	THREE_ATT_RIGHT_GONE,
 	THREE_ATT_LEFT_GONE,
+	TWO_ATT_HORIZONTAL,
+	ONE_LEFT,
+	ONE_RIGHT,
+	
+	NUM_BASE_EXT_TYPES,
 };
 
 struct base_extension_t {
@@ -43,12 +49,15 @@ struct base_extension_t {
 
 	int attachment_handle = -1;
 
-	int attachment_handles[NUM_BASE_EXT_ATTACH_PTS] = {-1, -1};
+	int attachment_handles[MAX_NUM_BASE_EXT_ATTACH_PTS] = {-1, -1};
+	int num_att_pts = -1;
+	BASE_EXT_TYPE base_ext_type = TWO_ATT_HORIZONTAL;
 
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-int create_base_ext(glm::vec2 pos);
+struct attachment_t;
+int create_base_ext(attachment_t& att, BASE_EXT_TYPE type);
 void update_base_ext(base_extension_t& attachment);
 void delete_base_ext(base_extension_t& attachment);
 
@@ -59,19 +68,47 @@ enum ATTACHMENT_TYPE : int {
 };
 OR_ENUM_DEFINITION(ATTACHMENT_TYPE)
 
+enum class ATT_PLACEMENT {
+	TOP = 0,
+	RIGHT,
+	LEFT,
+	BOTTOM
+};
+
+// struct att_pos_t {
+// 	float x = 0;
+// 	float y = 0;
+
+// 	bool operator==(const att_pos_t& other) const { 
+// 		return x == other.x && y == other.y;
+// 	}
+// };
+
+// template <>
+// struct std::hash<att_pos_t> {
+// 	std::size_t operator()(const att_pos_t& pos) const
+// 	{
+// 		return std::hash<float>()(pos.x) ^ std::hash<float>()(pos.y);
+// 	}
+// };
+
+typedef int att_pos_hash;
+att_pos_hash hash_att_pos(float x, float y);
+
 struct attachment_t {
+	static std::unordered_map<att_pos_hash, int> overall_atts_placed;
 	int handle = -1;
 	int transform_handle = -1;
 	int quad_render_handle = -1;
 	bool attached = false;
-	bool facing_left = false;
+	ATT_PLACEMENT att_placement = ATT_PLACEMENT::TOP;
 
 	ATTACHMENT_TYPE attachment_types = ATTMNT_NONE;
 
 	static const int WIDTH;
 	static const int HEIGHT;
 };
-int create_attachment(glm::vec2 pos, bool facing_left, ATTACHMENT_TYPE attmt_types, base_t* base, base_extension_t* base_ext);
+int create_attachment(glm::vec2 pos, ATT_PLACEMENT att_placement, ATTACHMENT_TYPE attmt_types, base_t* base, base_extension_t* base_ext);
 void update_attachment(attachment_t& attachment);
 attachment_t* get_attachment(int handle);
 void delete_attachment(int handle);

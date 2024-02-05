@@ -39,15 +39,19 @@ void init_preview_mode() {
     char resources_path[256]{};
 	get_resources_folder_path(resources_path);
 	char image_path[512]{};
-	sprintf(image_path, "%s\\%s\\selector\\circle.png", resources_path, ART_FOLDER);
+	sprintf(image_path, "%s\\%s\\selector\\item_selector.png", resources_path, ART_FOLDER);
+    preview_state.item_selector_tex_handle = create_texture(image_path, 0);
 
-    preview_state.circle_tex_handle = create_texture(image_path, 0);
+	memset(image_path, 0, 512);
+	sprintf(image_path, "%s\\%s\\selector\\base_ext_selector.png", resources_path, ART_FOLDER);
+    preview_state.base_ext_selector_tex_handle = create_texture(image_path, 0);
+
     preview_state.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0, 0, -1);
-    preview_state.quad_render_handle = create_quad_render(preview_state.transform_handle, create_color(255,0,0), preview_state_t::START_WIDTH, preview_state_t::START_HEIGHT, false, 1.f, preview_state.circle_tex_handle);
+    // preview_state.quad_render_handle = create_quad_render(preview_state.transform_handle, create_color(255,0,0), preview_state_t::START_WIDTH, preview_state_t::START_HEIGHT, false, 1.f, -1);
     preview_state.window_rel_size = glm::vec2(preview_state_t::START_WIDTH, preview_state_t::START_HEIGHT) / glm::vec2(globals.window.window_width, globals.window.window_height);
-    quad_render_t* q = get_quad_render(preview_state.quad_render_handle);
-    game_assert_msg(q, "quad render not properly initizlied for preview");
-    q->render = false;
+    // quad_render_t* q = get_quad_render(preview_state.quad_render_handle);
+    // game_assert_msg(q, "quad render not properly initizlied for preview");
+    // q->render = false;
 
     preview_state.cur_width = preview_state_t::START_WIDTH;
     preview_state.cur_height = preview_state_t::START_HEIGHT;
@@ -157,7 +161,11 @@ void move_att_selection_left() {
 	int starting = preview_state.active_att_idx == -1 ? preview_state.sorted_att_infos.size() - 1 : preview_state.active_att_idx - 1;
 	for (int i = starting; i >= 0; i--) {
 		att_summary_info_t& summary = preview_state.sorted_att_infos[i];
-		if (preview_state.cur_mode == PREVIEW_BASE_EXT && (summary.attachment_types & ATTMNT_BASE_EXT)) {
+		int num_atts_placed_here = attachment_t::overall_atts_placed[hash_att_pos(summary.x_pos, summary.y_pos)];
+		if (num_atts_placed_here >= 2) {
+			int a = 5;
+		}
+		if (preview_state.cur_mode == PREVIEW_BASE_EXT && (summary.attachment_types & ATTMNT_BASE_EXT) && num_atts_placed_here <= 1) {
 			possible_next = i;
 			break;
 		} else if (preview_state.cur_mode == PREVIEW_GUN && (summary.attachment_types & ATTMNT_GUN)) {
@@ -179,7 +187,9 @@ void move_att_selection_right() {
 	int starting = preview_state.active_att_idx == -1 ? 0 : preview_state.active_att_idx + 1;
 	for (int i = starting; i < preview_state.sorted_att_infos.size(); i++) {
 		att_summary_info_t& summary = preview_state.sorted_att_infos[i];
-		if (preview_state.cur_mode == PREVIEW_BASE_EXT && (summary.attachment_types & ATTMNT_BASE_EXT)) {
+		att_pos_hash att_hash = hash_att_pos(summary.x_pos, summary.y_pos);
+		int num_atts_placed_here = attachment_t::overall_atts_placed[att_hash];
+		if (preview_state.cur_mode == PREVIEW_BASE_EXT && (summary.attachment_types & ATTMNT_BASE_EXT) && num_atts_placed_here <= 2) {
 			possible_next = i;
 			break;
 		} else if (preview_state.cur_mode == PREVIEW_GUN && (summary.attachment_types & ATTMNT_GUN)) {
@@ -196,71 +206,130 @@ void move_att_selection_right() {
 	}
 }
 
+const float preview_state_t::TIME_UNTIL_BASE_EXT_SELECTOR_CAN_OPEN = 2.f;
 void update_preview_mode() {
-    bool selector_open = get_down(KEY_Z) || get_down(CONTROLLER_X);
+    bool selector_pressed = get_pressed(KEY_Z) || get_pressed(CONTROLLER_X);
+    // bool selector_open = get_down(KEY_Z) || get_down(CONTROLLER_X);
     bool selector_released = get_released(KEY_Z) || get_released(CONTROLLER_X);
 
-    if (selector_open || selector_released) {
-        
+    if (selector_pressed) {
         float ratio = preview_state_t::START_HEIGHT / preview_state_t::START_WIDTH;
         preview_state.cur_width = fmin(250.f, preview_state.window_rel_size.x * globals.camera.cam_view_dimensions.x);
         preview_state.cur_height = ratio * preview_state.cur_width;
-        
-        if (selector_open) {
-            glm::vec2 mouse = mouse_to_world_pos();
-            transform_t* transform = get_transform(preview_state.transform_handle);
-            game_assert_msg(transform, "transform not found for preview state");
-
-            if (!preview_state.preview_selector_open) {
-                if (is_controller_connected()) {
-                    transform->global_position.x = globals.window.window_width / 2.f;
-                    transform->global_position.y = globals.window.window_height / 2.f;
-                } else {
-                    transform->global_position.x = mouse.x;
-                    transform->global_position.y = mouse.y;
-                }
-                preview_state.preview_selector_open = true;
-                update_hierarchy_based_on_globals();
-            }
-
-            glm::vec2 selector_pos(transform->global_position.x, transform->global_position.y);
-            static glm::vec2 rel_pos;
-            if (!is_controller_connected()){
-                rel_pos = glm::normalize(mouse - selector_pos);
-            }  else {
-                glm::vec2 controller_axes(globals.window.user_input.controller_x_axis, globals.window.user_input.controller_y_axis);
-                if (glm::distance(controller_axes, glm::vec2(0)) >= 0.5f) {
-                    rel_pos = glm::normalize(controller_axes);
-                }
-            }
-
-            float dot_w_vert = glm::dot(glm::vec2(0,1), rel_pos);
-
-            float degrees_per_option = 360.f / NUM_PREVIEWABLE_ITEMS;
-
-            if (dot_w_vert > glm::cos(glm::radians(degrees_per_option / 2.f))) {
-                preview_state.cur_preview_selector_selected = PREVIEW_BASE;
-            } else {
-                if (glm::dot(glm::vec2(1,0), rel_pos) > 0) {
-                    preview_state.cur_preview_selector_selected = PREVIEW_GUN;
-                } else {
-                    preview_state.cur_preview_selector_selected = PREVIEW_BASE_EXT;
-                }
-            }
-
-        } else if (selector_released) {
-            preview_state.preview_selector_open = false;
-			if (preview_state.cur_mode != preview_state.cur_preview_selector_selected) {
-            	preview_state.cur_mode = preview_state.cur_preview_selector_selected; 
-				preview_state.active_att_idx = -1;
-			}
-        }
+		preview_state.preview_selector_open = true;	
+		if ((game::time_t::game_cur_time - preview_state.last_time_selector_open_press) < preview_state_t::TIME_UNTIL_BASE_EXT_SELECTOR_CAN_OPEN && (preview_state.cur_mode == PREVIEW_BASE_EXT)) {
+			preview_state.selector_mode = PREVIEW_SELECTOR_BASE_EXT_TYPE; 	
+			shader_set_int(preview_state_t::preview_render_data.shader, "num_options", 6);
+		} else {
+			preview_state.selector_mode = PREVIEW_SELECTOR_ITEM;
+			shader_set_int(preview_state_t::preview_render_data.shader, "num_options", 3);
+		}
+		preview_state.last_time_selector_open_press = game::time_t::game_cur_time;
     }
 
+	if (selector_released) {
+		preview_state.preview_selector_open = false;
+		preview_state.selector_mode = PREVIEW_SELECTOR_NONE;
+		if (preview_state.cur_mode != preview_state.cur_preview_selector_selected) {
+			preview_state.cur_mode = preview_state.cur_preview_selector_selected; 
+			preview_state.active_att_idx = -1;
+		}
+	}
+
+	if (preview_state.preview_selector_open) {
+		glm::vec2 mouse = mouse_to_world_pos();
+		transform_t* transform = get_transform(preview_state.transform_handle);
+		game_assert_msg(transform, "transform not found for preview state");
+
+		if (is_controller_connected()) {
+			transform->global_position.x = globals.camera.pos.x + globals.window.window_width / 2.f;
+			transform->global_position.y = globals.camera.pos.y + globals.window.window_height / 2.f;
+		} else {
+			transform->global_position.x = mouse.x;
+			transform->global_position.y = mouse.y;
+		}
+		update_hierarchy_based_on_globals();
+
+		glm::vec2 selector_pos(transform->global_position.x, transform->global_position.y);
+		static glm::vec2 rel_pos;
+		if (!is_controller_connected()){
+			rel_pos = glm::normalize(mouse - selector_pos);
+		}  else {
+			glm::vec2 controller_axes(globals.window.user_input.controller_x_axis, globals.window.user_input.controller_y_axis);
+			if (glm::distance(controller_axes, glm::vec2(0)) >= 0.5f) {
+				rel_pos = glm::normalize(controller_axes);
+			}
+		}
+
+		float angle = glm::degrees(atan2f(rel_pos.y, rel_pos.x));
+		if (angle < 0) {
+			angle += 360.f;
+		}
+
+		if (preview_state.selector_mode == PREVIEW_SELECTOR_ITEM) {
+			float degrees_per_option = 360.f / NUM_PREVIEWABLE_ITEMS;
+			float degrees_per_option_extent = degrees_per_option / 2.f;
+			if (in_between(angle, 90.f - degrees_per_option_extent, 90.f + degrees_per_option_extent)) {
+				preview_state.cur_preview_selector_selected = PREVIEW_BASE;
+			} else if (in_between(angle, 210.f - degrees_per_option_extent, 210.f + degrees_per_option_extent)) {
+				preview_state.cur_preview_selector_selected = PREVIEW_BASE_EXT;
+			} else if (in_between(angle, 330.f - degrees_per_option_extent, 330.f + degrees_per_option_extent)) {
+				preview_state.cur_preview_selector_selected = PREVIEW_GUN;
+			}
+		} else if (preview_state.selector_mode == PREVIEW_SELECTOR_BASE_EXT_TYPE) {
+			float degrees_per_option = 360.f / NUM_BASE_EXT_TYPES;
+			float degrees_per_option_extent = degrees_per_option / 2.f;
+			if (in_between(angle, 90.f - degrees_per_option_extent, 90.f + degrees_per_option_extent)) {
+				preview_state.cur_base_ext_select_mode = ONE_LEFT;
+			} else if (in_between(angle, 30.f - degrees_per_option_extent, 30.f + degrees_per_option_extent)) {
+				preview_state.cur_base_ext_select_mode = ONE_RIGHT;
+			} else if (in_between(angle, 330.f - degrees_per_option_extent, 330.f + degrees_per_option_extent)) {
+				preview_state.cur_base_ext_select_mode = TWO_ATT_HORIZONTAL;
+			} else if (in_between(angle, 270.f - degrees_per_option_extent, 270.f + degrees_per_option_extent)) {
+				preview_state.cur_base_ext_select_mode = THREE_ATT_BOTTOM_GONE;
+			} else if (in_between(angle, 210.f - degrees_per_option_extent, 210.f + degrees_per_option_extent)) {
+				preview_state.cur_base_ext_select_mode = THREE_ATT_RIGHT_GONE;
+			} else if (in_between(angle, 150.f - degrees_per_option_extent, 150.f + degrees_per_option_extent)) {
+				preview_state.cur_base_ext_select_mode = THREE_ATT_LEFT_GONE;
+			}
+		}
+
+	}
+
+	set_ui_value(std::string("base_ext_preview_mode"), std::string(""));
     if (preview_state.cur_mode == PREVIEW_GUN) {
 		set_ui_value(std::string("preview_mode"), std::string("preview gun mode"));
 	} else if (preview_state.cur_mode == PREVIEW_BASE_EXT) {
 		set_ui_value(std::string("preview_mode"), std::string("preview base ext mode"));
+		std::string str_base_ext_selector_mode = "not recognized";
+		switch (preview_state.cur_base_ext_select_mode) {
+			case ONE_LEFT: {
+				str_base_ext_selector_mode = "one left";
+				break;
+			}
+			case ONE_RIGHT: {
+				str_base_ext_selector_mode = "one right";
+				break;
+			}
+			case TWO_ATT_HORIZONTAL: {
+				str_base_ext_selector_mode = "two att hor";
+				break;
+			}
+			case THREE_ATT_BOTTOM_GONE: {
+				str_base_ext_selector_mode = "3 att bottom gone";
+				break;
+			}
+			case THREE_ATT_LEFT_GONE: {
+				str_base_ext_selector_mode = "3 att left gone";
+				break;
+			}
+			case THREE_ATT_RIGHT_GONE: {
+				str_base_ext_selector_mode = "3 att right gone";
+				break;
+			}
+		}
+
+		set_ui_value(std::string("base_ext_preview_mode"), str_base_ext_selector_mode);
 	} else if (preview_state.cur_mode == PREVIEW_BASE) {
 		set_ui_value(std::string("preview_mode"), std::string("preview base mode"));
 	} else {
@@ -281,38 +350,72 @@ void render_preview_mode() {
 	glm::mat4 projection = get_ortho_matrix(globals.window.window_width, globals.window.window_height);
 	shader_set_mat4(shader, "projection", projection);
 
-	quad_render_t* quad = get_quad_render(preview_state.quad_render_handle);
-	game_assert_msg(quad, "could not find quad for preview_state");
-    quad->width = preview_state.cur_width;
-    quad->height = preview_state.cur_height;
+	// quad_render_t* quad = get_quad_render(preview_state.quad_render_handle);
+	// game_assert_msg(quad, "could not find quad for preview_state");
+    // quad->width = preview_state.cur_width;
+    // quad->height = preview_state.cur_height;
 
     // get the transform for that rectangle render
     transform_t* transform_ptr = get_transform(preview_state.transform_handle);
     game_assert_msg(transform_ptr != NULL, "the transform for this quad doesn't exist");
 	transform_t cur_transform = *transform_ptr;
-	cur_transform.global_scale *= glm::vec3(quad->width, quad->height, 1.f);
+	cur_transform.global_scale *= glm::vec3(preview_state.cur_width, preview_state.cur_height, 1.f);
 
 	glm::mat4 model_matrix = get_global_model_matrix(cur_transform);
 	shader_set_mat4(shader, "model", model_matrix);
-	shader_set_vec3(shader, "color", quad->color);
-    bind_texture(quad->tex_handle);
+	shader_set_vec3(shader, "color", create_color(255, 0, 0));
+    // bind_texture(quad->tex_handle);
+	if (preview_state.selector_mode == PREVIEW_SELECTOR_ITEM) {
+		bind_texture(preview_state.item_selector_tex_handle);
+	} else {
+		bind_texture(preview_state.base_ext_selector_tex_handle);
+	}
     set_fill_mode();
 
     glm::vec2 selection_pt(0);
-    switch (preview_state.cur_preview_selector_selected) {
-        case PREVIEW_BASE: {
-            selection_pt = unit_circle_val(90);
-            break;
-        }
-        case PREVIEW_BASE_EXT: {
-            selection_pt = unit_circle_val(210);
-            break;
-        }
-        case PREVIEW_GUN: {
-            selection_pt = unit_circle_val(-30);
-            break;
-        }
-    }
+	if (preview_state.selector_mode == PREVIEW_SELECTOR_ITEM) {
+		switch (preview_state.cur_preview_selector_selected) {
+			case PREVIEW_BASE: {
+				selection_pt = unit_circle_val(90);
+				break;
+			}
+			case PREVIEW_BASE_EXT: {
+				selection_pt = unit_circle_val(210);
+				break;
+			}
+			case PREVIEW_GUN: {
+				selection_pt = unit_circle_val(-30);
+				break;
+			}
+		}
+	} else if (preview_state.selector_mode == PREVIEW_SELECTOR_BASE_EXT_TYPE) {
+		switch (preview_state.cur_base_ext_select_mode) {
+			case ONE_LEFT: {
+				selection_pt = unit_circle_val(90);
+				break;
+			}
+			case ONE_RIGHT: {
+				selection_pt = unit_circle_val(30);
+				break;
+			}
+			case TWO_ATT_HORIZONTAL: {
+				selection_pt = unit_circle_val(-30);
+				break;
+			}
+			case THREE_ATT_BOTTOM_GONE: {
+				selection_pt = unit_circle_val(-90);
+				break;
+			}
+			case THREE_ATT_RIGHT_GONE: {
+				selection_pt = unit_circle_val(-150);
+				break;
+			}
+			case THREE_ATT_LEFT_GONE: {
+				selection_pt = unit_circle_val(150);
+				break;
+			}
+		}
+	}
     
     shader_set_vec2(shader, "selection_point", selection_pt);
 
@@ -330,7 +433,7 @@ void init_base_ext_preview() {
 }
 
 void update_attachable_preview_item() {
-	if (preview_state.cur_mode == PREVIEW_BASE || preview_state.cur_mode == PREVIEW_NONE) return;
+	if (preview_state.cur_mode == PREVIEW_BASE) return;
 
 	bool preview_down = get_down(LEFT_MOUSE) || get_down(CONTROLLER_Y);
 
@@ -420,10 +523,16 @@ void add_attachment_to_preview_manager(attachment_t& att) {
 	transform_t* att_transform = get_transform(att.transform_handle);
 	game_assert_msg(att_transform, "transform for att not found");
 	summary.x_pos = att_transform->global_position.x;
+	summary.y_pos = att_transform->global_position.y;
+
+	if (preview_state.active_att_idx != -1 && summary.x_pos < preview_state.sorted_att_infos[preview_state.active_att_idx].x_pos) {
+		preview_state.active_att_idx++;	
+	}
+
 	preview_state.sorted_att_infos.push_back(summary);
 
 	std::sort(preview_state.sorted_att_infos.begin(), preview_state.sorted_att_infos.end(), att_summary_info_less_than());
-	printf("added att handle %i at x pos %f\n", summary.att_handle, summary.x_pos);
+	// printf("added att handle %i at x pos %f\n", summary.att_handle, summary.x_pos);
 }
 
 void delete_attachment_from_preview_manager(int att_handle) {

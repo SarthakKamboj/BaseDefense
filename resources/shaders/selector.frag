@@ -8,11 +8,12 @@ out vec4 frag_color;
 uniform sampler2D selector_image_tex;
 uniform vec2 selection_point;
 uniform vec3 color;
+uniform int num_options;
 
 void main() {
     vec4 tex_color = texture(selector_image_tex, tex_coord);
     float cos_theta = dot(normalize(selection_point), normalize(local_rel_pos));
-    bool in_section = cos_theta > cos(radians(60));
+    bool in_section = cos_theta > cos(radians(360 / num_options / 2));
     frag_color = tex_color;
     if (in_section) {
         frag_color = tex_color * vec4(color, 1);

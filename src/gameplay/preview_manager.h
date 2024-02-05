@@ -8,27 +8,41 @@ enum PREVIEW_MODE {
 	PREVIEW_BASE_EXT,
 	PREVIEW_BASE,
 	NUM_PREVIEWABLE_ITEMS,
-
-	PREVIEW_NONE
 };
 
 struct att_summary_info_t {
     int att_handle = -1;
     int att_transform_handle = -1;
     float x_pos = 0;
+    float y_pos = 0;
     ATTACHMENT_TYPE attachment_types = ATTMNT_NONE;
 };
 
+enum PREVIEW_SELECTOR_MODE {
+    PREVIEW_SELECTOR_ITEM = 0,
+    PREVIEW_SELECTOR_BASE_EXT_TYPE,
+	PREVIEW_SELECTOR_NONE
+};
+
 struct preview_state_t {
-    PREVIEW_MODE cur_mode = PREVIEW_NONE;
+    PREVIEW_MODE cur_mode = PREVIEW_BASE;
     bool preview_selector_open = false;
-    PREVIEW_MODE cur_preview_selector_selected = PREVIEW_NONE;
+    PREVIEW_MODE cur_preview_selector_selected = PREVIEW_BASE;
+
+    BASE_EXT_TYPE cur_base_ext_select_mode = TWO_ATT_HORIZONTAL;
+    PREVIEW_SELECTOR_MODE selector_mode = PREVIEW_SELECTOR_NONE;
+    time_count_t last_time_selector_open_press = -TIME_UNTIL_BASE_EXT_SELECTOR_CAN_OPEN;
+
+    static const float TIME_UNTIL_BASE_EXT_SELECTOR_CAN_OPEN;
     
     static render_object_data preview_render_data;
     
-    int circle_tex_handle = -1;
+    int item_selector_tex_handle = -1;
+    int base_ext_selector_tex_handle = -1;
+
     int transform_handle = -1;
-    int quad_render_handle = -1;
+
+    // int quad_render_handle = -1;
 
     glm::vec2 window_rel_size = glm::vec2(0);
 

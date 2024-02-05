@@ -23,3 +23,7 @@ glm::vec2 unit_circle_val(float degrees) {
 glm::vec2 lerp(glm::vec2 start, glm::vec2 end, float t) {
     return (1 - t) * start + (end * t);
 }
+
+bool in_between(float val, float min, float max) {
+    return val >= min && val <= max;
+}

@@ -16,6 +16,9 @@
                 {{{preview_mode}}}
             </text>
             <text>
+                base selector mode: {{{base_ext_preview_mode}}}
+            </text>
+            <text>
                 Enemies Left To Kill: {{{num_enemies_left_to_kill}}}
             </text>
         </container>
