@@ -161,11 +161,11 @@ void move_att_selection_left() {
 	int starting = preview_state.active_att_idx == -1 ? preview_state.sorted_att_infos.size() - 1 : preview_state.active_att_idx - 1;
 	for (int i = starting; i >= 0; i--) {
 		att_summary_info_t& summary = preview_state.sorted_att_infos[i];
-		int num_atts_placed_here = attachment_t::overall_atts_placed[hash_att_pos(summary.x_pos, summary.y_pos)];
+		int num_atts_placed_here = attachment_t::overall_atts_placed_w_base_ext[hash_att_pos(summary.x_pos, summary.y_pos)];
 		if (num_atts_placed_here >= 2) {
 			int a = 5;
 		}
-		if (preview_state.cur_mode == PREVIEW_BASE_EXT && (summary.attachment_types & ATTMNT_BASE_EXT) && num_atts_placed_here <= 1) {
+		if (preview_state.cur_mode == PREVIEW_BASE_EXT && (summary.attachment_types & ATTMNT_BASE_EXT) && num_atts_placed_here < 2) {
 			possible_next = i;
 			break;
 		} else if (preview_state.cur_mode == PREVIEW_GUN && (summary.attachment_types & ATTMNT_GUN)) {
@@ -175,10 +175,10 @@ void move_att_selection_left() {
 	}
 	if (possible_next != -1) {
 		preview_state.active_att_idx = possible_next;
-		printf("attachment of handle %i found\n", preview_state.sorted_att_infos[possible_next].att_handle);
+		// printf("attachment of handle %i found\n", preview_state.sorted_att_infos[possible_next].att_handle);
 	}
 	else {
-		printf("no new attachment found\n");
+		// printf("no new attachment found\n");
 	}
 }
 
@@ -188,8 +188,8 @@ void move_att_selection_right() {
 	for (int i = starting; i < preview_state.sorted_att_infos.size(); i++) {
 		att_summary_info_t& summary = preview_state.sorted_att_infos[i];
 		att_pos_hash att_hash = hash_att_pos(summary.x_pos, summary.y_pos);
-		int num_atts_placed_here = attachment_t::overall_atts_placed[att_hash];
-		if (preview_state.cur_mode == PREVIEW_BASE_EXT && (summary.attachment_types & ATTMNT_BASE_EXT) && num_atts_placed_here <= 2) {
+		int num_atts_placed_here = attachment_t::overall_atts_placed_w_base_ext[att_hash];
+		if (preview_state.cur_mode == PREVIEW_BASE_EXT && (summary.attachment_types & ATTMNT_BASE_EXT) && num_atts_placed_here < 2) {
 			possible_next = i;
 			break;
 		} else if (preview_state.cur_mode == PREVIEW_GUN && (summary.attachment_types & ATTMNT_GUN)) {
@@ -199,10 +199,10 @@ void move_att_selection_right() {
 	}
 	if (possible_next != -1) {
 		preview_state.active_att_idx = possible_next;
-		printf("attachment of handle %i found\n", preview_state.sorted_att_infos[possible_next].att_handle);
+		// printf("attachment of handle %i found\n", preview_state.sorted_att_infos[possible_next].att_handle);
 	}
 	else {
-		printf("no new attachment found\n");
+		// printf("no new attachment found\n");
 	}
 }
 
@@ -486,6 +486,8 @@ void update_attachable_preview_item() {
 			att_summary_info_t& summary = preview_state.sorted_att_infos[preview_state.active_att_idx];
 			transform_t* att_transform = get_transform(summary.att_transform_handle);
 			game_assert_msg(att_transform, "att transform not found");
+
+			add_debug_pt(glm::vec3(summary.x_pos, summary.y_pos, 50));
 
 			transform->global_position.x = att_transform->global_position.x;
 			transform->global_position.y = att_transform->global_position.y;

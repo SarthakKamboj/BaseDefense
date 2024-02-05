@@ -163,9 +163,6 @@ int create_attachment(glm::vec2 pos, ATT_PLACEMENT att_placement, ATTACHMENT_TYP
 	add_attachment_to_preview_manager(attmt);
 	transform_t* t = get_transform(attmt.transform_handle);
 	game_assert_msg(t, "transform for att not found");
-	att_pos_hash att_hash = hash_att_pos(t->global_position.x, t->global_position.y);
-	attachment_t::overall_atts_placed[att_hash] += 1;
-	printf("at att pos hash %i, val is %i\n", att_hash, attachment_t::overall_atts_placed[att_hash]);
 	return attmt.handle;
 }
 
@@ -173,7 +170,6 @@ void update_attachment(attachment_t& attachment) {
 	transform_t* attachment_transform = get_transform(attachment.transform_handle);
 	game_assert_msg(attachment_transform, "could not find transform of attachment pt");
 
-	add_debug_pt(attachment_transform->global_position);
 	if (attachment.attached) return;
 
 	if (preview_state.cur_mode != PREVIEW_GUN && preview_state.cur_mode != PREVIEW_BASE_EXT) return;
@@ -354,6 +350,14 @@ int create_base_ext(attachment_t& att, BASE_EXT_TYPE type) {
 		}
 	}
 	
+	for (int i = 0; i < base_ext.num_att_pts; i++)	 {
+		attachment_t* att = get_attachment(base_ext.attachment_handles[i]);
+		game_assert_msg(att, "att not found");
+		transform_t* t = get_transform(att->transform_handle);
+		att_pos_hash att_hash = hash_att_pos(t->global_position.x, t->global_position.y);
+		attachment_t::overall_atts_placed_w_base_ext[att_hash] += 1;
+		printf("for pos: (%f, %f), the value is now %i\n", t->global_position.x, t->global_position.y, attachment_t::overall_atts_placed_w_base_ext[att_hash]);
+	}
 
 	attached_base_exts.push_back(base_ext);
 	return base_ext.handle;
@@ -764,7 +768,7 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 	transform_t* transform = get_transform(spawner.transform_handle);
 	game_assert_msg(transform, "transform for enemy spawner not found");
 	glm::vec3& pos = transform->global_position;
-	// create_enemy(glm::vec2(pos.x, pos.y), 1, 40.f);
+	create_enemy(glm::vec2(pos.x, pos.y), 1, 40.f);
 	spawner.last_spawn_time = spawner.enemy_relative_time;
 }
 
@@ -859,7 +863,7 @@ void gos_update_delete_pass() {
 
 void delete_gos() {
 	attachments.clear();
-	attachment_t::overall_atts_placed.clear();
+	attachment_t::overall_atts_placed_w_base_ext.clear();
 	attached_guns.clear();
 	bullets.clear();
 	enemy_spawners.clear();
@@ -873,7 +877,7 @@ void delete_gos() {
 	preview_state.preview_gun = gun_t();
 }
 
-std::unordered_map<att_pos_hash, int> attachment_t::overall_atts_placed;
+std::unordered_map<att_pos_hash, int> attachment_t::overall_atts_placed_w_base_ext;
 
 att_pos_hash hash_att_pos(float x, float y) {
 	// return (att_pos_hash)(std::hash<int>()(x) ^ std::hash<int>()(y));

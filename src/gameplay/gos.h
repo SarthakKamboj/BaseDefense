@@ -96,7 +96,7 @@ typedef int att_pos_hash;
 att_pos_hash hash_att_pos(float x, float y);
 
 struct attachment_t {
-	static std::unordered_map<att_pos_hash, int> overall_atts_placed;
+	static std::unordered_map<att_pos_hash, int> overall_atts_placed_w_base_ext;
 	int handle = -1;
 	int transform_handle = -1;
 	int quad_render_handle = -1;
