@@ -21,19 +21,19 @@ bool level_finished = false;
 int main(int argc, char *argv[])
 {	 
 
-	widget_t widget1;
-	widget1.x = 0;
-	widget1.y = 1600;
-	widget1.render_height = 800;
-	widget1.render_width = 800;
+	// widget_t widget1;
+	// widget1.x = 0;
+	// widget1.y = 1600;
+	// widget1.render_height = 800;
+	// widget1.render_width = 800;
 
-	widget_t widget2;
-	widget2.x = 400;
-	widget2.y = 400;
-	widget2.render_height = 100;
-	widget2.render_width = 100;
-	bool behind = partially_behind_widget(widget2, widget1);
-	game_assert_msg(behind == false, "should be behind");
+	// widget_t widget2;
+	// widget2.x = 400;
+	// widget2.y = 400;
+	// widget2.render_height = 100;
+	// widget2.render_width = 100;
+	// bool behind = partially_behind_widget(widget2, widget1);
+	// game_assert_msg(behind == false, "should be behind");
 
 	bool running_in_vs = false;
 	if (argc > 1) {
@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
 		end_timer(frame_timer);
 
 		game::time_t::delta_time = fmin(frame_timer.elapsed_time_sec, 1 / 60.f);
+		// game::time_t::delta_time = frame_timer.elapsed_time_sec;
 		game::time_t::cur_time += game::time_t::delta_time;	
 
 		if (get_pressed(PRINT_FRAME_TIME_LOGS_KEY)) {
