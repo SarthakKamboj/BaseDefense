@@ -136,6 +136,7 @@ struct gun_t {
 	static const int WIDTH;
 	static const int HEIGHT;
 	static const float RETARGET_ANIM_TIME;
+	static const float MAX_DISTANCE_TO_ENEMY;
 
 	static std::vector<int> enemy_died_handles;
 };

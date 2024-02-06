@@ -402,16 +402,24 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 
 std::vector<int> gun_t::enemy_died_handles;
 const float gun_t::RETARGET_ANIM_TIME = 1;
+const float gun_t::MAX_DISTANCE_TO_ENEMY = bullet_t::ALIVE_TIME * 800.f;
 void update_attached_gun(gun_t& gun) {	
 	set_quad_color(gun.quad_render_handle, create_color(60,0,240));
+
+	transform_t* gun_transform = get_transform(gun.transform_handle);
+	game_assert_msg(gun_transform, "transform for gun not found");
 
 	if (gun.closest_enemy.handle != -1 && std::find(gun_t::enemy_died_handles.begin(), gun_t::enemy_died_handles.end(), gun.closest_enemy.handle) != gun_t::enemy_died_handles.end()) {
 		gun.closest_enemy.handle = -1;
 		gun.closest_enemy.transform_handle = -1;
-	}	
-
-	transform_t* gun_transform = get_transform(gun.transform_handle);
-	game_assert_msg(gun_transform, "transform for gun not found");
+	} else if (gun.closest_enemy.handle != -1) {
+		transform_t* enemy_transform = get_transform(gun.closest_enemy.transform_handle);
+		game_assert_msg(enemy_transform, "enemy transform not found");
+		if (glm::distance(enemy_transform->global_position, gun_transform->global_position) > gun_t::MAX_DISTANCE_TO_ENEMY) {
+			gun.closest_enemy.handle = -1;
+			gun.closest_enemy.transform_handle = -1;
+		}
+	}
 
 	attachment_t* att = get_attachment(gun.attachment_handle);
 	game_assert_msg(att, "att for attached gun not found");
@@ -424,7 +432,7 @@ void update_attached_gun(gun_t& gun) {
 			transform_t* enemy_transform = get_transform(go_globals.enemies[i].transform_handle);
 			game_assert_msg(enemy_transform, "enemy transform not found");
 			float distance = glm::distance(enemy_transform->global_position, attachment_transform->global_position);
-			if (distance < closest && std::find(gun_t::enemy_died_handles.begin(), gun_t::enemy_died_handles.end(), go_globals.enemies[i].handle) == gun_t::enemy_died_handles.end()) {
+			if (distance < closest && distance <= gun_t::MAX_DISTANCE_TO_ENEMY && std::find(gun_t::enemy_died_handles.begin(), gun_t::enemy_died_handles.end(), go_globals.enemies[i].handle) == gun_t::enemy_died_handles.end()) {
 				closest = distance;
 				gun.closest_enemy.handle = go_globals.enemies[i].handle;
 				gun.closest_enemy.transform_handle = go_globals.enemies[i].transform_handle;
@@ -468,7 +476,7 @@ void update_attached_gun(gun_t& gun) {
 	if (gun.closest_enemy.handle != -1 && gun.time_since_last_fire + time_between_fires < game::time_t::game_cur_time && t >= 1) {
 		gun.time_since_last_fire = game::time_t::game_cur_time;
 		glm::vec2 pos(attachment_transform->global_position.x, attachment_transform->global_position.y);
-		create_bullet(pos, glm::vec2(gun_facing_dir.x, gun_facing_dir.y), 800.f);
+		// create_bullet(pos, glm::vec2(gun_facing_dir.x, gun_facing_dir.y), 800.f);
 	}
 
 	gun.last_target_dir = gun_facing_dir;
@@ -645,6 +653,7 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 	game_assert_msg(transform, "transform for enemy spawner not found");
 	glm::vec2 pos = transform->global_position;
 	if (spawner.enemy_type_spawner == ENEMY_TYPE::GROUND) {
+		static bool made = false;
 		create_enemy(pos, spawner.dir, 40.f);
 	} else if (spawner.enemy_type_spawner == ENEMY_TYPE::AIR) {
 		create_air_enemy(pos, 40.f);
