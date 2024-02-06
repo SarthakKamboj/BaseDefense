@@ -42,7 +42,7 @@ int create_rigidbody(int transform_handle, bool use_gravity, float collider_widt
 	aabb_collider.height = collider_height;
 
 	// debug stuff
-	aabb_collider.collider_debug_transform_handle = create_transform(glm::vec3(aabb_collider.x, aabb_collider.y, 0.f), glm::vec3(1.f), 0.f);
+	aabb_collider.collider_debug_transform_handle = create_transform(glm::vec2(aabb_collider.x, aabb_collider.y), 9.f, glm::vec3(1.f), 0.f);
 	aabb_collider.collider_debug_render_handle = -1;
 	
 	if (debug) {
@@ -112,13 +112,11 @@ bool sat_detect_collision(rigidbody_t& rb1, rigidbody_t& rb2) {
 	transform_t transform1_obj;
 	transform1_obj.global_position.x = rb1.aabb_collider.x;
 	transform1_obj.global_position.y = rb1.aabb_collider.y;
-	transform1_obj.global_position.z = 0;
 	transform_t* transform1 = &transform1_obj;
 
 	transform_t transform2_obj;
 	transform2_obj.global_position.x = rb2.aabb_collider.x;
 	transform2_obj.global_position.y = rb2.aabb_collider.y;
-	transform2_obj.global_position.z = 0;
 	transform_t* transform2 = &transform2_obj;
 
 	float grid1_x = floor(transform1->global_position.x / 40);

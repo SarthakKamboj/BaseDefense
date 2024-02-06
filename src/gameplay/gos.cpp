@@ -48,8 +48,7 @@ void create_base(glm::vec2 pos) {
 	base_t gun_base;
 	gun_base.handle = cnt++;
 
-	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[BASE_Z_POS_KEY]);
-	gun_base.transform_handle = create_transform(place_pos, glm::vec3(1), 0.f, 0.f);
+	gun_base.transform_handle = create_transform(pos, go_globals.z_positions[BASE_Z_POS_KEY], glm::vec2(1), 0.f, 0.f);
 	gun_base.quad_render_handle = create_quad_render(gun_base.transform_handle, create_color(59,74,94), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
 	gun_base.rb_handle = create_rigidbody(gun_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYS_BASE, true, true);
 
@@ -152,11 +151,10 @@ int create_attachment(glm::vec2 pos, ATT_PLACEMENT att_placement, ATTACHMENT_TYP
 	attmt.handle = cnt++;
 	attmt.attachment_types = attmt_types;
 	attmt.att_placement = att_placement;
-	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[ATT_Z_POS_KEY]);
 	if (base) {
-		attmt.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, base->transform_handle);
+		attmt.transform_handle = create_transform(pos, go_globals.z_positions[ATT_Z_POS_KEY], glm::vec2(1), 0, 0, base->transform_handle);
 	} else {
-		attmt.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, ext->transform_handle);
+		attmt.transform_handle = create_transform(pos, go_globals.z_positions[ATT_Z_POS_KEY], glm::vec2(1), 0, 0, ext->transform_handle);
 	}
 	attmt.quad_render_handle = create_quad_render(attmt.transform_handle, create_color(0,0,255), attachment_t::WIDTH, attachment_t::HEIGHT, false, 0, -1);
 	attachments.push_back(attmt);
@@ -208,8 +206,6 @@ void update_attachment(attachment_t& attachment) {
 		transform_t* transform = get_transform(preview_state.preview_base_ext.transform_handle);
 		game_assert_msg(transform, "transform of preview attachment not found");
 		if(preview_btn_released && inventory.num_base_exts > 0) {
-			glm::vec3 pos = transform->global_position;
-			// create_base_ext(glm::vec2(pos.x, pos.y), preview_state.cur_base_ext_select_mode);
 			create_base_ext(attachment, preview_state.cur_base_ext_select_mode);
 			inventory.num_base_exts--;
 			delete_attachment_from_preview_manager(attachment.handle);
@@ -281,27 +277,27 @@ int create_base_ext(attachment_t& att, BASE_EXT_TYPE type) {
 	// glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[BASE_EXT_Z_POS_KEY]);
 	
 	glm::vec2 offset(base_extension_t::WIDTH * 0.45f, base_extension_t::HEIGHT * 0.45f);
-	glm::vec3 place_pos(0);
+	glm::vec2 place_pos(0);
 	switch (att.att_placement) {
 		case ATT_PLACEMENT::TOP: {
-			place_pos = glm::vec3(0, offset.y, go_globals.z_positions[BASE_EXT_Z_POS_KEY]);
+			place_pos = glm::vec2(0, offset.y);
 			break;
 		}
 		case ATT_PLACEMENT::BOTTOM: {
-			place_pos = glm::vec3(0, -offset.y, go_globals.z_positions[BASE_EXT_Z_POS_KEY]);
+			place_pos = glm::vec2(0, -offset.y);
 			break;
 		}
 		case ATT_PLACEMENT::RIGHT: {
-			place_pos = glm::vec3(offset.x, 0, go_globals.z_positions[BASE_EXT_Z_POS_KEY]);
+			place_pos = glm::vec2(offset.x, 0);
 			break;
 		}
 		case ATT_PLACEMENT::LEFT: {
-			place_pos = glm::vec3(-offset.x, 0, go_globals.z_positions[BASE_EXT_Z_POS_KEY]);
+			place_pos = glm::vec2(-offset.x, 0);
 			break;
 		}
 	}
 
-	base_ext.transform_handle = create_transform(place_pos, glm::vec3(1), 0.f, 0.f, att.transform_handle);
+	base_ext.transform_handle = create_transform(place_pos, go_globals.z_positions[BASE_EXT_Z_POS_KEY], glm::vec2(1), 0.f, 0.f, att.transform_handle);
 	base_ext.quad_render_handle = create_quad_render(base_ext.transform_handle, create_color(240,74,94), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
 	base_ext.rb_handle = create_rigidbody(base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_NONE, false, true);
 	base_ext.attachment_handle = preview_state.preview_base_ext.attachment_handle;
@@ -400,9 +396,9 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 	gun.facing_left = facing_left;
 
 	int multiplier = facing_left ? -1 : 1;
-	glm::vec3 gun_pos = glm::vec3(multiplier * gun_t::WIDTH / 2.f, 0, go_globals.z_positions[GUN_Z_POS_KEY]);
+	glm::vec2 gun_pos = glm::vec2(multiplier * gun_t::WIDTH / 2.f, 0);
 
-	gun.transform_handle = create_transform(gun_pos, glm::vec3(1), 0.f, 0.f, att->transform_handle);
+	gun.transform_handle = create_transform(gun_pos, go_globals.z_positions[GUN_Z_POS_KEY], glm::vec2(1), 0.f, 0.f, att->transform_handle);
 	transform_t* g = get_transform(gun.transform_handle);
 	gun.quad_render_handle = create_quad_render(gun.transform_handle, create_color(30,0,120), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
 	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYS_NONE, true, true);
@@ -511,8 +507,7 @@ void create_bullet(glm::vec2 start_pos, glm::vec2 move_dir, float speed) {
 	bullet_t bullet;
 	bullet.handle = cnt++;
 
- 	glm::vec3 place_pos(start_pos.x, start_pos.y, go_globals.z_positions[BULLET_Z_POS_KEY]);
-	bullet.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, -1);
+	bullet.transform_handle = create_transform(start_pos, go_globals.z_positions[BULLET_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
 	bullet.quad_render_handle = create_quad_render(bullet.transform_handle, glm::vec3(1,1,0), bullet_t::WIDTH, bullet_t::HEIGHT, false, 0, -1);
 	bullet.rb_handle = create_rigidbody(bullet.transform_handle, false, bullet_t::WIDTH, bullet_t::HEIGHT, true, PHYS_BULLET, true, true);
 
@@ -581,8 +576,7 @@ void create_enemy(glm::vec2 pos, int dir, float speed) {
 	enemy.dir = dir;
 	enemy.enemy_state = ENEMY_WALKING;
 	enemy.speed = speed;
-	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[ENEMY_Z_POS_KEY]);
-	enemy.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, -1);
+	enemy.transform_handle = create_transform(pos, go_globals.z_positions[ENEMY_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
 	enemy.quad_render_handle = create_quad_render(enemy.transform_handle, create_color(75, 25, 25), enemy_t::WIDTH, enemy_t::HEIGHT, false, 0, -1);
 	enemy.rb_handle = create_rigidbody(enemy.transform_handle, false, enemy_t::WIDTH, enemy_t::HEIGHT, true, PHYS_ENEMY, true, true);
 	enemies.push_back(enemy);
@@ -600,7 +594,7 @@ void update_enemy(enemy_t& enemy) {
 	game_assert_msg(transform, "transform for enemy not found");
 
 	if (enemy.enemy_state == ENEMY_WALKING) {
-		transform->global_position += glm::vec3(enemy.speed * enemy.dir * game::time_t::delta_time,0,0);
+		transform->global_position += glm::vec2(enemy.speed * enemy.dir * game::time_t::delta_time, 0);
 		float closest_distance = FLT_MAX;
 		for (int i = 0; i < gun_bases.size(); i++) {
 			int base_transform_handle = gun_bases[i].transform_handle;
@@ -623,9 +617,8 @@ void update_enemy(enemy_t& enemy) {
 
 			if (enemy.last_shoot_time + enemy_t::TIME_BETWEEN_SHOTS < game::time_t::game_cur_time) {
 				enemy.last_shoot_time = game::time_t::game_cur_time;
-				glm::vec3 normalized_diff = glm::normalize(base_transform->global_position - transform->global_position);
-				glm::vec2 dir = glm::vec2(normalized_diff.x, normalized_diff.y);
-				glm::vec3& pos = transform->global_position;
+				glm::vec2 dir = glm::normalize(base_transform->global_position - transform->global_position);
+				glm::vec2 pos = transform->global_position;
 				create_enemy_bullet(glm::vec2(pos.x, pos.y), dir, 800.f);
 			}
 		}
@@ -694,8 +687,7 @@ void create_enemy_bullet(glm::vec2 pos, glm::vec2 dir, float speed) {
 	static int cnt = 0;
 	enemy_bullet_t enemy_bullet;
 	enemy_bullet.handle = cnt++;
- 	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[ENEMY_BULLET_Z_POS_KEY]);
-	enemy_bullet.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, -1);
+	enemy_bullet.transform_handle = create_transform(pos, go_globals.z_positions[ENEMY_BULLET_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
 	enemy_bullet.rb_handle = create_rigidbody(enemy_bullet.transform_handle, false, enemy_bullet_t::WIDTH, enemy_bullet_t::HEIGHT, true, PHYS_ENEMY_BULLET, true, true);
 	enemy_bullet.quad_render_handle = create_quad_render(enemy_bullet.transform_handle, glm::vec3(0,1,0), enemy_bullet_t::WIDTH, enemy_bullet_t::HEIGHT, false, 0.f, -1);
 	enemy_bullet.creation_time = game::time_t::game_cur_time;
@@ -755,8 +747,7 @@ void create_enemy_spawner(glm::vec2 pos) {
 	static int cnt = 0;
 	enemy_spawner_t enemy_spawner;	
 	enemy_spawner.handle = cnt++;
-	glm::vec3 place_pos(pos.x, pos.y, go_globals.z_positions[ENEMY_SPAWNER_Z_POS_KEY]);
-	enemy_spawner.transform_handle = create_transform(place_pos, glm::vec3(1), 0, 0, -1);
+	enemy_spawner.transform_handle = create_transform(pos, go_globals.z_positions[ENEMY_SPAWNER_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
 	enemy_spawner.quad_render_handle = create_quad_render(enemy_spawner.transform_handle, create_color(25,25,75), 60, 140, false, 0, -1);
 
 	enemy_spawners.push_back(enemy_spawner);
@@ -767,8 +758,8 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 	if (spawner.last_spawn_time + enemy_spawner_t::TIME_BETWEEN_SPAWNS >= spawner.enemy_relative_time) return;
 	transform_t* transform = get_transform(spawner.transform_handle);
 	game_assert_msg(transform, "transform for enemy spawner not found");
-	glm::vec3& pos = transform->global_position;
-	create_enemy(glm::vec2(pos.x, pos.y), 1, 40.f);
+	glm::vec2 pos = transform->global_position;
+	create_enemy(pos, 1, 40.f);
 	spawner.last_spawn_time = spawner.enemy_relative_time;
 }
 

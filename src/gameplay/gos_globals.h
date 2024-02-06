@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 
+#define PREVIEW_SELECTOR_Z_POS_KEY "preview_selector"
 #define PREVIEW_Z_POS_KEY "preview"
 #define ATT_Z_POS_KEY "att"
 #define BASE_Z_POS_KEY "base"

@@ -109,6 +109,7 @@ void create_image_container(int texture_handle, float width, float height, WIDGE
 widget_t create_widget() {
     widget_t widget;
     widget.style = styles_stack[styles_stack.size() - 1];
+    widget.children_widget_handles.reserve(10);
     return widget;
 }
 

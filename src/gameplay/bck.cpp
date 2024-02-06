@@ -15,10 +15,10 @@ int parallax_bck::rec_render_handles[PARALLAX_BCK::NUM_BCKS] = {-1, -1, -1, -1};
 
 static int ground_height = -10;
 void init_parallax_bck_data() {
-	parallax_bck::transform_handles[EVEN1] = create_transform(glm::vec3(-1, -1, 0), glm::vec3(1), 0.f, 0.f);
-	parallax_bck::transform_handles[EVEN2] = create_transform(glm::vec3(-1, -1, 0), glm::vec3(1), 0.f, 0.f);
-	parallax_bck::transform_handles[ODD1] = create_transform(glm::vec3(-1, -1, 0), glm::vec3(1), 0.f, 0.f);
-	parallax_bck::transform_handles[ODD2] = create_transform(glm::vec3(-1, -1, 0), glm::vec3(1), 0.f, 0.f);
+	parallax_bck::transform_handles[EVEN1] = create_transform(glm::vec2(-1, -1), 0, glm::vec2(1), 0.f, 0.f);
+	parallax_bck::transform_handles[EVEN2] = create_transform(glm::vec2(-1, -1), 0, glm::vec2(1), 0.f, 0.f);
+	parallax_bck::transform_handles[ODD1] = create_transform(glm::vec2(-1, -1), 0, glm::vec2(1), 0.f, 0.f);
+	parallax_bck::transform_handles[ODD2] = create_transform(glm::vec2(-1, -1), 0, glm::vec2(1), 0.f, 0.f);
 
 	char resource_path[256]{};
 	get_resources_folder_path(resource_path);

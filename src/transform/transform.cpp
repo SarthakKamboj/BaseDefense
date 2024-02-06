@@ -133,13 +133,14 @@ void extract_translation_scale_rot(const glm::mat4& A, glm::vec3& translation, g
     rotation = glm::vec3(glm::degrees(rot_x), glm::degrees(rot_y), glm::degrees(rot_z));
 }
 
-int create_transform(glm::vec3 position, glm::vec3 scale, float rot_deg, float y_deg, int parent_transform_handle) {
+int create_transform(glm::vec2 position, float z_pos, glm::vec2 scale, float rot_deg, float y_deg, int parent_transform_handle) {
     static int running_count = 0;
 	transform_t transform;
     transform.handle = running_count++;
     transform.local_position = position;
 	transform.local_scale = scale;
     transform.local_rotation = glm::vec3(0, y_deg, rot_deg);
+    transform.z_pos = z_pos;
 
     transform.parent_transform_handle = parent_transform_handle;
     if (transform.parent_transform_handle == -1) {
@@ -153,7 +154,12 @@ int create_transform(glm::vec3 position, glm::vec3 scale, float rot_deg, float y
         parent_transform->child_transform_handles.push_back(transform.handle);
 
         glm::mat4 cur_global_model = get_global_model_matrix(*parent_transform) * get_local_model_matrix(transform);
-        extract_translation_scale_rot(cur_global_model, transform.global_position, transform.global_scale, transform.global_rotation);
+        glm::vec3 translation(0);
+        glm::vec3 scale(0);
+        extract_translation_scale_rot(cur_global_model, translation, scale, transform.global_rotation);
+        
+        transform.global_position = glm::vec2(translation.x, translation.y);
+        transform.global_scale = glm::vec2(scale.x, scale.y);
         
         // transform.global_position = glm::vec3(cur_global_model[3].x, cur_global_model[3].y, cur_global_model[3].z);
 
@@ -178,39 +184,33 @@ glm::mat4 get_local_model_matrix(transform_t& transform) {
         hence the calculation is T * R * S in linear algebra terms, which is
         why translation is done first in code, then rotation, then scale
     */
-	model = glm::translate(model, transform.local_position);
+	model = glm::translate(model, glm::vec3(transform.local_position.x, transform.local_position.y, 0));
 	model = glm::rotate(model, glm::radians(transform.local_rotation.z), glm::vec3(0.f, 0.f, 1.f));
 	model = glm::rotate(model, glm::radians(transform.local_rotation.y), glm::vec3(0.f, 1.f, .0f));
 	model = glm::rotate(model, glm::radians(transform.local_rotation.x), glm::vec3(1.f, 0.f, .0f));
-	const glm::vec3& scale = transform.local_scale;
+	glm::vec2 scale = transform.local_scale;
 	model = glm::scale(model, glm::vec3(scale.x, scale.y, 1.0f));
 	return model;
 }
 
-glm::mat4 get_global_model_matrix(transform_t& transform) {
+glm::mat4 get_global_model_matrix(transform_t& transform, bool with_z) {
 	glm::mat4 model = glm::mat4(1.0f);
     /* 
         we want to scale first, then rotate, then translate in the model space
         hence the calculation is T * R * S in linear algebra terms, which is
         why translation is done first in code, then rotation, then scale
     */
-	model = glm::translate(model, transform.global_position);
+    if (with_z) {
+	    model = glm::translate(model, glm::vec3(transform.global_position.x, transform.global_position.y, transform.z_pos));
+    } else {
+	    model = glm::translate(model, glm::vec3(transform.global_position.x, transform.global_position.y, 0));
+    }
 	model = glm::rotate(model, glm::radians(transform.global_rotation.z), glm::vec3(0.f, 0.f, 1.f));
 	model = glm::rotate(model, glm::radians(transform.global_rotation.y), glm::vec3(0.f, 1.f, .0f));
 	model = glm::rotate(model, glm::radians(transform.global_rotation.x), glm::vec3(1.f, 0.f, .0f));
-	const glm::vec3& scale = transform.global_scale;
+	glm::vec2 scale = transform.global_scale;
 	model = glm::scale(model, glm::vec3(scale.x, scale.y, 1.0f));
 	return model;
-}
-
-glm::vec3 get_world_pos(transform_t* transform) {
-    return transform->global_position;
-    // if (transform->parent_transform_handle == -1) {
-    //     return transform->global_position;
-    // }
-    // transform_t* parent_transform = get_transform(transform->parent_transform_handle);
-    // game_assert_msg(parent_transform, "parent transform not found");
-    // return parent_transform->global_position + transform->global_position;
 }
 
 transform_t* get_transform(int transform_handle) {
@@ -244,17 +244,20 @@ void update_local_recursively(transform_t* transform) {
         transform->local_scale = transform->global_scale;
         transform->local_rotation = transform->global_rotation;
     } else {
-        glm::mat4 cur_global = get_global_model_matrix(*transform);
+        glm::mat4 cur_global = get_global_model_matrix(*transform, false);
         transform_t* parent_transform = get_transform(transform->parent_transform_handle);
         game_assert_msg(parent_transform, "parent transform of new transform doesn't exist");
-        glm::mat4 parent_global = get_global_model_matrix(*parent_transform);
+        glm::mat4 parent_global = get_global_model_matrix(*parent_transform, false);
         glm::mat4 new_local = glm::inverse(parent_global)  * cur_global;
-        extract_translation_scale_rot(new_local, transform->local_position, transform->local_scale, transform->local_rotation);
+        glm::vec3 translation(0);
+        glm::vec3 scale(1);
+        extract_translation_scale_rot(new_local, translation, scale, transform->local_rotation);
+        transform->local_position = glm::vec2(translation.x, translation.y);
+        transform->local_scale = glm::vec2(scale.x, scale.y);
     }
     for (int i = 0; i < transform->child_transform_handles.size(); i++) {
         transform_t* t = get_transform(transform->child_transform_handles[i]);
         game_assert_msg(t, "transform for child handle not found");
-        // update_local_recursively(t);
         update_global_recursively(t);
     }
 }
@@ -268,7 +271,11 @@ void update_global_recursively(transform_t* transform) {
         transform_t* parent_transform = get_transform(transform->parent_transform_handle);
         game_assert_msg(parent_transform, "parent transform of new transform doesn't exist");
         glm::mat4 cur_global_model = get_global_model_matrix(*parent_transform) * get_local_model_matrix(*transform);
-        extract_translation_scale_rot(cur_global_model, transform->global_position, transform->global_scale, transform->global_rotation);
+        glm::vec3 translation(0);
+        glm::vec3 scale(1);
+        extract_translation_scale_rot(cur_global_model, translation, scale, transform->global_rotation);
+        transform->global_position = glm::vec2(translation.x, translation.y);
+        transform->global_scale = glm::vec2(scale.x, scale.y);
     }
     for (int i = 0; i < transform->child_transform_handles.size(); i++) {
         transform_t* t = get_transform(transform->child_transform_handles[i]);
@@ -277,12 +284,12 @@ void update_global_recursively(transform_t* transform) {
     } 
 }
 
-void set_local_pos(transform_t* t, glm::vec3& pos) {
+void set_local_pos(transform_t* t, glm::vec2& pos) {
     t->local_position = pos;
     update_global_recursively(t);
 }
 
-void set_local_scale(transform_t* t, glm::vec3& scale) {
+void set_local_scale(transform_t* t, glm::vec2& scale) {
     t->local_scale = scale;
     update_global_recursively(t);
 }
@@ -292,12 +299,12 @@ void set_local_rot(transform_t* t, glm::vec3& rot) {
     update_global_recursively(t);
 }
 
-void set_global_pos(transform_t* t, glm::vec3& pos) {
+void set_global_pos(transform_t* t, glm::vec2& pos) {
     t->global_position = pos;
     update_local_recursively(t);
 }
 
-void set_global_scale(transform_t* t, glm::vec3& scale) {
+void set_global_scale(transform_t* t, glm::vec2& scale) {
     t->global_scale = scale;
     update_local_recursively(t);
 }
@@ -313,14 +320,6 @@ void update_hierarchy_based_on_globals() {
     for (int i = 0; i < transforms.size(); i++) {
         if (transforms[i].parent_transform_handle == -1) {
             update_local_recursively(&transforms[i]);
-        }
-    }
-}
-
-void update_hierarchy_based_on_locals() {
-    for (int i = 0; i < transforms.size(); i++) {
-        if (transforms[i].parent_transform_handle == -1) {
-            update_global_recursively(&transforms[i]);
         }
     }
 }

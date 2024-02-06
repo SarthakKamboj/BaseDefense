@@ -46,7 +46,7 @@ void init_preview_mode() {
 	sprintf(image_path, "%s\\%s\\selector\\base_ext_selector.png", resources_path, ART_FOLDER);
     preview_state.base_ext_selector_tex_handle = create_texture(image_path, 0);
 
-    preview_state.transform_handle = create_transform(glm::vec3(0), glm::vec3(1), 0, 0, -1);
+    preview_state.transform_handle = create_transform(glm::vec2(0), go_globals.z_positions[PREVIEW_SELECTOR_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
     // preview_state.quad_render_handle = create_quad_render(preview_state.transform_handle, create_color(255,0,0), preview_state_t::START_WIDTH, preview_state_t::START_HEIGHT, false, 1.f, -1);
     preview_state.window_rel_size = glm::vec2(preview_state_t::START_WIDTH, preview_state_t::START_HEIGHT) / glm::vec2(globals.window.window_width, globals.window.window_height);
     // quad_render_t* q = get_quad_render(preview_state.quad_render_handle);
@@ -108,7 +108,7 @@ void init_preview_mode() {
 void init_preview_base() {
 	base_t& preview_base = preview_state.preview_base; 
     preview_base.handle = -1;
-	preview_base.transform_handle = create_transform(glm::vec3(0, 0, go_globals.z_positions[PREVIEW_Z_POS_KEY]), glm::vec3(1), 0.f, 0.f);
+	preview_base.transform_handle = create_transform(glm::vec2(0, 0), go_globals.z_positions[PREVIEW_Z_POS_KEY], glm::vec2(1), 0.f, 0.f);
 	preview_base.quad_render_handle = create_quad_render(preview_base.transform_handle, create_color(60,90,30), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
 	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYS_NONE, true, false);
 }
@@ -145,8 +145,8 @@ void update_preview_base() {
 
 	bool released_preview_button = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
 	if (released_preview_button && inventory.num_bases > 0) {
-		glm::vec3& pos = preview_transform->global_position;
-		create_base(glm::vec2(pos.x, pos.y));
+		glm::vec2 pos = preview_transform->global_position;
+		create_base(pos);
 		inventory.num_bases--;
 	}
 
@@ -359,9 +359,9 @@ void render_preview_mode() {
     transform_t* transform_ptr = get_transform(preview_state.transform_handle);
     game_assert_msg(transform_ptr != NULL, "the transform for this quad doesn't exist");
 	transform_t cur_transform = *transform_ptr;
-	cur_transform.global_scale *= glm::vec3(preview_state.cur_width, preview_state.cur_height, 1.f);
+	cur_transform.global_scale *= glm::vec2(preview_state.cur_width, preview_state.cur_height);
 
-	glm::mat4 model_matrix = get_global_model_matrix(cur_transform);
+	glm::mat4 model_matrix = get_global_model_matrix(cur_transform, true);
 	shader_set_mat4(shader, "model", model_matrix);
 	shader_set_vec3(shader, "color", create_color(255, 0, 0));
     // bind_texture(quad->tex_handle);
@@ -427,7 +427,7 @@ void init_base_ext_preview() {
     base_extension_t& preview_base_ext = preview_state.preview_base_ext;
 	preview_base_ext.handle = -1;
 
-	preview_base_ext.transform_handle = create_transform(glm::vec3(0, 0, go_globals.z_positions[PREVIEW_Z_POS_KEY]), glm::vec3(1), 0.f, 0.f);
+	preview_base_ext.transform_handle = create_transform(glm::vec2(0, 0), go_globals.z_positions[PREVIEW_Z_POS_KEY], glm::vec2(1), 0.f, 0.f);
 	preview_base_ext.quad_render_handle = create_quad_render(preview_base_ext.transform_handle, create_color(145, 145, 145), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
 	preview_base_ext.rb_handle = create_rigidbody(preview_base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_NONE, true, false);
 }
@@ -506,7 +506,7 @@ void init_preview_gun() {
 
 	preview_gun.attachment_handle = -1;
 
-	preview_gun.transform_handle = create_transform(glm::vec3(0, 0, go_globals.z_positions[PREVIEW_Z_POS_KEY]), glm::vec3(1), 0.f, 0.f, -1);
+	preview_gun.transform_handle = create_transform(glm::vec2(0, 0), go_globals.z_positions[PREVIEW_Z_POS_KEY], glm::vec2(1), 0.f, 0.f, -1);
 	preview_gun.quad_render_handle = create_quad_render(preview_gun.transform_handle, valid_placement_color, gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
 	preview_gun.rb_handle = create_rigidbody(preview_gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYS_NONE, false, false);
 }

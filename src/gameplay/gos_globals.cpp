@@ -6,6 +6,7 @@ void init_gos_globals() {
     auto& z_positions = go_globals.z_positions;
 
     z_positions[PREVIEW_Z_POS_KEY] = 6;
+    z_positions[PREVIEW_SELECTOR_Z_POS_KEY] = 7;
     z_positions[ATT_Z_POS_KEY] = 5;
 	z_positions[BASE_Z_POS_KEY] = 0;
 	z_positions[BASE_EXT_Z_POS_KEY] = 3;

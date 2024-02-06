@@ -296,6 +296,9 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
         }
     }   
 
+    
+
+    // TODO: THIS STUFF MAY NEED TO BE DONE SEPARATELY
     style_t original_style = widget.style;
     ui_anim_player_t* hover_anim_player = get_ui_anim_player_by_idx(widget.attached_hover_anim_player_handle);
     if (hover_anim_player && hover_anim_player->duration_cursor > 0) {
@@ -309,6 +312,7 @@ widget_registration_info_t register_widget(widget_t& widget, const char* key, bo
             widget.style = get_intermediate_style(original_style, *attached_player);
         }
     }
+
 
     arr.push_back(widget);
     if (push_onto_stack) {
@@ -647,8 +651,6 @@ style_t get_intermediate_style(style_t& original_style, ui_anim_player_t& player
     }
     if (anim->style_params_overriden.translate) {
         new_style.translate = (anim_weight * anim->style.translate) + (1 - anim_weight) * original_style.translate;
-        // if (anim_weight > 0 && anim_weight < 1) {
-        // }
     }
 
     return new_style;
@@ -1374,12 +1376,17 @@ ui_anim_player_t* get_ui_anim_player_by_handle(int handle) {
 }
 
 ui_anim_t* get_ui_anim(int handle) {
-    for (int i = 0; i < ui_anims.size(); i++) {
-        if (ui_anims[i].handle == handle) {
-            return &ui_anims[i];
-        }
+    // can use as index b/c ui_anims never get cleared out
+    if (handle >= ui_anims.size()) {
+        return NULL;
     }
-    return NULL;
+    return &ui_anims[handle];
+    // for (int i = 0; i < ui_anims.size(); i++) {
+    //     if (ui_anims[i].handle == handle) {
+    //         return &ui_anims[i];
+    //     }
+    // }
+    // return NULL;
 }
 
 void set_translate_in_ui_anim(const char* anim_name, glm::vec2 translate) {
