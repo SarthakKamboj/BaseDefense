@@ -220,11 +220,12 @@ void update_preview_mode() {
 		if ((game::time_t::game_cur_time - preview_state.last_time_selector_open_press) < preview_state_t::TIME_UNTIL_BASE_EXT_SELECTOR_CAN_OPEN && (preview_state.cur_mode == PREVIEW_BASE_EXT)) {
 			preview_state.selector_mode = PREVIEW_SELECTOR_BASE_EXT_TYPE; 	
 			shader_set_int(preview_state_t::preview_render_data.shader, "num_options", 6);
+			preview_state.last_time_selector_open_press = game::time_t::game_cur_time - preview_state.last_time_selector_open_press;
 		} else {
 			preview_state.selector_mode = PREVIEW_SELECTOR_ITEM;
 			shader_set_int(preview_state_t::preview_render_data.shader, "num_options", 3);
+			preview_state.last_time_selector_open_press = game::time_t::game_cur_time;
 		}
-		preview_state.last_time_selector_open_press = game::time_t::game_cur_time;
     }
 
 	if (selector_released) {
