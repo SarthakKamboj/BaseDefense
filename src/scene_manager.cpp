@@ -11,8 +11,11 @@
 #include "utils/io.h"
 #include "globals.h"
 #include "gameplay/preview_manager.h"
+#include "gameplay/enemies.h"
+#include "gameplay/gos_globals.h"
 
-extern score_t score;
+extern go_globals_t go_globals;
+
 extern inventory_t inventory;
 extern store_t store;
 extern globals_t globals;
@@ -92,14 +95,14 @@ void scene_manager_update(scene_manager_t& sm) {
                 add_ui_anim_to_widget(bottom_border_name, "move_up");
             }
         } else {
-
             scene_manager_t::levels_unlocked[sm.cur_level-1] = true;
             enemy_t::deleted_base_handles.clear();
             gun_t::enemy_died_handles.clear();
 
             init_preview_mode();
 	        init_camera();	
-            create_enemy_spawner(glm::vec2(50, 50));
+            create_enemy_spawner(glm::vec2(50, 50), MOVE_DIR::RIGHT);
+            create_enemy_spawner(glm::vec2(500, 50), MOVE_DIR::LEFT);
 
             add_active_ui_file("play.xml");
             add_active_ui_file("play_anims.json");
@@ -119,7 +122,7 @@ void scene_manager_update(scene_manager_t& sm) {
             add_ui_anim_to_widget("gun_container", "selected");
 
 
-            score.enemies_left_to_kill = scene_manager_t::levels[sm.cur_level-1].num_enemies_to_kill;
+            go_globals.score.enemies_left_to_kill = scene_manager_t::levels[sm.cur_level-1].num_enemies_to_kill;
             inventory = inventory_t();
             store = store_t();
 

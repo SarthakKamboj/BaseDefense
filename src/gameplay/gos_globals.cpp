@@ -15,4 +15,6 @@ void init_gos_globals() {
 	z_positions[ENEMY_BULLET_Z_POS_KEY] = 2;
 	z_positions[ENEMY_SPAWNER_Z_POS_KEY] = 0;
 	z_positions[ENEMY_Z_POS_KEY] = 1;
+
+	go_globals.attachments.reserve(500);
 };

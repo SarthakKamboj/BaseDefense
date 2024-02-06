@@ -2,6 +2,7 @@
 
 #include "utils/time.h"
 #include "constants.h"
+#include "go_helper.h"
 
 #include "glm/glm.hpp"
 
@@ -114,11 +115,6 @@ attachment_t* get_attachment(int handle);
 void delete_attachment(int handle);
 void delete_attachment(attachment_t& att);
 
-struct closest_entity_t {
-	int handle = -1;	
-	int transform_handle = -1;
-};
-
 struct gun_t {
 	int handle = -1;
 
@@ -166,11 +162,6 @@ void create_bullet(glm::vec2 start_pos, glm::vec2 move_dir, float speed);
 void update_bullet(bullet_t& bullet);
 void delete_bullet(bullet_t& bullet);
 
-enum ENEMY_STATE {
-	ENEMY_WALKING = 0,
-	ENEMY_SHOOTING
-};
-
 struct enemy_bullet_t {
 	int handle = -1;
 
@@ -188,50 +179,6 @@ struct enemy_bullet_t {
 };
 void create_enemy_bullet(glm::vec2 pos, glm::vec2 dir, float speed);
 void delete_enemy_bullet(enemy_bullet_t& enemy_bullet);
-
-struct enemy_t {
-	int handle = -1;
-	ENEMY_STATE enemy_state = ENEMY_WALKING;
-
-	int transform_handle = -1;
-	int quad_render_handle = -1;
-	int rb_handle = -1;
-
-	static const int WIDTH;
-	static const int HEIGHT;
-
-	int dir = 1;
-	int health = 100;
-
-	float speed = 0;
-	closest_entity_t closest_base;
-	static const float DIST_TO_BASE;
-	static const float TIME_BETWEEN_SHOTS;
-	time_count_t last_shoot_time = -TIME_BETWEEN_SHOTS;
-
-	static std::vector<int> deleted_base_handles;
-};
-
-void create_enemy(glm::vec2 pos, int dir, float speed);
-void update_enemy(enemy_t& enemy);
-void delete_enemy(int enemy_handle);
-
-struct enemy_spawner_t {
-	int handle = -1;
-
-	int transform_handle = -1;
-	int quad_render_handle = -1;
-
-	static const int WIDTH;
-	static const int HEIGHT;
-
-	static const float TIME_BETWEEN_SPAWNS;
-	time_count_t last_spawn_time = -TIME_BETWEEN_SPAWNS;
-	time_count_t enemy_relative_time = 0;
-};
-
-void create_enemy_spawner(glm::vec2 pos);
-void update_enemy_spawner(enemy_spawner_t& spawner);
 
 struct score_t {
 	int enemies_left_to_kill = 10;

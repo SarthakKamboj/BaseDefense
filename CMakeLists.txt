@@ -37,6 +37,7 @@ function(configure_game)
         src/gameplay/store.cpp
         src/gameplay/preview_manager.cpp
         src/gameplay/gos_globals.cpp
+        src/gameplay/enemies.cpp
 
         src/animation/animation.cpp
 

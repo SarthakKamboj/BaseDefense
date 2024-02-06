@@ -2,6 +2,10 @@
 
 #include <map>
 #include <string>
+#include <vector>
+
+#include "gos.h"
+#include "enemies.h"
 
 #define PREVIEW_SELECTOR_Z_POS_KEY "preview_selector"
 #define PREVIEW_Z_POS_KEY "preview"
@@ -16,6 +20,18 @@
 
 struct go_globals_t {
     std::map<std::string, int> z_positions;
+
+    std::vector<base_t> gun_bases;
+    std::vector<base_extension_t> attached_base_exts;
+    std::vector<gun_t> attached_guns;
+    std::vector<bullet_t> bullets;
+    std::vector<enemy_bullet_t> enemy_bullets;
+    std::vector<attachment_t> attachments;
+    std::vector<enemy_t> enemies;
+    std::vector<enemy_spawner_t> enemy_spawners;
+    std::vector<int> enemies_to_delete;
+
+    score_t score;
 };
 
 void init_gos_globals();
