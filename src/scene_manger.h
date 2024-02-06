@@ -20,6 +20,7 @@ struct scene_manager_t {
 
 void scene_manager_init();
 void unload_level();
+void unlock_level(int level);
 // void scene_manager_load_level(scene_manager_t& sm, int level_num);
 void scene_manager_update(scene_manager_t& sm);
 

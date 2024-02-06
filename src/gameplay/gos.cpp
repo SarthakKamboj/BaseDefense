@@ -656,7 +656,13 @@ void update_score() {
     set_ui_value(std::string("num_enemies_left_to_kill"), std::to_string(go_globals.score.enemies_left_to_kill));
 	if (go_globals.score.enemies_left_to_kill == 0) {
 		globals.scene_manager.queue_level_load = true;
-		globals.scene_manager.level_to_load = GAME_OVER_SCREEN_LEVEL;
+		if (globals.scene_manager.cur_level == globals.scene_manager.levels.size()) {
+			globals.scene_manager.level_to_load = GAME_OVER_SCREEN_LEVEL;
+		} else {
+			globals.scene_manager.level_to_load = LEVELS_DISPLAY;
+			unlock_level(globals.scene_manager.cur_level + 1);
+			// globals.scene_manager.level_to_load = globals.scene_manager.cur_level + 1;
+		}
 	}
 }
 

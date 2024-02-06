@@ -62,6 +62,11 @@ void unload_level() {
     delete_gos();
 }
 
+void unlock_level(int level) {
+    game_assert_msg(level >= LEVEL_1 && level <= LEVEL_5, "level is not within the correct bounds");
+    globals.scene_manager.levels_unlocked[level-1] = true;
+}
+
 void scene_manager_update(scene_manager_t& sm) {
     if (sm.queue_level_load) {
         sm.queue_level_load = false;

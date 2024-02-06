@@ -42,6 +42,7 @@ void update() {
             } else {
                 set_ui_value(std::string(text_buffer), std::string("x"));
             }
+
             if (globals.scene_manager.levels_unlocked[i-1]) {
                 char container_name[16]{};
                 sprintf(container_name, "%i_container", i);
