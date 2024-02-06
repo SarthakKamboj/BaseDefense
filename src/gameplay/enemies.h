@@ -24,6 +24,13 @@ enum class ENEMY_TYPE {
 	AIR
 };
 
+struct air_enemy_specific_info_t {
+	glm::vec2 target_loc_at_top_of_screen = glm::vec2(-1, -1);
+	bool at_top_of_screen = false;
+	MOVE_DIR dir = MOVE_DIR::RIGHT;
+	time_count_t last_time_changed_dir = 0;
+};
+
 struct enemy_t {
 	int handle = -1;
 	ENEMY_STATE enemy_state = ENEMY_STATE::ENEMY_MOVING;
@@ -36,7 +43,9 @@ struct enemy_t {
 	static const int GROUND_WIDTH;
 	static const int GROUND_HEIGHT;
 	static const int AIR_WIDTH;
-	static const int AIR_HEIGHT;
+	static const int AIR_HEIGHT;	
+
+	air_enemy_specific_info_t air;
 
 	int width = -1;
 	int height = -1;

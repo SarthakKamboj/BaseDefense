@@ -10,8 +10,10 @@
 #include "ui/ui.h"
 #include "ui/ui_elements.h"
 #include "utils/general.h"
+#include "globals.h"
 
 extern go_globals_t go_globals;
+extern globals_t globals;
 
 std::vector<int> enemy_t::deleted_base_handles;
 
@@ -81,6 +83,8 @@ void update_enemy(enemy_t& enemy) {
 			}
 
 		} else if (enemy.enemy_type == ENEMY_TYPE::AIR) {
+			air_enemy_specific_info_t& air = enemy.air;
+
 			if (std::find(enemy_t::deleted_base_handles.begin(), enemy_t::deleted_base_handles.end(), enemy.closest_base.handle) != enemy_t::deleted_base_handles.end()) {
 				enemy.closest_base.handle = -1;
 			}
@@ -95,6 +99,8 @@ void update_enemy(enemy_t& enemy) {
 						closest_distance = base_dist;
 						enemy.closest_base.handle = go_globals.gun_bases[i].handle;
 						enemy.closest_base.transform_handle = go_globals.gun_bases[i].transform_handle;
+						air.at_top_of_screen = false;
+						air.target_loc_at_top_of_screen = glm::vec2(-1, -1);
 					}
 				}
 			}
@@ -108,6 +114,30 @@ void update_enemy(enemy_t& enemy) {
 				float base_dist = abs(transform->global_position.x - base_transform->global_position.x);
 				if (base_dist < enemy_t::DIST_TO_BASE) {
 					enemy.enemy_state = ENEMY_STATE::ENEMY_SHOOTING;
+				}
+			} else {
+				glm::vec2& target = air.target_loc_at_top_of_screen;
+				if (target == glm::vec2(-1, -1)) {
+					target.x = (globals.window.window_width * 0.05f) + (rand() % static_cast<int>(globals.window.window_width * 0.9f));
+					target.y = globals.window.window_height - enemy.height - 20.f - (rand() % 45);
+				}
+				
+				if (glm::distance(target, transform->global_position) <= 2.f && !air.at_top_of_screen) {
+					air.at_top_of_screen = true;
+					air.dir = (rand() % 2) == 0 ? MOVE_DIR::RIGHT : MOVE_DIR::LEFT;
+				}
+
+				if (air.at_top_of_screen) {
+					transform->global_position += glm::vec2(enemy.speed * ((int)air.dir) * game::time_t::delta_time, 0);
+					float top_of_screen_x = air.target_loc_at_top_of_screen.x;
+					float mindless_move_x_extent = globals.window.window_width * .4f;
+					if (((transform->global_position.x <= top_of_screen_x - mindless_move_x_extent) || (transform->global_position.x >= top_of_screen_x + mindless_move_x_extent)) && (game::time_t::game_cur_time - air.last_time_changed_dir > 1.f)) {
+						air.dir = static_cast<MOVE_DIR>(-1 * (int)air.dir);
+						air.last_time_changed_dir = game::time_t::game_cur_time;
+					}
+				} else {
+					glm::vec2 move_dir = glm::normalize(target - transform->global_position);
+					transform->global_position += move_dir * enemy.speed * (float)game::time_t::delta_time;		
 				}
 			}
 		}	
