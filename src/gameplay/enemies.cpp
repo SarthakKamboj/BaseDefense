@@ -15,18 +15,39 @@ extern go_globals_t go_globals;
 
 std::vector<int> enemy_t::deleted_base_handles;
 
-const int enemy_t::HEIGHT = 120;
-const int enemy_t::WIDTH = 40;
+static int enemy_cnt = 0;
+
+const int enemy_t::GROUND_HEIGHT = 120;
+const int enemy_t::GROUND_WIDTH = 40;
+const int enemy_t::AIR_HEIGHT = 40;
+const int enemy_t::AIR_WIDTH = 40;
 void create_enemy(glm::vec2 pos, MOVE_DIR dir, float speed) {
-	static int cnt = 0;
 	enemy_t enemy;
-	enemy.handle = cnt++;
+	enemy.handle = enemy_cnt++;
 	enemy.dir = dir;
-	enemy.enemy_state = ENEMY_WALKING;
+	enemy.enemy_state = ENEMY_STATE::ENEMY_MOVING;
+	enemy.enemy_type = ENEMY_TYPE::GROUND;
 	enemy.speed = speed;
 	enemy.transform_handle = create_transform(pos, go_globals.z_positions[ENEMY_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
-	enemy.quad_render_handle = create_quad_render(enemy.transform_handle, create_color(75, 25, 25), enemy_t::WIDTH, enemy_t::HEIGHT, false, 0, -1);
-	enemy.rb_handle = create_rigidbody(enemy.transform_handle, false, enemy_t::WIDTH, enemy_t::HEIGHT, true, PHYS_ENEMY, true, true);
+	enemy.quad_render_handle = create_quad_render(enemy.transform_handle, create_color(165, 42, 42), enemy_t::GROUND_WIDTH, enemy_t::GROUND_HEIGHT, false, 0, -1);
+	enemy.rb_handle = create_rigidbody(enemy.transform_handle, false, enemy_t::GROUND_WIDTH, enemy_t::GROUND_HEIGHT, true, PHYS_ENEMY, true, true);
+	enemy.width = enemy_t::GROUND_WIDTH;
+	enemy.height = enemy_t::GROUND_HEIGHT; 
+	go_globals.enemies.push_back(enemy);
+}
+
+void create_air_enemy(glm::vec2 pos, float speed) {
+	enemy_t enemy;
+	enemy.handle = enemy_cnt++;
+	enemy.dir = MOVE_DIR::NONE;
+	enemy.enemy_state = ENEMY_STATE::ENEMY_MOVING;
+	enemy.enemy_type = ENEMY_TYPE::AIR;
+	enemy.speed = speed;
+	enemy.transform_handle = create_transform(pos, go_globals.z_positions[ENEMY_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
+	enemy.quad_render_handle = create_quad_render(enemy.transform_handle, create_color(235,234,235), enemy_t::AIR_WIDTH, enemy_t::AIR_HEIGHT, false, 0, -1);
+	enemy.rb_handle = create_rigidbody(enemy.transform_handle, false, enemy_t::AIR_WIDTH, enemy_t::AIR_HEIGHT, true, PHYS_ENEMY, true, true);
+	enemy.width = enemy_t::AIR_WIDTH;
+	enemy.height = enemy_t::AIR_HEIGHT;
 	go_globals.enemies.push_back(enemy);
 }
 
@@ -41,24 +62,60 @@ void update_enemy(enemy_t& enemy) {
 	transform_t* transform = get_transform(enemy.transform_handle);
 	game_assert_msg(transform, "transform for enemy not found");
 
-	if (enemy.enemy_state == ENEMY_WALKING) {
-		transform->global_position += glm::vec2(enemy.speed * ((int)enemy.dir) * game::time_t::delta_time, 0);
-		float closest_distance = FLT_MAX;
-		for (int i = 0; i < go_globals.gun_bases.size(); i++) {
-			int base_transform_handle = go_globals.gun_bases[i].transform_handle;
-			transform_t* base_transform = get_transform(base_transform_handle);
-			game_assert_msg(base_transform, "base transform not found");
-			float base_dist = abs(transform->global_position.x - base_transform->global_position.x);
-			if (base_dist < enemy_t::DIST_TO_BASE && base_dist < closest_distance) {
-				closest_distance = base_dist;
-				enemy.closest_base.handle = go_globals.gun_bases[i].handle;
-				enemy.closest_base.transform_handle = go_globals.gun_bases[i].transform_handle;
-				enemy.enemy_state = ENEMY_SHOOTING;
+	if (enemy.enemy_state == ENEMY_STATE::ENEMY_MOVING) {
+		if (enemy.enemy_type == ENEMY_TYPE::GROUND) {
+			transform->global_position += glm::vec2(enemy.speed * ((int)enemy.dir) * game::time_t::delta_time, 0);
+
+			float closest_distance = FLT_MAX;
+			for (int i = 0; i < go_globals.gun_bases.size(); i++) {
+				int base_transform_handle = go_globals.gun_bases[i].transform_handle;
+				transform_t* base_transform = get_transform(base_transform_handle);
+				game_assert_msg(base_transform, "base transform not found");
+				float base_dist = abs(transform->global_position.x - base_transform->global_position.x);
+				if (base_dist < enemy_t::DIST_TO_BASE && base_dist < closest_distance) {
+					closest_distance = base_dist;
+					enemy.closest_base.handle = go_globals.gun_bases[i].handle;
+					enemy.closest_base.transform_handle = go_globals.gun_bases[i].transform_handle;
+					enemy.enemy_state = ENEMY_STATE::ENEMY_SHOOTING;
+				}
 			}
-		}
-	} else if (enemy.enemy_state == ENEMY_SHOOTING) {
+
+		} else if (enemy.enemy_type == ENEMY_TYPE::AIR) {
+			if (std::find(enemy_t::deleted_base_handles.begin(), enemy_t::deleted_base_handles.end(), enemy.closest_base.handle) != enemy_t::deleted_base_handles.end()) {
+				enemy.closest_base.handle = -1;
+			}
+			if (enemy.closest_base.handle == -1) {
+				float closest_distance = FLT_MAX;
+				for (int i = 0; i < go_globals.gun_bases.size(); i++) {
+					int base_transform_handle = go_globals.gun_bases[i].transform_handle;
+					transform_t* base_transform = get_transform(base_transform_handle);
+					game_assert_msg(base_transform, "base transform not found");
+					float base_dist = abs(transform->global_position.x - base_transform->global_position.x);
+					if (base_dist < closest_distance) {
+						closest_distance = base_dist;
+						enemy.closest_base.handle = go_globals.gun_bases[i].handle;
+						enemy.closest_base.transform_handle = go_globals.gun_bases[i].transform_handle;
+					}
+				}
+			}
+
+			if (enemy.closest_base.handle != -1) {
+				transform_t* base_transform = get_transform(enemy.closest_base.transform_handle);
+				game_assert_msg(base_transform, "base transform not found");
+				glm::vec2 diff = base_transform->global_position - transform->global_position;
+				glm::vec2 move_dir = glm::normalize(diff);
+				transform->global_position += move_dir * enemy.speed * (float)game::time_t::delta_time;
+				float base_dist = abs(transform->global_position.x - base_transform->global_position.x);
+				if (base_dist < enemy_t::DIST_TO_BASE) {
+					enemy.enemy_state = ENEMY_STATE::ENEMY_SHOOTING;
+				}
+			}
+		}	
+	} else if (enemy.enemy_state == ENEMY_STATE::ENEMY_SHOOTING) {
 		if (std::find(enemy_t::deleted_base_handles.begin(), enemy_t::deleted_base_handles.end(), enemy.closest_base.handle) != enemy_t::deleted_base_handles.end()) {
-			enemy.enemy_state = ENEMY_WALKING;
+			enemy.enemy_state = ENEMY_STATE::ENEMY_MOVING;
+			enemy.closest_base.handle = -1;
+			enemy.closest_base.transform_handle = -1;
 		} else {
 			transform_t* base_transform = get_transform(enemy.closest_base.transform_handle);
 			game_assert_msg(base_transform, "base transform not found");
@@ -67,7 +124,7 @@ void update_enemy(enemy_t& enemy) {
 				enemy.last_shoot_time = game::time_t::game_cur_time;
 				glm::vec2 dir = glm::normalize(base_transform->global_position - transform->global_position);
 				glm::vec2 pos = transform->global_position;
-				create_enemy_bullet(glm::vec2(pos.x, pos.y), dir, 800.f);
+				create_enemy_bullet(pos, dir, 800.f);
 			}
 		}
 	}
@@ -86,8 +143,8 @@ void update_enemy(enemy_t& enemy) {
 	}
 
 	float health_left_pct = enemy.health / 100.f;
-	glm::vec2 health_bar_left = world_pos_to_screen(glm::vec2(transform->global_position.x - enemy_t::WIDTH / 2, transform->global_position.y + enemy_t::HEIGHT/2 + 20));
-	glm::vec2 health_bar_dim = world_vec_to_screen_vec(glm::vec2(enemy_t::WIDTH, 10));
+	glm::vec2 health_bar_left = world_pos_to_screen(glm::vec2(transform->global_position.x - (enemy.width / 2), transform->global_position.y + (enemy.height/2) + 20));
+	glm::vec2 health_bar_dim = world_vec_to_screen_vec(glm::vec2(enemy.width, 10));
 
 	style_t grey_bar;
 	grey_bar.background_color = create_color(128, 128, 128, 1);

@@ -614,14 +614,26 @@ void delete_enemy_bullet(enemy_bullet_t& bullet) {
 	}
 }
 
+static int enemy_spawner_cnt = 0;
 const float enemy_spawner_t::TIME_BETWEEN_SPAWNS = 2.5f;
 void create_enemy_spawner(glm::vec2 pos, MOVE_DIR dir) {
-	static int cnt = 0;
 	enemy_spawner_t enemy_spawner;	
-	enemy_spawner.handle = cnt++;
+	enemy_spawner.handle = enemy_spawner_cnt++;
+	enemy_spawner.enemy_type_spawner = ENEMY_TYPE::GROUND;
 	enemy_spawner.transform_handle = create_transform(pos, go_globals.z_positions[ENEMY_SPAWNER_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
 	enemy_spawner.quad_render_handle = create_quad_render(enemy_spawner.transform_handle, create_color(25,25,75), 60, 140, false, 0, -1);
 	enemy_spawner.dir = dir;
+
+	go_globals.enemy_spawners.push_back(enemy_spawner);
+}
+
+void create_air_enemy_spawner(glm::vec2 pos) {
+	enemy_spawner_t enemy_spawner;	
+	enemy_spawner.handle = enemy_spawner_cnt++;
+	enemy_spawner.enemy_type_spawner = ENEMY_TYPE::AIR;
+	enemy_spawner.transform_handle = create_transform(pos, go_globals.z_positions[ENEMY_SPAWNER_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
+	enemy_spawner.quad_render_handle = create_quad_render(enemy_spawner.transform_handle, create_color(25,75,75), 60, 60, false, 0, -1);
+	enemy_spawner.dir = MOVE_DIR::NONE;
 
 	go_globals.enemy_spawners.push_back(enemy_spawner);
 }
@@ -632,7 +644,11 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 	transform_t* transform = get_transform(spawner.transform_handle);
 	game_assert_msg(transform, "transform for enemy spawner not found");
 	glm::vec2 pos = transform->global_position;
-	create_enemy(pos, spawner.dir, 40.f);
+	if (spawner.enemy_type_spawner == ENEMY_TYPE::GROUND) {
+		create_enemy(pos, spawner.dir, 40.f);
+	} else if (spawner.enemy_type_spawner == ENEMY_TYPE::AIR) {
+		create_air_enemy(pos, 40.f);
+	}
 	spawner.last_spawn_time = spawner.enemy_relative_time;
 }
 

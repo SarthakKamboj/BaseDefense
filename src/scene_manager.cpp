@@ -102,7 +102,8 @@ void scene_manager_update(scene_manager_t& sm) {
             init_preview_mode();
 	        init_camera();	
             create_enemy_spawner(glm::vec2(50, 50), MOVE_DIR::RIGHT);
-            create_enemy_spawner(glm::vec2(500, 50), MOVE_DIR::LEFT);
+            create_enemy_spawner(glm::vec2(1000, 50), MOVE_DIR::LEFT);
+            create_air_enemy_spawner(glm::vec2(1000, 500));
 
             add_active_ui_file("play.xml");
             add_active_ui_file("play_anims.json");
