@@ -115,6 +115,12 @@ attachment_t* get_attachment(int handle);
 void delete_attachment(int handle);
 void delete_attachment(attachment_t& att);
 
+enum class GUN_STATE {
+	NONE = 0,
+	ROTATING_TO_ENEMY,
+	SHOOTING
+};
+
 struct gun_t {
 	int handle = -1;
 
@@ -125,13 +131,14 @@ struct gun_t {
 	int attachment_handle = -1;
 	bool facing_left = false;
 
+	GUN_STATE gun_state = GUN_STATE::NONE;
+
 	float fire_rate = 0;
 	time_count_t time_since_last_fire = 0;
 
 	closest_entity_t closest_enemy;
 	time_count_t last_retarget_time = 0;
-	glm::vec2 last_target_dir = glm::vec2(0);
-	glm::vec2 prev_enemy_last_target_dir = glm::vec2(0);
+	glm::vec2 dir_upon_target_fix = glm::vec2(0);
 
 	static const int WIDTH;
 	static const int HEIGHT;

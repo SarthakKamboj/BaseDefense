@@ -378,6 +378,8 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 
 	attachment_t* att = get_attachment(gun.attachment_handle);
 	game_assert_msg(att, "attachment not found to make gun");
+	transform_t* attachment_transform = get_transform(att->transform_handle);
+	game_assert_msg(attachment_transform, "transform for gun's attach pt not found");
 
 	gun.fire_rate = fire_rate;
 	gun.facing_left = facing_left;
@@ -386,25 +388,27 @@ void create_attached_gun(int attachment_handle, bool facing_left, float fire_rat
 	glm::vec2 gun_pos = glm::vec2(multiplier * gun_t::WIDTH / 2.f, 0);
 
 	gun.transform_handle = create_transform(gun_pos, go_globals.z_positions[GUN_Z_POS_KEY], glm::vec2(1), 0.f, 0.f, att->transform_handle);
-	transform_t* g = get_transform(gun.transform_handle);
-	gun.quad_render_handle = create_quad_render(gun.transform_handle, create_color(30,0,120), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
+	transform_t* gun_transform = get_transform(gun.transform_handle);
+	game_assert_msg(gun_transform, "transform for gun not found");
+	gun.quad_render_handle = create_quad_render(gun.transform_handle, create_color(60,0,240), gun_t::WIDTH, gun_t::HEIGHT, false, 0.f, -1);
 	gun.rb_handle = create_rigidbody(gun.transform_handle, false, gun_t::WIDTH, gun_t::HEIGHT, true, PHYS_NONE, true, true);
 
-	if (gun.facing_left) {
-		gun.prev_enemy_last_target_dir = glm::vec2(-1,0);
-	} else {
-		gun.prev_enemy_last_target_dir = glm::vec2(1,0);
-	}
-	gun.last_target_dir = gun.prev_enemy_last_target_dir;
+	// glm::vec3 rot = attachment_transform->local_rotation;
+	// if (gun.facing_left) {
+	// 	rot.z = 180.f;
+	// } else {
+	// 	rot.z = 0;
+	// }
+	// set_local_rot(attachment_transform, rot);
 
 	go_globals.attached_guns.push_back(gun);
+
 }
 
 std::vector<int> gun_t::enemy_died_handles;
 const float gun_t::RETARGET_ANIM_TIME = 1;
 const float gun_t::MAX_DISTANCE_TO_ENEMY = bullet_t::ALIVE_TIME * 800.f;
 void update_attached_gun(gun_t& gun) {	
-	set_quad_color(gun.quad_render_handle, create_color(60,0,240));
 
 	transform_t* gun_transform = get_transform(gun.transform_handle);
 	game_assert_msg(gun_transform, "transform for gun not found");
@@ -412,12 +416,14 @@ void update_attached_gun(gun_t& gun) {
 	if (gun.closest_enemy.handle != -1 && std::find(gun_t::enemy_died_handles.begin(), gun_t::enemy_died_handles.end(), gun.closest_enemy.handle) != gun_t::enemy_died_handles.end()) {
 		gun.closest_enemy.handle = -1;
 		gun.closest_enemy.transform_handle = -1;
+		gun.gun_state = GUN_STATE::NONE;
 	} else if (gun.closest_enemy.handle != -1) {
 		transform_t* enemy_transform = get_transform(gun.closest_enemy.transform_handle);
 		game_assert_msg(enemy_transform, "enemy transform not found");
 		if (glm::distance(enemy_transform->global_position, gun_transform->global_position) > gun_t::MAX_DISTANCE_TO_ENEMY) {
 			gun.closest_enemy.handle = -1;
 			gun.closest_enemy.transform_handle = -1;
+			gun.gun_state = GUN_STATE::NONE;
 		}
 	}
 
@@ -426,7 +432,7 @@ void update_attached_gun(gun_t& gun) {
 	transform_t* attachment_transform = get_transform(att->transform_handle);
 	game_assert_msg(attachment_transform, "transform for gun's attach pt not found");
 	
-	if (gun.closest_enemy.handle == -1) {
+	if (gun.gun_state == GUN_STATE::NONE) {
 		float closest = FLT_MAX;
 		for (int i = 0; i < go_globals.enemies.size(); i++) {
 			transform_t* enemy_transform = get_transform(go_globals.enemies[i].transform_handle);
@@ -436,50 +442,52 @@ void update_attached_gun(gun_t& gun) {
 				closest = distance;
 				gun.closest_enemy.handle = go_globals.enemies[i].handle;
 				gun.closest_enemy.transform_handle = go_globals.enemies[i].transform_handle;
+				gun.gun_state = GUN_STATE::ROTATING_TO_ENEMY;
+				gun.last_retarget_time = game::time_t::game_cur_time;
+				float angle = attachment_transform->global_rotation.z;
+				if (gun.facing_left) {
+					angle += 180.f;
+				}
+				gun.dir_upon_target_fix = unit_circle_val(angle);
 			}
 		}
-
-		gun.last_retarget_time = game::time_t::game_cur_time;
-		gun.prev_enemy_last_target_dir = gun.last_target_dir;
 	}
+
+	if (gun.gun_state == GUN_STATE::NONE) return;
 	
 	glm::vec2 gun_facing_dir;
-	time_count_t t = fmin(1, (game::time_t::game_cur_time - gun.last_retarget_time) / gun_t::RETARGET_ANIM_TIME);
-	if (gun.closest_enemy.handle == -1) {
-		gun_facing_dir = gun.facing_left ? glm::vec2(-1,0) : glm::vec2(1,0);
-	} else {
-		transform_t* enemy_transform = get_transform(gun.closest_enemy.transform_handle);
-		game_assert_msg(enemy_transform, "enemy transform not found");
+	transform_t* enemy_transform = get_transform(gun.closest_enemy.transform_handle);
+	game_assert_msg(enemy_transform, "enemy transform not found");
+	glm::vec2 to_enemy = glm::normalize(enemy_transform->global_position - attachment_transform->global_position);
+	if (gun.gun_state == GUN_STATE::ROTATING_TO_ENEMY) {
+		time_count_t t = fmin(1, (game::time_t::game_cur_time - gun.last_retarget_time) / gun_t::RETARGET_ANIM_TIME);
+		// glm::vec2 cur_facing_dir(cos(gun_transform->global_rotation.z), sin(gun_transform->global_rotation.));
+		gun_facing_dir = lerp(gun.dir_upon_target_fix, to_enemy, t);
+		// gun_facing_dir = lerp(cur_facing_dir, to_enemy, t);
 
-		glm::vec2 to_enemy = glm::normalize(glm::vec2(enemy_transform->global_position.x - attachment_transform->global_position.x, enemy_transform->global_position.y - attachment_transform->global_position.y));
-		gun_facing_dir = lerp(gun.prev_enemy_last_target_dir, to_enemy, t);
+		if (t >= 1) {
+			gun.gun_state = GUN_STATE::SHOOTING;
+			printf("now shooting\n");
+		}
+	} else if (gun.gun_state == GUN_STATE::SHOOTING) {
+		gun_facing_dir = to_enemy;
 	}
 
-	glm::vec2 horizontal = glm::vec2(-1, 0);
-	glm::vec2 vertical = glm::vec2(0, -1);
-	if (!gun.facing_left) {
-		horizontal = glm::vec2(1, 0);
-		vertical = glm::vec2(0, 1);
-	}
-	float cos_z = glm::dot(gun_facing_dir, horizontal);
-	float z_rad = acos(cos_z);
 	glm::vec3 rot = attachment_transform->local_rotation;
-	rot.z = glm::degrees(z_rad);
-
-	float below_gun = glm::dot(gun_facing_dir, vertical);
-	if (below_gun < 0) {
-		rot.z *= -1;
+	if (gun.facing_left) {
+		rot.z = angle_between_vec2(gun_facing_dir, glm::vec2(-1, 0));
+	} else {
+		rot.z = angle_between_vec2(gun_facing_dir, glm::vec2(1, 0));
 	}
+
 	set_local_rot(attachment_transform, rot);
 
 	float time_between_fires = 1 / gun.fire_rate;
-	if (gun.closest_enemy.handle != -1 && gun.time_since_last_fire + time_between_fires < game::time_t::game_cur_time && t >= 1) {
+	if (gun.closest_enemy.handle != -1 && gun.time_since_last_fire + time_between_fires < game::time_t::game_cur_time && gun.gun_state == GUN_STATE::SHOOTING) {
 		gun.time_since_last_fire = game::time_t::game_cur_time;
-		glm::vec2 pos(attachment_transform->global_position.x, attachment_transform->global_position.y);
-		// create_bullet(pos, glm::vec2(gun_facing_dir.x, gun_facing_dir.y), 800.f);
+		create_bullet(attachment_transform->global_position, gun_facing_dir, 800.f);
 	}
 
-	gun.last_target_dir = gun_facing_dir;
 }
 
 void delete_attached_gun(gun_t& gun) {
@@ -653,7 +661,6 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 	game_assert_msg(transform, "transform for enemy spawner not found");
 	glm::vec2 pos = transform->global_position;
 	if (spawner.enemy_type_spawner == ENEMY_TYPE::GROUND) {
-		static bool made = false;
 		create_enemy(pos, spawner.dir, 40.f);
 	} else if (spawner.enemy_type_spawner == ENEMY_TYPE::AIR) {
 		create_air_enemy(pos, 40.f);
@@ -670,7 +677,6 @@ void update_score() {
 		} else {
 			globals.scene_manager.level_to_load = LEVELS_DISPLAY;
 			unlock_level(globals.scene_manager.cur_level + 1);
-			// globals.scene_manager.level_to_load = globals.scene_manager.cur_level + 1;
 		}
 	}
 }

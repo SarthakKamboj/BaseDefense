@@ -200,6 +200,7 @@ void delete_enemy_by_index(int idx, const int handle) {
 		delete_rigidbody(enemy.rb_handle);
 		delete_quad_render(enemy.quad_render_handle);
 		go_globals.enemies.erase(go_globals.enemies.begin() + idx);
+		gun_t::enemy_died_handles.push_back(handle);
 	}
 }
 
