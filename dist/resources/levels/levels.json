@@ -3,12 +3,13 @@
         {
             "enemies": 25,
             "level_name": "level5",
+            "time": 50,
             "air_spawners": [
                 {
                     "x": 200
                 },
                 {
-                    "x": 2000
+                    "x": 2500
                 }
             ],
             "ground_spawners": [
@@ -17,7 +18,7 @@
                     "dir": "right"
                 },
                 {
-                    "x": 2000,
+                    "x": 2500,
                     "dir": "left"
                 }
             ]
