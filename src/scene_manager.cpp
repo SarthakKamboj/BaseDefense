@@ -44,6 +44,38 @@ void scene_manager_init() {
                 level.num_enemies_to_kill = atoi(val->buffer);
             } else if (strcmp(key->buffer, "level_name") == 0) {
                 memcpy(level.level_name, val->buffer, val->length);
+            } else if (strcmp(key->buffer, "air_spawners") == 0) {
+                json_node_t* air_spawner_section = level_node_parameter;
+                for (int k = 0; k < air_spawner_section->num_children; k++) {
+                    json_node_t* spawn_info_node = air_spawner_section->children[k];
+                    for (int m = 0; m < spawn_info_node->num_children; m++) {
+                        json_node_t* air_spawn_param = spawn_info_node->children[m];
+                        if (strcmp(air_spawn_param->key->buffer, "x") == 0) {
+                            int x_pos = atoi(air_spawn_param->value->buffer);
+                            level.air_spawner_xs.push_back(x_pos);
+                        }
+                    }
+                }
+            }  else if (strcmp(key->buffer, "ground_spawners") == 0) {
+                json_node_t* ground_spawner_section = level_node_parameter;
+                for (int k = 0; k < ground_spawner_section->num_children; k++) {
+                    json_node_t* spawn_info_node = ground_spawner_section->children[k];
+                    ground_spawn_info_t ground_spawners_info;
+                    for (int m = 0; m < spawn_info_node->num_children; m++) {
+                        json_node_t* ground_spawn_param = spawn_info_node->children[m];
+                        if (strcmp(ground_spawn_param->key->buffer, "x") == 0) {
+                            int x_pos = atoi(ground_spawn_param->value->buffer);
+                            ground_spawners_info.x = x_pos;
+                        } else if (strcmp(ground_spawn_param->key->buffer, "dir") == 0) {
+                            if (strcmp(ground_spawn_param->value->buffer, "right") == 0) {
+                                ground_spawners_info.move_dir = MOVE_DIR::RIGHT;
+                            } else {
+                                ground_spawners_info.move_dir = MOVE_DIR::LEFT;
+                            }
+                        }
+                    }
+                    level.ground_spawners_info.push_back(ground_spawners_info);
+                }
             }
         }
         scene_manager_t::levels.push_back(level);
@@ -106,9 +138,18 @@ void scene_manager_update(scene_manager_t& sm) {
 
             init_preview_mode();
 	        init_camera();	
-            create_enemy_spawner(glm::vec2(50, 50), MOVE_DIR::RIGHT);
-            create_enemy_spawner(glm::vec2(1000, 50), MOVE_DIR::LEFT);
-            create_air_enemy_spawner(glm::vec2(1000, 500));
+
+            for (auto& info : scene_manager_t::levels[sm.cur_level-1].ground_spawners_info) {
+                create_enemy_spawner(glm::vec2(info.x, 50), info.move_dir);
+            }
+
+            for (float x : scene_manager_t::levels[sm.cur_level-1].air_spawner_xs) {
+                create_air_enemy_spawner(glm::vec2(x, 500));
+            }
+
+            // create_enemy_spawner(glm::vec2(50, 50), MOVE_DIR::RIGHT);
+            // create_enemy_spawner(glm::vec2(1000, 50), MOVE_DIR::LEFT);
+            // create_air_enemy_spawner(glm::vec2(1000, 500));
 
             add_active_ui_file("play.xml");
             add_active_ui_file("play_anims.json");

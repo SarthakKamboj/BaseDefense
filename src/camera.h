@@ -8,6 +8,7 @@ struct camera_t {
 	glm::vec2 drag_start_mouse_pos = glm::vec2(0);
 	glm::vec2 drag_start_pos = glm::vec2(0);
 	glm::vec2 cam_view_dimensions = glm::vec2(0);
+	glm::vec2 cam_view_multiplers = glm::vec2(2);
 	bool dragging = false;
 	float scroll_speed = 40.f;
 };

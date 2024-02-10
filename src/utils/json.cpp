@@ -165,6 +165,11 @@ static json_node_t* json_read_curly_brace_section(FILE* json_file) {
             }
             char ending_bracket = getc(json_file);
             game_assert_msg(ending_bracket == ']', "ending bracket not found at this point");
+            json_eat_empty_spaces(json_file);
+			if (json_peek(json_file) == ',') {
+				getc(json_file);
+				json_eat_empty_spaces(json_file);
+			}
         }
 
         child_node->key = child_key_string;

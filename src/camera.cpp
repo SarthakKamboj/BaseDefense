@@ -13,7 +13,8 @@ extern store_t store;
 
 void init_camera() {
 	globals.camera.rotation = 0;
-	globals.camera.cam_view_dimensions = glm::vec2(globals.window.window_width, globals.window.window_height);
+	globals.camera.cam_view_multiplers = glm::vec2(2);
+	globals.camera.cam_view_dimensions = glm::vec2(globals.window.window_width * globals.camera.cam_view_multiplers.x, globals.window.window_height * globals.camera.cam_view_multiplers.y);
 	// printf("globals.camera.cam_view_dimensions: %f, %f\n", globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.x);
 }
 
@@ -74,8 +75,7 @@ void update_camera() {
 	}
 
 	if (globals.window.resized) {
-		cam.cam_view_dimensions = glm::vec2(globals.window.window_width, globals.window.window_height);
-		// printf("globals.camera.cam_view_dimensions: %f, %f\n", globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.x);
+		cam.cam_view_dimensions = glm::vec2(globals.window.window_width * globals.camera.cam_view_multiplers.x, globals.window.window_height * globals.camera.cam_view_multiplers.y);
 	}
 
 	float mouse_scroll_delta = globals.window.user_input.mouse_scroll_wheel_delta_y;
@@ -100,6 +100,7 @@ void update_camera() {
 		}
 		
 		cam.cam_view_dimensions += delta_dim;
+		globals.camera.cam_view_multiplers = cam.cam_view_dimensions / glm::vec2(globals.window.window_width, globals.window.window_height);
 		// printf("globals.camera.cam_view_dimensions: %f, %f\n", globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.y);
 	}
 }

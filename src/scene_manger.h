@@ -1,12 +1,20 @@
 #pragma once
 
 #include "constants.h"
+#include "gameplay/enemies.h"
 
 #include <vector>
+
+struct ground_spawn_info_t {
+	float x = -1;
+	MOVE_DIR move_dir = MOVE_DIR::NONE;
+};
 
 struct levels_data_t {
 	int num_enemies_to_kill = 0;
 	char level_name[64]{};
+	std::vector<float> air_spawner_xs;
+	std::vector<ground_spawn_info_t> ground_spawners_info;
 };
 
 // level 0 is the test ui level
