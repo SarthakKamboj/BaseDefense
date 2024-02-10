@@ -721,7 +721,7 @@ void gos_update() {
 	update_hierarchy_based_on_globals();
 	update_score();
 
-	gos_update_delete_pass();
+	gos_update_delete_pass(); 
 }
 
 void gos_update_delete_pass() {

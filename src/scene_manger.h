@@ -15,6 +15,7 @@ struct levels_data_t {
 	char level_name[64]{};
 	std::vector<float> air_spawner_xs;
 	std::vector<ground_spawn_info_t> ground_spawners_info;
+	float time = 20;
 };
 
 // level 0 is the test ui level

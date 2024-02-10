@@ -19,7 +19,6 @@ extern go_globals_t go_globals;
 extern inventory_t inventory;
 extern store_t store;
 extern globals_t globals;
-extern bool paused;
 
 std::vector<levels_data_t> scene_manager_t::levels;
 std::vector<bool> scene_manager_t::levels_unlocked;
@@ -44,6 +43,8 @@ void scene_manager_init() {
                 level.num_enemies_to_kill = atoi(val->buffer);
             } else if (strcmp(key->buffer, "level_name") == 0) {
                 memcpy(level.level_name, val->buffer, val->length);
+            } else if (strcmp(key->buffer, "time") == 0) {
+                level.time = atof(val->buffer);
             } else if (strcmp(key->buffer, "air_spawners") == 0) {
                 json_node_t* air_spawner_section = level_node_parameter;
                 for (int k = 0; k < air_spawner_section->num_children; k++) {
@@ -110,7 +111,7 @@ void scene_manager_update(scene_manager_t& sm) {
     
         clear_active_ui_files();
         clear_active_ui_anim_files();
-        paused = false;
+        go_globals.paused = false;
 
         ui_enable_controller_support();
 
@@ -122,6 +123,9 @@ void scene_manager_update(scene_manager_t& sm) {
         } else if (sm.cur_level == GAME_OVER_SCREEN_LEVEL) {
             add_active_ui_file("game_over.xml");
             add_active_ui_anim_file("game_over_anims.json");
+        } else if (sm.cur_level == LOSE_SCREEN_LEVEL) {
+            add_active_ui_file("lose.xml");
+            add_active_ui_anim_file("lose_anims.json");
         } else if (sm.cur_level == LEVELS_DISPLAY) {
             add_active_ui_file("levels_display.xml");
             add_active_ui_anim_file("levels_display_anims.json");
@@ -172,6 +176,7 @@ void scene_manager_update(scene_manager_t& sm) {
             go_globals.score.enemies_left_to_kill = scene_manager_t::levels[sm.cur_level-1].num_enemies_to_kill;
             inventory = inventory_t();
             store = store_t();
+            go_globals.time_left = scene_manager_t::levels[sm.cur_level-1].time;
 
             ui_disable_controller_support();
         }

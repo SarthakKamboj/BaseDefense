@@ -11,11 +11,12 @@
 #include "gameplay/store.h"
 #include "ui/ui.h"
 #include "gameplay/preview_manager.h"
+#include "gameplay/gos_globals.h"
 
 extern globals_t globals;
+extern go_globals_t go_globals;
 extern store_t store;
 
-bool paused = false;
 void update() {
 
     time_count_t delta_time = game::time_t::delta_time;
@@ -29,6 +30,11 @@ void update() {
             globals.running = false;
         }
     } else if (globals.scene_manager.cur_level == GAME_OVER_SCREEN_LEVEL) {
+        if (get_if_key_clicked_on("continue_btn")) {
+            globals.scene_manager.queue_level_load = true;
+            globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
+        }
+    } else if (globals.scene_manager.cur_level == LOSE_SCREEN_LEVEL) {
         if (get_if_key_clicked_on("continue_btn")) {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
@@ -62,7 +68,7 @@ void update() {
         }
     } else {
 
-        bool prev_paused = paused;
+        bool prev_paused = go_globals.paused;
         update_store();
 
         if (globals.window.resized) {
@@ -72,31 +78,38 @@ void update() {
         set_ui_value(std::string("pause_text"), std::string("| |"));
         set_ui_value(std::string("space"), std::string(" "));
         if (get_if_key_clicked_on("pause_icon_btn")) {
-            paused = true;
+            go_globals.paused = true;
         }
 
         if (get_released(KEY_P) || get_pressed(CONTROLLER_START)) {
-            paused = !paused;     
+            go_globals.paused = !go_globals.paused;     
         }
 
         if (get_if_key_clicked_on("resume_btn")) {
-            paused = false;
+            go_globals.paused = false;
         } else if (get_if_key_clicked_on("back_to_main_menu_btn")) {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
         }
 
-        if (!paused) {
+        if (!go_globals.paused) {
             update_camera();
             update_rigidbodies();
             update_image_anim_players();
             gos_update();
-        } else {
-            delta_time = 0;
+            if (!go_globals.paused) {
+                go_globals.time_left -= game::time_t::delta_time;
+            }
+            set_ui_value(std::string("time_left"), std::to_string((int)ceil(go_globals.time_left)));
+            if (go_globals.time_left <= 0) {
+                globals.scene_manager.queue_level_load = true;
+                globals.scene_manager.level_to_load = LOSE_SCREEN_LEVEL;
+            }
+            game::time_t::game_cur_time += delta_time;
         }
 
-        if (prev_paused != paused) {
-            if (paused) {
+        if (prev_paused != go_globals.paused) {
+            if (go_globals.paused) {
                 stop_ui_anim_player("pause_panel", "pause_menu_close");
                 ui_enable_controller_support();
             } else {
@@ -108,6 +121,5 @@ void update() {
         }
     }
 
-    game::time_t::game_cur_time += delta_time;
     scene_manager_update(globals.scene_manager);
 }

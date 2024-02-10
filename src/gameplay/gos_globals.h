@@ -32,6 +32,8 @@ struct go_globals_t {
     std::vector<int> enemies_to_delete;
 
     score_t score;
+    float time_left = 20;
+    bool paused = false;
 };
 
 void init_gos_globals();

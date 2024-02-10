@@ -22,8 +22,6 @@ extern go_globals_t go_globals;
 extern inventory_t inventory;
 extern store_t store;
 
-extern bool paused;
-
 preview_state_t preview_state;
 render_object_data preview_state_t::preview_render_data{};
 
@@ -118,7 +116,7 @@ void update_preview_base() {
 	quad_render_t* quad_render = get_quad_render(preview_base.quad_render_handle);
 	game_assert_msg(quad_render, "quad render for base not found");	
 
-	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE || store.open || paused) {
+	if (preview_state.cur_mode != PREVIEW_MODE::PREVIEW_BASE || store.open || go_globals.paused) {
 		quad_render->render = false;
 		return;
 	}
@@ -446,7 +444,7 @@ void update_attachable_preview_item() {
 	}
 	game_assert_msg(preview_quad, "quad render for preview attachment not found");
 
-	if (store.open || paused) {
+	if (store.open || go_globals.paused) {
 		preview_quad->render = false;
 		return;
 	}
