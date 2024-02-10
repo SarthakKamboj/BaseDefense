@@ -1,24 +1,105 @@
 {
     "levels": [
         {
+            "enemies": 25,
+            "level_name": "level5",
+            "air_spawners": [
+                {
+                    "x": 200
+                },
+                {
+                    "x": 2000
+                }
+            ],
+            "ground_spawners": [
+                {
+                    "x": 200,
+                    "dir": "right"
+                },
+                {
+                    "x": 2000,
+                    "dir": "left"
+                }
+            ]
+        },
+        {
             "enemies": 7,
-            "level_name": "level1"
+            "level_name": "level1",
+            "air_spawners": [
+                {
+                    "x": 50
+                }
+            ]
         }, 
         {
             "enemies": 9,
-            "level_name": "level2"
+            "level_name": "level2",
+            "air_spawners": [
+                {
+                    "x": 50
+                },
+                {
+                    "x": 1000
+                }
+            ]
         },
         {
             "enemies": 13,
-            "level_name": "level3"
+            "level_name": "level3",
+            "air_spawners": [
+                {
+                    "x": 50
+                },
+                {
+                    "x": 1000
+                }
+            ],
+            "ground_spawners": [
+                {
+                    "x": 50,
+                    "dir": "right"
+                }
+            ]
         },
         {
             "enemies": 18,
-            "level_name": "level4"
+            "level_name": "level4",
+            "air_spawners": [
+                {
+                    "x": 50
+                },
+                {
+                    "x": 600
+                }
+            ],
+            "ground_spawners": [
+                {
+                    "x": 50,
+                    "dir": "left"
+                }
+            ]
         },
         {
             "enemies": 25,
-            "level_name": "level5"
+            "level_name": "level5",
+            "air_spawners": [
+                {
+                    "x": 50
+                },
+                {
+                    "x": 600
+                }
+            ],
+            "ground_spawners": [
+                {
+                    "x": 50,
+                    "dir": "right"
+                },
+                {
+                    "x": 600,
+                    "dir": "left"
+                }
+            ]
         }
     ]
 }
