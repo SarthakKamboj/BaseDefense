@@ -26,9 +26,32 @@ void update() {
         if (get_if_key_clicked_on("play_game_btn")) {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = LEVELS_DISPLAY;
+        } else if (get_if_key_clicked_on("settings_btn")) {
+            globals.scene_manager.queue_level_load = true;
+            globals.scene_manager.level_to_load = SETTINGS_MENU_LEVEL;
         } else if (get_if_key_clicked_on("quit_btn")) {
             globals.running = false;
         }
+    } else if (globals.scene_manager.cur_level == SETTINGS_MENU_LEVEL) {
+        set_ui_value(std::string("mute_text"), std::string(globals.muted ? "Unmute" : "Mute"));
+        set_ui_value(std::string("fs_text"), std::string(globals.fullscreen ? "No Full Screen" : "Full Screen"));
+
+        if (get_if_key_clicked_on("back_btn")) {
+            globals.scene_manager.queue_level_load = true;
+            globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
+        } else if (get_if_key_clicked_on("mute_btn")) {
+            globals.muted = !globals.muted;
+        } else if (get_if_key_clicked_on("fs_btn")) {
+            globals.fullscreen = !globals.fullscreen;
+        } else if (get_if_key_clicked_on("credits_btn")) {
+            globals.scene_manager.queue_level_load = true;
+            globals.scene_manager.level_to_load = CREDITS_LEVEL;
+        }
+    } else if (globals.scene_manager.cur_level == CREDITS_LEVEL) {
+        if (get_if_key_clicked_on("back_btn")) {
+            globals.scene_manager.queue_level_load = true;
+            globals.scene_manager.level_to_load = SETTINGS_MENU_LEVEL;
+        } 
     } else if (globals.scene_manager.cur_level == GAME_OVER_SCREEN_LEVEL) {
         if (get_if_key_clicked_on("continue_btn")) {
             globals.scene_manager.queue_level_load = true;

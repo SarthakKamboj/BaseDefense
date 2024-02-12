@@ -126,6 +126,12 @@ void scene_manager_update(scene_manager_t& sm) {
         } else if (sm.cur_level == LOSE_SCREEN_LEVEL) {
             add_active_ui_file("lose.xml");
             add_active_ui_anim_file("lose_anims.json");
+        } else if (sm.cur_level == SETTINGS_MENU_LEVEL) {
+            add_active_ui_file("settings.xml");
+            add_active_ui_file("settings_anims.json");
+        } else if (sm.cur_level == CREDITS_LEVEL) {
+            add_active_ui_file("credits.xml");
+            add_active_ui_file("credits_anims.json");
         } else if (sm.cur_level == LEVELS_DISPLAY) {
             add_active_ui_file("levels_display.xml");
             add_active_ui_anim_file("levels_display_anims.json");

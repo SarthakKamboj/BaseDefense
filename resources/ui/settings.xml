@@ -1,0 +1,57 @@
+<panel id="main_panel" ver_align="space_between"
+    bck_mode="gradient" 
+    background_color="0,0,255"
+    tl_bck="24,21,59" br_bck="83,22,51" tr_bck="35,25,62" bl_bck="32,6,43">
+    <container id="back_container" width="1" height="0.15" 
+        widget_size_width="parent" widget_size_height="parent" 
+        ver_align="center" hor_align="start">
+        <button id="back_btn" padding="30,15" font_size="30"
+            margin="30,0"
+            border_radius="15"
+            background_color="250,72,83">
+            Back
+        </button>
+    </container>
+    <container id="games_container" width="1" height="0.35"
+        widget_size_width="parent" widget_size_height="parent" 
+        ver_align="center" hor_align="center" 
+        content_spacing="10">
+        <text font_size="108" color="250,72,83">Settings</text>
+    </container>
+    <container id="buttons" width="1" height="0.5"
+        widget_size_width="parent" widget_size_height="parent" 
+        display_dir="horizontal" hor_align="center"
+        content_spacing="100">
+        <container id="first_container" width="0.2" height="1" 
+        widget_size_width="parent" widget_size_height="parent"
+        ver_align="start" hor_align="center"
+        display_dir="vertical" content_spacing="30">
+            <button id="mute_btn" padding="30,20"
+                font_size="40"
+                border_radius="20"
+                hover_background_color="250,32,43"
+                background_color="250,72,83">
+                {{{mute_text}}}
+            </button>
+            <button id="fs_btn" padding="30,20"
+                font_size="40"
+                border_radius="20"
+                hover_background_color="250,32,43"
+                background_color="250,72,83">
+                {{{fs_text}}}
+            </button>
+        </container>
+        <container id="second_container" width="0.2" height="1" 
+        widget_size_width="parent" widget_size_height="parent"
+        ver_align="start" hor_align="center"
+        display_dir="vertical" content_spacing="30">
+            <button id="credits_btn" padding="30,20"
+                font_size="40"
+                border_radius="20"
+                hover_background_color="250,32,43"
+                background_color="250,72,83">
+                Credits
+            </button>
+        </container>
+    </container>
+</panel>
