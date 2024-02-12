@@ -1,0 +1,35 @@
+<panel id="main_panel" ver_align="space_between"
+    bck_mode="gradient" 
+    background_color="0,0,255"
+    tl_bck="24,21,59" br_bck="83,22,51" tr_bck="35,25,62" bl_bck="32,6,43">
+    <container id="back_container" width="1" height="0.15" 
+        widget_size_width="parent" widget_size_height="parent" 
+        ver_align="center" hor_align="start">
+        <button id="back_btn" padding="30,15" font_size="30"
+            margin="30,0"
+            border_radius="15"
+            background_color="250,72,83">
+            Back
+        </button>
+    </container>
+    <container id="games_container" width="1" height="0.35"
+        widget_size_width="parent" widget_size_height="parent" 
+        ver_align="center" hor_align="center" 
+        content_spacing="10">
+        <text font_size="108" color="250,72,83">Credits</text>
+    </container>
+    <container id="info" width="1" height="0.5" 
+    widget_size_width="parent" widget_size_height="parent"
+    ver_align="start" hor_align="center"
+    display_dir="vertical" content_spacing="30">
+        <text font_size="40">
+            Programmer: Sarthak Kamboj
+        </text>
+        <text font_size="40">
+            Game Engine: Custom
+        </text>
+        <text font_size="40">
+            Programming Language: C++
+        </text>
+    </container>
+</panel>
