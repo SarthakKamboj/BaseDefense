@@ -160,9 +160,6 @@ void move_att_selection_left() {
 	for (int i = starting; i >= 0; i--) {
 		att_summary_info_t& summary = preview_state.sorted_att_infos[i];
 		int num_atts_placed_here = attachment_t::overall_atts_placed_w_base_ext[hash_att_pos(summary.x_pos, summary.y_pos)];
-		if (num_atts_placed_here >= 2) {
-			int a = 5;
-		}
 		if (preview_state.cur_mode == PREVIEW_BASE_EXT && (summary.attachment_types & ATTMNT_BASE_EXT) && num_atts_placed_here < 2) {
 			possible_next = i;
 			break;

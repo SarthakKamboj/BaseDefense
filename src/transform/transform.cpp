@@ -223,9 +223,6 @@ transform_t* get_transform(int transform_handle) {
 }
 
 void delete_transform(int handle) {
-    if (handle == 0 || handle == 1) {
-        int a = 5;
-    }
     int i_to_remove = -1;
     for (int i = 0; i < transforms.size(); i++) {
         transform_t& transform = transforms[i];
