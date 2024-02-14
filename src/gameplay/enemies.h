@@ -87,3 +87,4 @@ struct enemy_spawner_t {
 void create_enemy_spawner(glm::vec2 pos, MOVE_DIR dir);
 void create_air_enemy_spawner(glm::vec2 pos);
 void update_enemy_spawner(enemy_spawner_t& spawner);
+void delete_enemy_spawner(enemy_spawner_t& spawner);

@@ -668,6 +668,11 @@ void update_enemy_spawner(enemy_spawner_t& spawner) {
 	spawner.last_spawn_time = spawner.enemy_relative_time;
 }
 
+void delete_enemy_spawner(enemy_spawner_t& spawner) {
+	delete_transform(spawner.transform_handle);
+	delete_quad_render(spawner.quad_render_handle);
+}
+
 void update_score() {
     set_ui_value(std::string("num_enemies_left_to_kill"), std::to_string(go_globals.score.enemies_left_to_kill));
 	if (go_globals.score.enemies_left_to_kill == 0) {
@@ -763,16 +768,59 @@ void gos_update_delete_pass() {
 }
 
 void delete_gos() {
-	go_globals.attachments.clear();
-	attachment_t::overall_atts_placed_w_base_ext.clear();
+	int size = 0;
 
+	size = go_globals.attached_guns.size();
+	while (size > 0) {
+		delete_attached_gun(go_globals.attached_guns[0]);
+		size--;
+	}
 	go_globals.attached_guns.clear();
+
+	size = go_globals.bullets.size();
+	while (size > 0) {
+		delete_bullet(go_globals.bullets[0]);
+		size--;
+	}
 	go_globals.bullets.clear();
+
+	size = go_globals.enemy_spawners.size();
+	while (size > 0) {
+		delete_enemy_spawner(go_globals.enemy_spawners[0]);
+		size--;
+	}
 	go_globals.enemy_spawners.clear();
+
+	size = go_globals.enemies.size();
+	while (size > 0) {
+		delete_enemy_by_index(0, go_globals.enemies[0].handle);
+		size--;
+	}
 	go_globals.enemies.clear();
-	go_globals.	gun_bases.clear();
+
+	size = go_globals.gun_bases.size();
+	while (size > 0) {
+		delete_base(go_globals.gun_bases[0]);
+		size--;
+	}
+	go_globals.gun_bases.clear();
+
+	size = go_globals.attached_base_exts.size();
+	while (size > 0) {
+		delete_base_ext(go_globals.attached_base_exts[0]);
+		size--;
+	}
 	go_globals.attached_base_exts.clear();
+
+	size = go_globals.enemy_bullets.size();
+	while (size > 0) {
+		delete_enemy_bullet(go_globals.enemy_bullets[0]);
+		size--;
+	}
 	go_globals.enemy_bullets.clear();
+	
+	attachment_t::overall_atts_placed_w_base_ext.clear();
+	go_globals.attachments.clear();
 
 	preview_state.preview_base = base_t();
 	preview_state.preview_base_ext = base_extension_t();

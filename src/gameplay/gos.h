@@ -76,23 +76,6 @@ enum class ATT_PLACEMENT {
 	BOTTOM
 };
 
-// struct att_pos_t {
-// 	float x = 0;
-// 	float y = 0;
-
-// 	bool operator==(const att_pos_t& other) const { 
-// 		return x == other.x && y == other.y;
-// 	}
-// };
-
-// template <>
-// struct std::hash<att_pos_t> {
-// 	std::size_t operator()(const att_pos_t& pos) const
-// 	{
-// 		return std::hash<float>()(pos.x) ^ std::hash<float>()(pos.y);
-// 	}
-// };
-
 typedef int att_pos_hash;
 att_pos_hash hash_att_pos(float x, float y);
 
