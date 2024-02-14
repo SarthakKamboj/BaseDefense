@@ -85,6 +85,7 @@ void init_preview_mode() {
 
         // load in shader for these rectangle quads because the game is 2D, so everything is basically a solid color or a texture
         data.shader = create_shader("selector.vert", "selector.frag");
+		data.shader.valid = true;
         // set projection matrix in the shader
         // glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
         // shader_set_mat4(data.shader, "projection", projection);
@@ -101,6 +102,7 @@ void init_preview_mode() {
     init_preview_gun();
 	init_base_ext_preview();
 	init_preview_base();
+	preview_state.first_base_previewed = false;
 }
 
 void init_preview_base() {
@@ -124,14 +126,34 @@ void update_preview_base() {
 	transform_t* preview_transform = get_transform(preview_base.transform_handle);
 	game_assert_msg(preview_transform, "could not find transform for preview base");
 
+	bool preview_mode_on = get_down(LEFT_MOUSE) || get_down(CONTROLLER_Y);
+	quad_render->render = preview_mode_on;
+	
+	bool released_preview_button = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
+	if (released_preview_button && inventory.num_bases > 0) {
+		glm::vec2 pos = preview_transform->global_position;
+		create_base(pos);
+		inventory.num_bases--;
+	}
+	
+	if (!preview_mode_on) {
+		return;
+	}
+
 	if (!is_controller_connected()) {
 		glm::vec2 mouse = mouse_to_world_pos();
 		preview_transform->global_position.x = mouse.x;
 		preview_transform->global_position.y = base_t::HEIGHT * 0.5f;
 	} else {
-		float cur_x = preview_transform->global_position.x;
-		float delta_x = globals.window.user_input.controller_x_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;
-		preview_transform->global_position.x = cur_x + delta_x;
+		bool previewed_just_opened = get_pressed(CONTROLLER_Y);
+		if (!preview_state.first_base_previewed) {
+			preview_state.first_base_previewed = true;
+			preview_transform->global_position.x = globals.camera.pos.x + (globals.camera.cam_view_dimensions.x / 2.f);
+		} else {
+			float cur_x = preview_transform->global_position.x;
+			float delta_x = globals.window.user_input.controller_x_axis * PREVIEW_MOVE_SPEED * game::time_t::delta_time;
+			preview_transform->global_position.x = cur_x + delta_x;
+		}
 		preview_transform->global_position.y = base_t::HEIGHT * 0.5f;
 	}
 
@@ -139,17 +161,7 @@ void update_preview_base() {
 		quad_render->color = invalid_placement_color;
 	} else {
 		quad_render->color = valid_placement_color;
-	}
-
-	bool released_preview_button = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
-	if (released_preview_button && inventory.num_bases > 0) {
-		glm::vec2 pos = preview_transform->global_position;
-		create_base(pos);
-		inventory.num_bases--;
-	}
-
-	bool preview_mode_on = get_down(LEFT_MOUSE) || get_down(CONTROLLER_Y);
-	quad_render->render = preview_mode_on;
+	}	
 
 	update_hierarchy_based_on_globals();
 }

@@ -13,7 +13,7 @@
 
 #include "glm/glm.hpp"
 
-#define UI_RELOADING 1
+#define UI_RELOADING 0
 
 #define GREEN glm::vec3(0, 1, 0)
 #define BLUE glm::vec3(0, 0, 1)

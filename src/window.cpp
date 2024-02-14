@@ -248,6 +248,7 @@ void process_input() {
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y: {
                                 user_input.released[CONTROLLER_Y] = true;
                                 user_input.down[CONTROLLER_Y] = false;
+                                printf("controller y released\n");
                                 break;
                             }
                             case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B: {

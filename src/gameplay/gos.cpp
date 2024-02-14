@@ -675,7 +675,7 @@ void update_score() {
 		if (globals.scene_manager.cur_level == globals.scene_manager.levels.size()) {
 			globals.scene_manager.level_to_load = GAME_OVER_SCREEN_LEVEL;
 		} else {
-			globals.scene_manager.level_to_load = LEVELS_DISPLAY;
+			globals.scene_manager.level_to_load = LEVEL_COMPLETE_LEVEL;
 			unlock_level(globals.scene_manager.cur_level + 1);
 		}
 	}

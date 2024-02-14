@@ -29,6 +29,8 @@ struct preview_state_t {
     bool preview_selector_open = false;
     PREVIEW_MODE cur_preview_selector_selected = PREVIEW_BASE;
 
+	bool first_base_previewed = false;
+
     BASE_EXT_TYPE cur_base_ext_select_mode = TWO_ATT_HORIZONTAL;
     PREVIEW_SELECTOR_MODE selector_mode = PREVIEW_SELECTOR_NONE;
     time_count_t last_time_selector_open_press = -TIME_UNTIL_BASE_EXT_SELECTOR_CAN_OPEN;

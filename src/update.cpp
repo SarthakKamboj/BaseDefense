@@ -62,6 +62,11 @@ void update() {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
         }
+    } else if (globals.scene_manager.cur_level == LEVEL_COMPLETE_LEVEL) {
+        if (get_if_key_clicked_on("continue_btn")) {
+            globals.scene_manager.queue_level_load = true;
+            globals.scene_manager.level_to_load = LEVELS_DISPLAY;
+        }
     } else if (globals.scene_manager.cur_level == LEVELS_DISPLAY) {
         for (int i = 1; i <= 5; i++) {
             char text_buffer[32]{};
