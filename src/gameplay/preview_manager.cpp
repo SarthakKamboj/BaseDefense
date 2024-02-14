@@ -113,7 +113,7 @@ void init_preview_base() {
     preview_base.handle = -1;
 	preview_base.transform_handle = create_transform(glm::vec2(0, 0), go_globals.z_positions[PREVIEW_Z_POS_KEY], glm::vec2(1), 0.f, 0.f);
 	preview_base.quad_render_handle = create_quad_render(preview_base.transform_handle, create_color(60,90,30), base_t::WIDTH, base_t::HEIGHT, false, 0.f, -1);
-	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH, base_t::HEIGHT, true, PHYS_NONE, true, false);
+	preview_base.rb_handle = create_rigidbody(preview_base.transform_handle, false, base_t::WIDTH * 3.f, base_t::HEIGHT, true, PHYS_BASE, true, false);
 }
 
 void update_preview_base() {	
@@ -131,18 +131,7 @@ void update_preview_base() {
 
 	bool preview_mode_on = get_down(LEFT_MOUSE) || get_down(CONTROLLER_Y);
 	quad_render->render = preview_mode_on;
-	
-	bool released_preview_button = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
-	if (released_preview_button && inventory.num_bases > 0) {
-		glm::vec2 pos = preview_transform->global_position;
-		create_base(pos);
-		inventory.num_bases--;
-	}
-	
-	if (!preview_mode_on) {
-		return;
-	}
-
+		
 	if (!is_controller_connected()) {
 		glm::vec2 mouse = mouse_to_world_pos();
 		preview_transform->global_position.x = mouse.x;
@@ -160,10 +149,34 @@ void update_preview_base() {
 		preview_transform->global_position.y = base_t::HEIGHT * 0.5f;
 	}
 
-	if (inventory.num_bases == 0) {
+	bool valid = inventory.num_bases > 0;
+
+	if (valid) {
+		std::vector<kin_w_kin_col_t> collisions = get_from_kin_w_kin_cols(preview_base.rb_handle, PHYS_BASE);
+		for (int i = 0; i < collisions.size(); i++) {
+			kin_w_kin_col_t& col = collisions[i];
+			if (col.kin_type1 == PHYS_BASE && col.kin_type2 == PHYS_BASE) {
+				valid = false;
+				break;
+			}
+		}
+	}
+
+	if (!valid) {
 		quad_render->color = invalid_placement_color;
 	} else {
 		quad_render->color = valid_placement_color;
+	}
+	
+	bool released_preview_button = get_released(LEFT_MOUSE) || get_released(CONTROLLER_Y);
+	if (released_preview_button && valid) {
+		glm::vec2 pos = preview_transform->global_position;
+		create_base(pos);
+		inventory.num_bases--;
+	}
+	
+	if (!preview_mode_on) {
+		return;
 	}	
 
 	update_hierarchy_based_on_globals();
