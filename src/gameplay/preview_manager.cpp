@@ -102,7 +102,10 @@ void init_preview_mode() {
     init_preview_gun();
 	init_base_ext_preview();
 	init_preview_base();
+
 	preview_state.first_base_previewed = false;
+	preview_state.active_att_idx = -1;
+	preview_state.sorted_att_infos.clear();
 }
 
 void init_preview_base() {
@@ -535,9 +538,13 @@ void add_attachment_to_preview_manager(attachment_t& att) {
 	summary.x_pos = att_transform->global_position.x;
 	summary.y_pos = att_transform->global_position.y;
 
+	printf("prev preview_state.active_att_idx: %i", preview_state.active_att_idx);
+
 	if (preview_state.active_att_idx != -1 && summary.x_pos < preview_state.sorted_att_infos[preview_state.active_att_idx].x_pos) {
 		preview_state.active_att_idx++;	
 	}
+
+	printf("    new preview_state.active_att_idx: %i\n", preview_state.active_att_idx);
 
 	preview_state.sorted_att_infos.push_back(summary);
 
@@ -551,7 +558,13 @@ void delete_attachment_from_preview_manager(int att_handle) {
 		att_summary_info_t& summary = arr[i];
 		if (summary.att_handle == att_handle) {
 			if (i == preview_state.active_att_idx) {
-				preview_state.active_att_idx = -1;
+				if (i == arr.size() - 1 && arr.size() >= 2) {
+					preview_state.active_att_idx--;
+				} else if (arr.size() >= i+2) {
+					preview_state.active_att_idx = i;
+				}  else {
+					preview_state.active_att_idx = -1;
+				}
 				printf("removed att handle %i at x pos %f\n", summary.att_handle, summary.x_pos);
 			} else if (i < preview_state.active_att_idx) {
 				preview_state.active_att_idx--;
