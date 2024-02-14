@@ -1,4 +1,8 @@
 {
+    "home_btn:hover": {
+        "background_color": "249,246,158",
+        "anim_time": 0.1
+    },
     "1_container:hover": {
         "background_color": "249,246,158",
         "anim_time": 0.1

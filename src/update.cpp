@@ -94,6 +94,11 @@ void update() {
                 }
             }
         }
+
+        if (get_if_key_clicked_on("home_btn")) {
+            globals.scene_manager.queue_level_load = true;
+            globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
+        }
     } else {
 
         bool prev_paused = go_globals.paused;

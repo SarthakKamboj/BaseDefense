@@ -1,4 +1,15 @@
-<panel id="levels_display_panel" hor_align="center" ver_align="center" background_color="24,21,59">
+<panel id="levels_display_panel" hor_align="center" ver_align="start" background_color="24,21,59">
+    <container id="back_container" width="1" height="0.2" 
+        widget_size_width="parent" widget_size_height="parent" 
+        ver_align="center" hor_align="start">
+        <button id="home_btn" padding="30,15" font_size="30"
+            margin="30,0"
+            border_radius="15"
+            color="63,62,57"
+            background_color="249,246,8">
+            Home
+        </button>
+    </container>
     <container id="header_info" 
     ver_align="start" hor_align="center"
     bck_mode="gradient-tl-br"
