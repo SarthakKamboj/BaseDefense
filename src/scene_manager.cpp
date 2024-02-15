@@ -82,9 +82,20 @@ void scene_manager_init() {
         scene_manager_t::levels.push_back(level);
         scene_manager_t::levels_unlocked.push_back(false);
     }
+
+    memset(levels_data_path, 0, strlen(levels_data_path));
+    sprintf(levels_data_path, "%s\\%s\\unlocked_levels.txt", buffer, LEVELS_FOLDER);
+    FILE* unlocked_levels_file = fopen(levels_data_path, "r");
+    while (!feof(unlocked_levels_file)) {
+        char level[10]{};
+        fscanf(unlocked_levels_file, "%s\n", level);
+        int level_int = atoi(level);
+        scene_manager_t::levels_unlocked[level_int-1] = true;
+    }
+    fclose(unlocked_levels_file);
+
     // keep level 1 unlocked
     scene_manager_t::levels_unlocked[0] = true;
-
     json_free_document(doc);
 }
 
@@ -146,6 +157,18 @@ void scene_manager_update(scene_manager_t& sm) {
             }
         } else {
             scene_manager_t::levels_unlocked[sm.cur_level-1] = true;
+
+            char buffer[256]{};
+            get_resources_folder_path(buffer);
+            char levels_data_path[256]{};
+            memset(levels_data_path, 0, strlen(levels_data_path));
+            sprintf(levels_data_path, "%s\\%s\\unlocked_levels.txt", buffer, LEVELS_FOLDER);
+            FILE* unlocked_levels_file = fopen(levels_data_path, "w");
+            for (int i = 0; i < sm.cur_level; i++) {
+                fprintf(unlocked_levels_file, "%i\n", i+1);
+            }
+            fclose(unlocked_levels_file);
+
             enemy_t::deleted_base_handles.clear();
             gun_t::enemy_died_handles.clear();
 
@@ -180,7 +203,6 @@ void scene_manager_update(scene_manager_t& sm) {
             add_ui_anim_to_widget("base_container", "selected");
             add_ui_anim_to_widget("base_ext_container", "selected");
             add_ui_anim_to_widget("gun_container", "selected");
-
 
             go_globals.score.enemies_left_to_kill = scene_manager_t::levels[sm.cur_level-1].num_enemies_to_kill;
             inventory = inventory_t();
