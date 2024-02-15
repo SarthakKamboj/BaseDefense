@@ -535,3 +535,40 @@ void delete_rbs() {
 	frame_non_kin_w_kin_cols.clear();
 	frame_kin_w_kin_cols.clear();
 }
+
+void print_rb_layer(PHYSICS_RB_LAYER layer) {
+	switch (layer) {
+		case PHYS_NONE: {
+			printf("phys none\n");
+			break;
+		}
+		case PHYS_BASE: {
+			printf("phys base \n");
+			break;
+		}
+		case PHYS_BASE_EXT: {
+			printf("phys base ext");
+			break;
+		}
+		case PHYS_GUN: {
+			printf("phys guns");
+			break;
+		}
+		case PHYS_ENEMY: {
+			printf("phys enemy");
+			break;
+		}
+		case PHYS_BULLET: {
+			printf("phys bullet");
+			break;
+		}
+		case PHYS_ENEMY_BULLET: {
+			printf("phys enemy bullet");
+			break;
+		}
+		default: {
+			printf("non recognized phys");
+			break;
+		}
+	}
+}

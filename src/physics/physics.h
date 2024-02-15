@@ -18,6 +18,7 @@ enum PHYSICS_RB_LAYER {
 
 	NUM_PHYS_OPTIONS
 };
+void print_rb_layer(PHYSICS_RB_LAYER layer);
 
 /**
  * @brief AABB collider

@@ -192,7 +192,7 @@ void update_attachment(attachment_t& attachment) {
 
 		transform_t* transform = get_transform(preview_state.preview_base_ext.transform_handle);
 		game_assert_msg(transform, "transform of preview attachment not found");
-		if(preview_btn_released && inventory.num_base_exts > 0) {
+		if(preview_btn_released && preview_state.preview_base_valid) {
 			create_base_ext(attachment, preview_state.cur_base_ext_select_mode);
 			inventory.num_base_exts--;
 			delete_attachment_from_preview_manager(attachment.handle);
@@ -286,7 +286,7 @@ int create_base_ext(attachment_t& att, BASE_EXT_TYPE type) {
 
 	base_ext.transform_handle = create_transform(place_pos, go_globals.z_positions[BASE_EXT_Z_POS_KEY], glm::vec2(1), 0.f, 0.f, att.transform_handle);
 	base_ext.quad_render_handle = create_quad_render(base_ext.transform_handle, create_color(240,74,94), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
-	base_ext.rb_handle = create_rigidbody(base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_NONE, false, true);
+	base_ext.rb_handle = create_rigidbody(base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_BASE_EXT, false, true);
 	base_ext.attachment_handle = preview_state.preview_base_ext.attachment_handle;
 
 	// attachment_t* att = get_attachment(base_ext.attachment_handle);

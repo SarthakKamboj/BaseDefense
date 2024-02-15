@@ -155,7 +155,8 @@ void update_preview_base() {
 		std::vector<kin_w_kin_col_t> collisions = get_from_kin_w_kin_cols(preview_base.rb_handle, PHYS_BASE);
 		for (int i = 0; i < collisions.size(); i++) {
 			kin_w_kin_col_t& col = collisions[i];
-			if (col.kin_type1 == PHYS_BASE && col.kin_type2 == PHYS_BASE) {
+			if ((col.kin_type1 == PHYS_BASE && col.kin_type2 == PHYS_BASE) 
+				|| (col.kin_type1 == PHYS_BASE_EXT || col.kin_type2 == PHYS_BASE_EXT)) {
 				valid = false;
 				break;
 			}
@@ -453,7 +454,7 @@ void init_base_ext_preview() {
 
 	preview_base_ext.transform_handle = create_transform(glm::vec2(0, 0), go_globals.z_positions[PREVIEW_Z_POS_KEY], glm::vec2(1), 0.f, 0.f);
 	preview_base_ext.quad_render_handle = create_quad_render(preview_base_ext.transform_handle, create_color(145, 145, 145), base_extension_t::WIDTH, base_extension_t::HEIGHT, false, 0.f, -1);
-	preview_base_ext.rb_handle = create_rigidbody(preview_base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_NONE, true, false);
+	preview_base_ext.rb_handle = create_rigidbody(preview_base_ext.transform_handle, false, base_extension_t::WIDTH, base_extension_t::HEIGHT, true, PHYS_BASE_EXT, true, false);
 }
 
 void update_attachable_preview_item() {
@@ -492,7 +493,25 @@ void update_attachable_preview_item() {
 		}
 	}
 
-	if (inventory.num_base_exts == 0) {
+	preview_state.preview_base_valid = inventory.num_base_exts > 0;
+
+	if (preview_state.preview_base_valid) {
+		std::vector<kin_w_kin_col_t> collisions = get_from_kin_w_kin_cols(preview_state.preview_base_ext.rb_handle, PHYS_BASE_EXT);
+		printf("collisions size: %i\n", (int)collisions.size());
+		int num_exts_overlapped = 0;
+		for (int i = 0; i < collisions.size(); i++) {
+			kin_w_kin_col_t& col = collisions[i];
+			if (col.kin_type1 == PHYS_BASE_EXT && col.kin_type2 == PHYS_BASE_EXT) {
+				num_exts_overlapped++;
+			}
+			if (num_exts_overlapped == 2) {
+				preview_state.preview_base_valid = false;
+				break;
+			}
+		}
+	}
+
+	if (!preview_state.preview_base_valid && preview_state.cur_mode == PREVIEW_BASE_EXT) {
 		preview_quad->color = invalid_placement_color;
 	} else {
 		preview_quad->color = valid_placement_color;
@@ -505,6 +524,7 @@ void update_attachable_preview_item() {
 		transform = get_transform(preview_state.preview_gun.transform_handle);
 	}
 	game_assert_msg(transform, "transform of preview attachment not found");
+
 	if (is_controller_connected()) {
 		if (preview_state.active_att_idx != -1) {
 			att_summary_info_t& summary = preview_state.sorted_att_infos[preview_state.active_att_idx];

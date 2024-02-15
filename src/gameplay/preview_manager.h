@@ -56,6 +56,7 @@ struct preview_state_t {
 
     gun_t preview_gun;
     base_extension_t preview_base_ext;
+    bool preview_base_valid = true;
     base_t preview_base;
 
     std::vector<att_summary_info_t> sorted_att_infos;
