@@ -45,11 +45,7 @@ void init_preview_mode() {
     preview_state.base_ext_selector_tex_handle = create_texture(image_path, 0);
 
     preview_state.transform_handle = create_transform(glm::vec2(0), go_globals.z_positions[PREVIEW_SELECTOR_Z_POS_KEY], glm::vec2(1), 0, 0, -1);
-    // preview_state.quad_render_handle = create_quad_render(preview_state.transform_handle, create_color(255,0,0), preview_state_t::START_WIDTH, preview_state_t::START_HEIGHT, false, 1.f, -1);
     preview_state.window_rel_size = glm::vec2(preview_state_t::START_WIDTH, preview_state_t::START_HEIGHT) / glm::vec2(globals.window.window_width, globals.window.window_height);
-    // quad_render_t* q = get_quad_render(preview_state.quad_render_handle);
-    // game_assert_msg(q, "quad render not properly initizlied for preview");
-    // q->render = false;
 
     preview_state.cur_width = preview_state_t::START_WIDTH;
     preview_state.cur_height = preview_state_t::START_HEIGHT;
@@ -86,9 +82,6 @@ void init_preview_mode() {
         // load in shader for these rectangle quads because the game is 2D, so everything is basically a solid color or a texture
         data.shader = create_shader("selector.vert", "selector.frag");
 		data.shader.valid = true;
-        // set projection matrix in the shader
-        // glm::mat4 projection = glm::ortho(0.0f, globals.window.window_width, 0.0f, globals.window.window_height);
-        // shader_set_mat4(data.shader, "projection", projection);
         shader_set_mat4(data.shader, "view", glm::mat4(1.0f));
         shader_set_int(data.shader, "selector_image_tex", 0);
 
@@ -458,17 +451,26 @@ void init_base_ext_preview() {
 }
 
 void update_attachable_preview_item() {
-	if (preview_state.cur_mode == PREVIEW_BASE) return;
-
-	bool preview_down = get_down(LEFT_MOUSE) || get_down(CONTROLLER_Y);
 
 	quad_render_t* preview_quad = NULL;
+	if (preview_state.cur_mode == PREVIEW_BASE) {
+		preview_quad = get_quad_render(preview_state.preview_base_ext.quad_render_handle);
+		game_assert_msg(preview_quad, "quad render for preview base_ext not found");
+		preview_quad->render = false;
+		preview_quad = get_quad_render(preview_state.preview_gun.quad_render_handle);
+		game_assert_msg(preview_quad, "quad render for preview gun not found");
+		preview_quad->render = false;
+		return;
+	}
+
 	if (preview_state.cur_mode == PREVIEW_BASE_EXT) {
 		preview_quad = get_quad_render(preview_state.preview_base_ext.quad_render_handle);
 	} else if (preview_state.cur_mode == PREVIEW_GUN) {
 		preview_quad = get_quad_render(preview_state.preview_gun.quad_render_handle);
 	}
 	game_assert_msg(preview_quad, "quad render for preview attachment not found");
+
+	bool preview_down = get_down(LEFT_MOUSE) || get_down(CONTROLLER_Y);
 
 	if (store.open || go_globals.paused) {
 		preview_quad->render = false;
@@ -497,7 +499,6 @@ void update_attachable_preview_item() {
 
 	if (preview_state.preview_base_valid) {
 		std::vector<kin_w_kin_col_t> collisions = get_from_kin_w_kin_cols(preview_state.preview_base_ext.rb_handle, PHYS_BASE_EXT);
-		printf("collisions size: %i\n", (int)collisions.size());
 		int num_exts_overlapped = 0;
 		for (int i = 0; i < collisions.size(); i++) {
 			kin_w_kin_col_t& col = collisions[i];
