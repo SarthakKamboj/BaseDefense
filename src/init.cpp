@@ -507,6 +507,10 @@ void load_level(application_t& app, int level_num) {
 }
 #endif
 
+void init_audio_fx() {
+	read_wav_sound("shot", "shot.wav", false);
+}
+
 // TODO: audio and Window take the most amount of time to initialize...possibly make this shorter
 
 void init() {
@@ -542,4 +546,5 @@ void init() {
 
 	scene_manager_init();
 	init_gos_globals();
+	init_audio_fx();
 }

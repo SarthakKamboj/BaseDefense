@@ -226,8 +226,11 @@ void move_att_selection_right() {
 const float preview_state_t::TIME_UNTIL_BASE_EXT_SELECTOR_CAN_OPEN = 2.f;
 void update_preview_mode() {
     bool selector_pressed = get_pressed(KEY_Z) || get_pressed(CONTROLLER_X);
-    // bool selector_open = get_down(KEY_Z) || get_down(CONTROLLER_X);
     bool selector_released = get_released(KEY_Z) || get_released(CONTROLLER_X);
+
+	glm::vec2 mouse = mouse_to_world_pos();
+	transform_t* transform = get_transform(preview_state.transform_handle);
+	game_assert_msg(transform, "transform not found for preview state");
 
     if (selector_pressed) {
         float ratio = preview_state_t::START_HEIGHT / preview_state_t::START_WIDTH;
@@ -243,6 +246,16 @@ void update_preview_mode() {
 			shader_set_int(preview_state_t::preview_render_data.shader, "num_options", 3);
 			preview_state.last_time_selector_open_press = game::time_t::game_cur_time;
 		}
+		  
+		if (is_controller_connected()) {
+			transform->global_position.x = globals.camera.pos.x + globals.camera.cam_view_dimensions.x / 2.f;
+			transform->global_position.y = globals.camera.pos.y + globals.camera.cam_view_dimensions.y / 2.f;
+		} else {
+			glm::vec2 global_pos = mouse_to_world_pos();
+			transform->global_position.x = global_pos.x;
+			transform->global_position.y = global_pos.y;
+		}
+		update_hierarchy_based_on_globals();
     }
 
 	if (selector_released) {
@@ -255,19 +268,6 @@ void update_preview_mode() {
 	}
 
 	if (preview_state.preview_selector_open) {
-		glm::vec2 mouse = mouse_to_world_pos();
-		transform_t* transform = get_transform(preview_state.transform_handle);
-		game_assert_msg(transform, "transform not found for preview state");
-
-		if (is_controller_connected()) {
-			transform->global_position.x = globals.camera.pos.x + globals.window.window_width / 2.f;
-			transform->global_position.y = globals.camera.pos.y + globals.window.window_height / 2.f;
-		} else {
-			transform->global_position.x = mouse.x;
-			transform->global_position.y = mouse.y;
-		}
-		update_hierarchy_based_on_globals();
-
 		glm::vec2 selector_pos(transform->global_position.x, transform->global_position.y);
 		static glm::vec2 rel_pos;
 		if (!is_controller_connected()){
@@ -365,7 +365,8 @@ void render_preview_mode() {
 
     glm::mat4 view_mat = get_cam_view_matrix();
 	shader_set_mat4(shader, "view", view_mat);
-	glm::mat4 projection = get_ortho_matrix(globals.window.window_width, globals.window.window_height);
+	// glm::mat4 projection = get_ortho_matrix(globals.window.window_width, globals.window.window_height);
+	glm::mat4 projection = get_ortho_matrix(globals.camera.cam_view_dimensions.x, globals.camera.cam_view_dimensions.y);
 	shader_set_mat4(shader, "projection", projection);
 
 	// quad_render_t* quad = get_quad_render(preview_state.quad_render_handle);

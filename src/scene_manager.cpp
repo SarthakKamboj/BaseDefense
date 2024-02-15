@@ -109,6 +109,17 @@ void unload_level() {
 void unlock_level(int level) {
     game_assert_msg(level >= LEVEL_1 && level <= LEVEL_5, "level is not within the correct bounds");
     globals.scene_manager.levels_unlocked[level-1] = true;
+
+    char buffer[256]{};
+    get_resources_folder_path(buffer);
+    char levels_data_path[256]{};
+    memset(levels_data_path, 0, strlen(levels_data_path));
+    sprintf(levels_data_path, "%s\\%s\\unlocked_levels.txt", buffer, LEVELS_FOLDER);
+    FILE* unlocked_levels_file = fopen(levels_data_path, "w");
+    for (int i = 0; i < level; i++) {
+        fprintf(unlocked_levels_file, "%i\n", i+1);
+    }
+    fclose(unlocked_levels_file);
 }
 
 void scene_manager_update(scene_manager_t& sm) {
@@ -156,18 +167,10 @@ void scene_manager_update(scene_manager_t& sm) {
                 add_ui_anim_to_widget(bottom_border_name, "move_up");
             }
         } else {
-            scene_manager_t::levels_unlocked[sm.cur_level-1] = true;
-
-            char buffer[256]{};
-            get_resources_folder_path(buffer);
-            char levels_data_path[256]{};
-            memset(levels_data_path, 0, strlen(levels_data_path));
-            sprintf(levels_data_path, "%s\\%s\\unlocked_levels.txt", buffer, LEVELS_FOLDER);
-            FILE* unlocked_levels_file = fopen(levels_data_path, "w");
-            for (int i = 0; i < sm.cur_level; i++) {
-                fprintf(unlocked_levels_file, "%i\n", i+1);
+            // scene_manager_t::levels_unlocked[sm.cur_level-1] = true;
+            if (!scene_manager_t::levels_unlocked[sm.cur_level-1]) {
+                unlock_level(sm.cur_level);
             }
-            fclose(unlocked_levels_file);
 
             enemy_t::deleted_base_handles.clear();
             gun_t::enemy_died_handles.clear();

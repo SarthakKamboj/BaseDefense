@@ -360,15 +360,17 @@ void process_input() {
                     user_input.released[event.key.keysym.sym - 'a'] = true;
                     user_input.down[event.key.keysym.sym - 'a'] = false;
                 }
+                break;
             }
-            break;
             case SDL_KEYDOWN: {
                 if (event.key.keysym.sym >= 'a' && event.key.keysym.sym <= 'z') {
+                    if (!user_input.down[event.key.keysym.sym - 'a']) {
+                        user_input.pressed[event.key.keysym.sym - 'a'] = true;
+                    }
                     user_input.down[event.key.keysym.sym - 'a'] = true;
-                    user_input.pressed[event.key.keysym.sym - 'a'] = true;
                 }
+                break;
             }
-            break;
             case SDL_MOUSEWHEEL: {
                 user_input.mouse_scroll_wheel_delta_y = event.wheel.y;
             }

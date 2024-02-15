@@ -11,6 +11,7 @@
 #include "preview_manager.h"
 #include "gos_globals.h"
 #include "enemies.h"
+#include "audio/audio.h"
 
 #include <vector>
 #include <algorithm>
@@ -515,6 +516,8 @@ void create_bullet(glm::vec2 start_pos, glm::vec2 move_dir, float speed) {
 	bullet.speed = speed;
 	bullet.creation_time = game::time_t::cur_time;
 	go_globals.bullets.push_back(bullet);
+
+	play_sound("shot");
 }
 
 void mark_bullet_for_deletion(int bullet_handle) {

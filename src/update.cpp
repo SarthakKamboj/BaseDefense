@@ -12,6 +12,7 @@
 #include "ui/ui.h"
 #include "gameplay/preview_manager.h"
 #include "gameplay/gos_globals.h"
+#include "audio/audio.h"
 
 extern globals_t globals;
 extern go_globals_t go_globals;
@@ -41,6 +42,13 @@ void update() {
             globals.scene_manager.level_to_load = MAIN_MENU_LEVEL;
         } else if (get_if_key_clicked_on("mute_btn")) {
             globals.muted = !globals.muted;
+            if (globals.muted) {
+                mute_sounds();
+                mute_bck_sound();
+            } else {
+                unmute_sounds();
+                unmute_bck_sound();
+            }
         } else if (get_if_key_clicked_on("fs_btn")) {
             globals.fullscreen = !globals.fullscreen;
         } else if (get_if_key_clicked_on("credits_btn")) {
