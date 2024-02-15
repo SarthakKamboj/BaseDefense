@@ -461,13 +461,10 @@ void update_attached_gun(gun_t& gun) {
 	glm::vec2 to_enemy = glm::normalize(enemy_transform->global_position - attachment_transform->global_position);
 	if (gun.gun_state == GUN_STATE::ROTATING_TO_ENEMY) {
 		time_count_t t = fmin(1, (game::time_t::game_cur_time - gun.last_retarget_time) / gun_t::RETARGET_ANIM_TIME);
-		// glm::vec2 cur_facing_dir(cos(gun_transform->global_rotation.z), sin(gun_transform->global_rotation.));
 		gun_facing_dir = lerp(gun.dir_upon_target_fix, to_enemy, t);
-		// gun_facing_dir = lerp(cur_facing_dir, to_enemy, t);
 
 		if (t >= 1) {
 			gun.gun_state = GUN_STATE::SHOOTING;
-			printf("now shooting\n");
 		}
 	} else if (gun.gun_state == GUN_STATE::SHOOTING) {
 		gun_facing_dir = to_enemy;
