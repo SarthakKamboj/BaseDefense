@@ -82,16 +82,6 @@ struct user_input_t {
     // true while continuously button is down
     bool enter_down = false;
 
-    // bool right_mouse_down_click = false;
-    // bool left_mouse_down_click = false;
-    // bool middle_mouse_down_click = false;
-    // bool right_mouse_release = false;
-    // bool left_mouse_release = false;
-    // bool middle_mouse_release = false;
-    // bool right_mouse_down = false;
-    // bool left_mouse_down = false;
-    // bool middle_mouse_down = false;
-
     bool quit = false;
 
     // positive away from user
@@ -133,3 +123,6 @@ bool get_released(KEYS key);
 
 bool detect_window_error();
 bool is_controller_connected();
+
+void set_full_screen();
+void set_not_full_screen();

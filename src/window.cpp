@@ -410,3 +410,11 @@ KEYS operator++(KEYS& a, int) {
 bool is_controller_connected() {
     return globals.window.user_input.game_controller != NULL;
 }
+
+void set_full_screen() {
+    SDL_SetWindowFullscreen(globals.window.sdl_window, SDL_WINDOW_FULLSCREEN);
+}
+
+void set_not_full_screen() {
+    SDL_SetWindowFullscreen(globals.window.sdl_window, 0);
+}

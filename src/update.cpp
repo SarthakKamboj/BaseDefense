@@ -51,6 +51,11 @@ void update() {
             }
         } else if (get_if_key_clicked_on("fs_btn")) {
             globals.fullscreen = !globals.fullscreen;
+            if (globals.fullscreen) {
+                set_full_screen();
+            } else {
+                set_not_full_screen();
+            }
         } else if (get_if_key_clicked_on("credits_btn")) {
             globals.scene_manager.queue_level_load = true;
             globals.scene_manager.level_to_load = CREDITS_LEVEL;
